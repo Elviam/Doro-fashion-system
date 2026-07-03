@@ -93,11 +93,11 @@ export default function ModalPermisos({ isOpen = true, onClose, rol, permisos, o
   // Header
   const tituloPersonalizado = (
     <div>
-      <h2 className="text-xl sm:text-2xl font-bold mb-1 uppercase tracking-widest transition-colors text-morado dark:text-blanco m-0">
+      <h2 className="text-xl sm:text-2xl font-display font-bold mb-1 uppercase tracking-widest transition-colors text-[var(--noir)] dark:text-[var(--snow)] m-0">
         Gestionar Permisos
       </h2>
-      <p className="text-xs sm:text-sm text-gris dark:text-lila-soft transition-colors font-poppins font-normal tracking-normal normal-case">
-        Rol: <strong className="text-morado dark:text-lila">{rol.nombre}</strong>
+      <p className="text-xs sm:text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)] transition-colors font-body font-normal tracking-normal normal-case">
+        Rol: <strong className="text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{rol.nombre}</strong>
       </p>
     </div>
   );
@@ -105,8 +105,8 @@ export default function ModalPermisos({ isOpen = true, onClose, rol, permisos, o
   // Footer
   const footerAcciones = (
     <div className="flex justify-between items-center w-full">
-      <div className="text-xs font-semibold text-gris dark:text-lila-soft">
-        Seleccionados: <span className="text-morado dark:text-lila font-bold text-sm">{permisosSeleccionados.length}</span> de {permisos.length}
+      <div className="text-xs lg:text-sm font-semibold text-[var(--noir-soft)] dark:text-[var(--ash)]">
+        Seleccionados: <span className="text-[var(--gold-dark)] dark:text-[var(--gold-light)] font-bold text-sm lg:text-base">{permisosSeleccionados.length}</span> de {permisos.length}
       </div>
       <div className="flex gap-3">
         <Boton variante="secundario" onClick={handleIntentarCerrar} tipo="button">
@@ -128,10 +128,10 @@ export default function ModalPermisos({ isOpen = true, onClose, rol, permisos, o
         titulo={tituloPersonalizado}
         footer={footerAcciones}
       >
-        <div className="font-poppins pt-2 pb-4">
+        <div className="font-body pt-2 pb-4">
           
           {/* Buscador y Filtros */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 p-4 rounded-xl border transition-colors shadow-sm bg-lila/5 border-morado/10 dark:bg-oscuro/20 dark:border-lila/10 dark:shadow-none">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 p-4 rounded-[2px] border transition-colors shadow-sm bg-[var(--gold-08)] border-[var(--border-gold-25)] dark:bg-[var(--gold-08)] dark:border-[var(--border-gold-20)] dark:shadow-none">
             <Input 
               label="Buscar Permiso" 
               name="busqueda" 
@@ -150,28 +150,28 @@ export default function ModalPermisos({ isOpen = true, onClose, rol, permisos, o
           </div>
 
           {/* Permisos */}
-          <div className="border border-morado/20 dark:border-lila/20 rounded-xl overflow-hidden shadow-sm flex flex-col h-[50vh]">
+          <div className="border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] rounded-[2px] overflow-hidden shadow-sm flex flex-col h-[50vh]">
             
-            <div className="bg-lila-pastel dark:bg-bg-card p-3 border-b border-morado/20 dark:border-lila/20 flex justify-between items-center shrink-0">
+            <div className="bg-[var(--gold-08)] dark:bg-[var(--noir)] p-3 border-b border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] flex justify-between items-center shrink-0">
               <label className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
                 <input
                   type="checkbox"
                   checked={todosSeleccionados}
                   onChange={handleSeleccionarTodos}
                   disabled={permisosFiltrados.length === 0}
-                  className="w-4 h-4 rounded cursor-pointer accent-morado dark:accent-lila"
+                  className="w-4 h-4 rounded-[2px] cursor-pointer accent-[var(--gold-dark)] dark:accent-[var(--gold-light)]"
                 />
-                <span className="text-xs font-bold uppercase tracking-wider text-morado dark:text-lila">
+                <span className="text-xs lg:text-sm font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
                   {todosSeleccionados ? "Deseleccionar Todos" : "Seleccionar Todos"}
                 </span>
               </label>
-              <span className="text-xs text-gris dark:text-lila-soft font-medium">
+              <span className="text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)] font-medium">
                 Mostrando {permisosFiltrados.length} permisos
               </span>
             </div>
 
             {/* Scroll de Permisos */}
-            <div className="p-4 overflow-y-auto bg-blanco dark:bg-oscuro/40 flex-1">
+            <div className="p-4 overflow-y-auto bg-[var(--snow)] dark:bg-[var(--noir-soft)] flex-1">
               {permisosFiltrados.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {permisosFiltrados.map(permiso => {
@@ -180,31 +180,31 @@ export default function ModalPermisos({ isOpen = true, onClose, rol, permisos, o
                       <label
                         key={permiso.code}
                         className={`
-                          flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer shadow-sm
+                          flex items-start gap-3 p-3 rounded-[2px] border transition-all cursor-pointer shadow-sm
                           ${isChecked 
-                            ? 'bg-morado/5 border-morado/30 dark:bg-lila/10 dark:border-lila/30' 
-                            : 'bg-blanco border-morado/10 hover:border-morado/30 dark:bg-bg-card dark:border-lila/5 dark:hover:border-lila/20'}
+                            ? 'bg-[var(--gold-08)] border-[var(--border-gold-55)] dark:bg-[var(--gold-08)] dark:border-[var(--border-gold-40)]' 
+                            : 'bg-[var(--snow)] border-[var(--border-gold-25)] hover:border-[var(--border-gold-55)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)] dark:hover:border-[var(--border-gold-40)]'}
                         `}
                       >
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => handleTogglePermiso(permiso.code)}
-                          className="mt-1 w-4 h-4 rounded cursor-pointer accent-morado dark:accent-lila shrink-0"
+                          className="mt-1 w-4 h-4 rounded-[2px] cursor-pointer accent-[var(--gold-dark)] dark:accent-[var(--gold-light)] shrink-0"
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className={`text-sm font-bold truncate ${isChecked ? 'text-morado dark:text-lila' : 'text-oscuro dark:text-blanco'}`}>
+                            <span className={`text-sm lg:text-base font-bold truncate ${isChecked ? 'text-[var(--gold-dark)] dark:text-[var(--gold-light)]' : 'text-[var(--noir)] dark:text-[var(--snow)]'}`}>
                               {permiso.nombre}
                             </span>
                             <Etiquetas contenido={permiso.modulo || "Otros"} />
                           </div>
                           {permiso.descripcion && (
-                            <p className="text-[11px] text-gris dark:text-lila-soft/80 leading-tight mb-1">
+                            <p className="text-[11px] lg:text-xs text-[var(--noir-soft)] dark:text-[var(--ash)] leading-tight mb-1">
                               {permiso.descripcion}
                             </p>
                           )}
-                          <p className="text-[10px] font-mono text-morado/50 dark:text-lila/40">
+                          <p className="text-[10px] lg:text-[11px] font-mono text-[var(--noir-soft)] dark:text-[var(--ash)]">
                             {permiso.code}
                           </p>
                         </div>
@@ -213,10 +213,10 @@ export default function ModalPermisos({ isOpen = true, onClose, rol, permisos, o
                   })}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-gris dark:text-lila-soft/50 py-10">
+                <div className="flex flex-col items-center justify-center h-full text-[var(--noir-soft)] dark:text-[var(--ash)] py-10">
                   <i className="bi bi-search text-3xl mb-3 opacity-50"></i>
-                  <p className="text-sm font-medium">No se encontraron permisos</p>
-                  <p className="text-xs mt-1">Intenta con otra búsqueda o módulo</p>
+                  <p className="text-sm lg:text-base font-medium">No se encontraron permisos</p>
+                  <p className="text-xs lg:text-sm mt-1">Intenta con otra búsqueda o módulo</p>
                 </div>
               )}
             </div>

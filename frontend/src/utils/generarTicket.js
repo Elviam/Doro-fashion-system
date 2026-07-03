@@ -41,7 +41,7 @@ function marcaDeAgua(doc, altura) {
   doc.setFontSize(9);
   doc.setTextColor(181, 181, 181);
 
-  const texto   = "A U R A";
+  const texto   = "D'ORO";
   const espacioX = 20;
   const espacioY = 20;
   const angulo   = 35;
@@ -71,14 +71,14 @@ export function generarTicket(venta) {
   // ── Nombre de la tienda ──────────────────────────────────────
   doc.setFont("courier", "bold");
   doc.setFontSize(26);
-  doc.text("AURA", ANCHO / 2, y, { align: "center" });
+  doc.text("D'ORO", ANCHO / 2, y, { align: "center" });
   y += 9;
 
   y = centrado(doc, "B O U T I Q U E", y, false, 8);
   y += 3;
   y = centrado(doc, "CDMX, MEXICO", y, false, 7);
   y += 2;
-  y = centrado(doc, "contacto@auraboutique.mx", y, false, 7);
+  y = centrado(doc, "contacto@doroboutique.mx", y, false, 7);
   y += 5;
 
   y = linea(doc, y);
@@ -182,7 +182,7 @@ export function generarTicket(venta) {
 
   y = centrado(doc, mensajeFooter, y, false, 7.5);
   y += 4;
-  centrado(doc, "A U R A  B O U T I Q U E", y, true, 7.5);
+  centrado(doc, "D'ORO  B O U T I Q U E", y, true, 7.5);
 
-  doc.save(`AURA-Pedido-${venta.numeroPedido || venta.id.slice(0, 8).toUpperCase()}.pdf`);
+  doc.save(`D'ORO-Pedido-${venta.numeroPedido || venta.id.slice(0, 8).toUpperCase()}.pdf`);
 }

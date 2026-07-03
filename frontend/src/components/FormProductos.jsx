@@ -170,51 +170,51 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
         ancho="max-w-3xl"
         footer={footerAcciones}
       >
-        <form className="flex flex-col gap-8 font-poppins pt-2">
+        <form className="flex flex-col gap-8 font-body pt-2">
 
           {/* Imagen */}
           <div className={`
-            p-5 rounded-xl border transition-colors shadow-sm
-            bg-blanco border-morado/20
-            dark:bg-oscuro/20 dark:border-lila/5 dark:shadow-none
+            p-5 rounded-[2px] border transition-colors shadow-sm
+            bg-[var(--snow)] border-[var(--border-gold-40)]
+            dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
           `}>
-            <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-morado dark:text-lila">
+            <h3 className="text-sm lg:text-base font-tag uppercase flex items-center gap-2 mb-4 text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
               <i className="bi bi-image"></i> Fotografía del Producto
             </h3>
             <div className="flex flex-col sm:flex-row gap-6 items-center">
               
               <div className={`
-                relative w-32 h-32 shrink-0 rounded-xl border flex items-center justify-center overflow-hidden shadow-inner transition-colors
-                bg-lila-pastel border-morado/20
-                dark:bg-white dark:border-lila/20
+                relative w-32 h-32 shrink-0 rounded-[2px] border flex items-center justify-center overflow-hidden shadow-inner transition-colors
+                bg-[var(--gold-08)] border-[var(--border-gold-40)]
+                dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)]
               `}>
                 {imagenPreview ? (
                   <>
-                    <img src={imagenPreview} alt="Preview" className="w-full h-full object-contain bg-white" />
+                    <img src={imagenPreview} alt="Preview" className="w-full h-full object-contain bg-[var(--snow)]" />
                     <button
                       type="button"
                       onClick={handleEliminarImagen}
-                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-rojo text-blanco flex items-center justify-center shadow-md hover:bg-rojo/80 transition-colors"
+                      className="absolute top-1 right-1 w-6 h-6 rounded-[2px] bg-rojo text-[var(--snow)] flex items-center justify-center shadow-md hover:bg-rojo/80 transition-colors"
                       title="Eliminar imagen"
                     >
                       <i className="bi bi-x text-sm"></i>
                     </button>
                   </>
                 ) : (
-                  <i className="bi bi-camera text-4xl text-morado/30 dark:text-lila-soft/50"></i>
+                  <i className="bi bi-camera text-4xl text-[var(--gold)]/40"></i>
                 )}
               </div>
 
               <div className="flex-1 w-full">
                 <label className={`
-                  flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-colors
-                  border-morado/30 bg-morado/5 hover:bg-morado/10
-                  dark:border-lila/30 dark:bg-lila/5 dark:hover:bg-lila/10
+                  flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-[2px] cursor-pointer transition-colors
+                  border-[var(--border-gold-40)] bg-[var(--gold-08)] hover:bg-[var(--gold-08)]
+                  dark:border-[var(--border-gold-20)] dark:bg-[var(--gold-08)] dark:hover:bg-[var(--gold-08)]
                 `}>
                   <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
-                    <i className="bi bi-cloud-arrow-up text-2xl mb-2 text-morado dark:text-lila"></i>
-                    <p className="text-sm font-medium">Haz clic para subir una imagen</p>
-                    <p className="text-xs mt-1 text-gris dark:text-lila-soft">PNG, JPG o WEBP (Max. 5MB)</p>
+                    <i className="bi bi-cloud-arrow-up text-2xl mb-2 text-[var(--gold-dark)] dark:text-[var(--gold-light)]"></i>
+                    <p className="text-sm lg:text-base font-medium text-[var(--noir)] dark:text-[var(--snow)]">Haz clic para subir una imagen</p>
+                    <p className="text-xs lg:text-sm mt-1 text-[var(--noir-soft)] dark:text-[var(--ash)]">PNG, JPG o WEBP (Max. 5MB)</p>
                   </div>
                   <input 
                     type="file" 
@@ -230,11 +230,11 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
 
           {/* Información */}
           <div className={`
-            p-5 rounded-xl border transition-colors shadow-sm
-            bg-blanco border-morado/20
-            dark:bg-oscuro/20 dark:border-lila/5 dark:shadow-none
+            p-5 rounded-[2px] border transition-colors shadow-sm
+            bg-[var(--snow)] border-[var(--border-gold-40)]
+            dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
           `}>
-            <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-morado dark:text-lila">
+            <h3 className="text-sm lg:text-base font-tag uppercase flex items-center gap-2 mb-4 text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
               <i className="bi bi-info-circle"></i> Información General
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -291,11 +291,11 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
 
           {/* Descripción */}
           <div className={`
-            p-5 rounded-xl border transition-colors shadow-sm
-            bg-blanco border-morado/20
-            dark:bg-oscuro/20 dark:border-lila/5 dark:shadow-none
+            p-5 rounded-[2px] border transition-colors shadow-sm
+            bg-[var(--snow)] border-[var(--border-gold-40)]
+            dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
           `}>
-            <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-morado dark:text-lila">
+            <h3 className="text-sm lg:text-base font-tag uppercase flex items-center gap-2 mb-4 text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
               <i className="bi bi-card-text"></i> Descripción
             </h3>
             <Input 
@@ -306,11 +306,11 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
 
           {/* Precios */}
           <div className={`
-            p-5 rounded-xl border transition-colors shadow-sm
-            bg-blanco border-morado/20
-            dark:bg-oscuro/20 dark:border-lila/5 dark:shadow-none
+            p-5 rounded-[2px] border transition-colors shadow-sm
+            bg-[var(--snow)] border-[var(--border-gold-40)]
+            dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
           `}>
-            <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-morado dark:text-lila">
+            <h3 className="text-sm lg:text-base font-tag uppercase flex items-center gap-2 mb-4 text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
               <i className="bi bi-currency-dollar"></i> Precios
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -321,11 +321,11 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
 
           {/* Inventario */}
           <div className={`
-            p-5 rounded-xl border transition-colors shadow-sm
-            bg-blanco border-morado/20
-            dark:bg-oscuro/20 dark:border-lila/5 dark:shadow-none
+            p-5 rounded-[2px] border transition-colors shadow-sm
+            bg-[var(--snow)] border-[var(--border-gold-40)]
+            dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
           `}>
-            <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-morado dark:text-lila">
+            <h3 className="text-sm lg:text-base font-tag uppercase flex items-center gap-2 mb-4 text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
               <i className="bi bi-box-seam"></i> Inventario y Alertas
             </h3>
 
@@ -349,9 +349,9 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
             </div>
             
             <div className={`
-              flex flex-col sm:flex-row gap-3 items-end mb-6 p-4 rounded-lg border transition-colors
-              bg-lila-pastel border-morado/20
-              dark:bg-lila/5 dark:border-lila/10
+              flex flex-col sm:flex-row gap-3 items-end mb-6 p-4 rounded-[2px] border transition-colors
+              bg-[var(--gold-08)] border-[var(--border-gold-40)]
+              dark:bg-[var(--gold-08)] dark:border-[var(--border-gold-20)]
             `}>
               <div className="flex-1 w-full">
                 <Input 
@@ -387,28 +387,28 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
                   <div 
                     key={idx} 
                     className={`
-                      flex items-center justify-between rounded-lg p-2 pr-3 group border transition-colors shadow-sm
-                      bg-blanco border-morado/20
-                      dark:bg-oscuro/40 dark:border-lila/20 dark:shadow-none
+                      flex items-center justify-between rounded-[2px] p-2 pr-3 group border transition-colors shadow-sm
+                      bg-[var(--snow)] border-[var(--border-gold-40)]
+                      dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)] dark:shadow-none
                     `}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`
-                        flex flex-col items-center justify-center w-10 h-10 rounded-md border transition-colors
-                        bg-lila-pastel border-morado/20
-                        dark:bg-lila/10 dark:border-lila/20
+                        flex flex-col items-center justify-center w-10 h-10 rounded-[2px] border transition-colors
+                        bg-[var(--gold-08)] border-[var(--border-gold-40)]
+                        dark:bg-[var(--gold-08)] dark:border-[var(--border-gold-20)]
                       `}>
-                        <span className="text-xs font-bold uppercase text-morado dark:text-blanco">{item.talla === "Unitalla" ? "UNI" : item.talla}</span>
+                        <span className="text-xs lg:text-sm font-tag uppercase text-[var(--gold-dark)] dark:text-[var(--snow)]">{item.talla === "Unitalla" ? "UNI" : item.talla}</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[9px] uppercase tracking-wider text-gris dark:text-lila-soft">Stock</span>
-                        <span className="text-sm font-bold text-oscuro dark:text-blanco">{item.stock}</span>
+                        <span className="text-[9px] lg:text-[10px] font-tag uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)]">Stock</span>
+                        <span className="text-sm lg:text-base font-bold text-[var(--noir)] dark:text-[var(--snow)]">{item.stock}</span>
                       </div>
                     </div>
                     <button 
                       type="button" 
                       onClick={() => handleEliminarTalla(item.talla)}
-                      className="transition-colors opacity-70 group-hover:opacity-100 text-gris hover:text-rojo dark:text-lila-soft dark:hover:text-rojo"
+                      className="transition-colors opacity-70 group-hover:opacity-100 text-[var(--noir-soft)] hover:text-rojo dark:text-[var(--ash)] dark:hover:text-rojo"
                       title="Eliminar talla"
                     >
                       <i className="bi bi-x-circle-fill text-lg"></i>
@@ -418,9 +418,9 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
               </div>
             ) : (
               <p className={`
-                text-sm italic text-center py-6 rounded-lg border transition-colors
-                text-gris bg-lila-pastel border-morado/20
-                dark:text-lila-mid dark:bg-oscuro/40 dark:border-lila/5
+                text-sm lg:text-base italic text-center py-6 rounded-[2px] border transition-colors
+                text-[var(--noir-soft)] bg-[var(--gold-08)] border-[var(--border-gold-40)]
+                dark:text-[var(--ash)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)]
               `}>
                 Aún no has agregado tallas a este producto.
               </p>

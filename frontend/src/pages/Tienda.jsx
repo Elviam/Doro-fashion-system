@@ -3,10 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import HeaderTienda from "../components/tienda/HeaderTienda";
 import FooterTienda from "../components/tienda/FooterTienda";
-import BarraAnuncios from "../components/tienda/BarraAnuncios";
 import HeroCarrusel from "../components/tienda/HeroCarrusel";
-import RielCategorias from "../components/tienda/RielCategorias";
 import FiltrosSidebar, { DrawerFiltros } from "../components/tienda/FiltrosSidebar";
+import { RANGO_PRECIO } from "../constants/precio";
 import BarraOrdenamiento from "../components/tienda/BarraOrdenamiento";
 import TarjetaProductoTienda from "../components/tienda/TarjetaProductoTienda";
 import VistaRapida from "../components/tienda/VistaRapida";
@@ -18,10 +17,11 @@ import { api } from "../services/api";
 import useTitulo from "../hooks/useTitulo";
 
 const filtrosIniciales = {
-  precioMax:    2000,
+  precioMin: RANGO_PRECIO.min,
+  precioMax: RANGO_PRECIO.max,
   departamento: "",
-  tallas:       [],
-  soloEnStock:  false,
+  tallas: [],
+  soloEnStock: false,
 };
 
 export default function Tienda() {
@@ -64,11 +64,69 @@ export default function Tienda() {
   }, [carrito, claveCarrito]);
 
   useEffect(() => {
-    api.get("/products?activo=true&limit=100")
-      .then((data) => setProductos(data.items ?? []))
-      .catch(() => setProductos([]))
-      .finally(() => setCargando(false));
-  }, []);
+  const productosMock = [
+    {
+      id: "1",
+      nombre: "Camisa de Lino Ivory",
+      categoria: "Camisas",
+      departamento: "Hombre",
+      precioVenta: 2450,
+      stock: 12,
+      inventario: [
+        { talla: "S", stock: 3 },
+        { talla: "M", stock: 5 },
+        { talla: "L", stock: 4 },
+        { talla: "XL", stock: 0 },
+      ],
+    },
+    {
+      id: "2",
+      nombre: "Vestido Noir Satinado",
+      categoria: "Vestidos",
+      departamento: "Mujer",
+      precioVenta: 4890,
+      stock: 6,
+      inventario: [
+        { talla: "XS", stock: 2 },
+        { talla: "S", stock: 2 },
+        { talla: "M", stock: 2 },
+      ],
+    },
+    {
+      id: "3",
+      nombre: "Abrigo de Lana Dorado",
+      categoria: "Abrigos",
+      departamento: "Mujer",
+      precioVenta: 8990,
+      stock: 0,
+      inventario: [
+        { talla: "S", stock: 0 },
+        { talla: "M", stock: 0 },
+      ],
+    },
+    {
+      id: "4",
+      nombre: "Pantalón Sastre Noir",
+      categoria: "Pantalones",
+      departamento: "Hombre",
+      precioVenta: 3200,
+      stock: 9,
+      inventario: [
+        { talla: "30", stock: 3 },
+        { talla: "32", stock: 4 },
+        { talla: "34", stock: 2 },
+      ],
+    },
+  ];
+
+  setProductos(productosMock);
+  setCargando(false);
+
+  /*api.get("/products?activo=true&limit=100")
+    .then((data) => setProductos(data.items ?? []))
+    .catch(() => setProductos([]))
+    .finally(() => setCargando(false));   */
+}, []);
 
   // Recibe (productoId, "agregado" | "quitado") desde TarjetaProductoTienda
   const handleFavoritoChange = (productoId, accion) => {
@@ -185,7 +243,11 @@ export default function Tienda() {
           p.marca?.toLowerCase().includes(q)
       );
     }
-    lista = lista.filter((p) => p.precioVenta <= filtros.precioMax);
+    lista = lista.filter(
+      (p) =>
+        p.precioVenta >= filtros.precioMin &&
+        p.precioVenta <= filtros.precioMax
+    );
     if (filtros.departamento)
       lista = lista.filter((p) => p.departamento === filtros.departamento);
     if (filtros.tallas.length > 0)
@@ -210,9 +272,7 @@ export default function Tienda() {
       : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4";
 
   return (
-    <div className="min-h-screen bg-oscuro">
-
-      <BarraAnuncios />
+    <div className="min-h-screen" style={{ background: "var(--ivory-deep)" }}>
 
       <HeaderTienda
         busqueda={busqueda}
@@ -232,13 +292,6 @@ export default function Tienda() {
       <HeroCarrusel />
 
       <section ref={catalogoRef} className="max-w-[1480px] mx-auto px-6 lg:px-10 mt-10">
-        <div className="md:hidden">
-          <RielCategorias
-            categoriaActiva={categoriaActiva}
-            onSeleccionarCategoria={seleccionarCategoria}
-          />
-        </div>
-
         <div className="flex gap-6">
           <FiltrosSidebar filtros={filtros} setFiltro={setFiltro} onLimpiar={limpiarFiltros} />
 
@@ -259,22 +312,72 @@ export default function Tienda() {
             />
 
             {cargando ? (
-              <div className="bg-bg-card border border-lila/10 rounded-2xl py-20 text-center">
-                <i className="bi bi-arrow-repeat text-3xl text-lila animate-spin" />
-                <p className="text-sm text-text-muted mt-3">Cargando productos…</p>
+              <div
+                className="rounded-[2px] py-24 text-center"
+                style={{ background: "var(--snow)", border: "1px solid var(--border-gold-20)" }}
+              >
+                <i className="bi bi-arrow-repeat text-3xl animate-spin" style={{ color: "var(--gold-dark)" }} />
+                <p
+                  className="mt-4"
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontStyle: "italic",
+                    fontSize: "15px",
+                    color: "var(--ash)",
+                  }}
+                >
+                  Cargando productos…
+                </p>
               </div>
             ) : productosFiltrados.length === 0 ? (
-              <div className="bg-bg-card border border-lila/10 rounded-2xl py-20 text-center">
-                <div className="w-16 h-16 rounded-full bg-lila/10 mx-auto flex items-center justify-center mb-3">
-                  <i className="bi bi-search text-2xl text-lila" />
+              <div
+                className="rounded-[2px] py-24 text-center"
+                style={{ background: "var(--snow)", border: "1px solid var(--border-gold-20)" }}
+              >
+                <div
+                  className="w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-4"
+                  style={{ background: "var(--gold-08)" }}
+                >
+                  <i className="bi bi-search text-2xl" style={{ color: "var(--gold-dark)" }} />
                 </div>
-                <p className="text-base font-bold text-blanco">Sin coincidencias</p>
-                <p className="text-sm text-text-muted mt-1">
+                <p
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 300,
+                    fontStyle: "italic",
+                    fontSize: "clamp(20px, 2.4vw, 26px)",
+                    color: "var(--noir)",
+                  }}
+                >
+                  Sin coincidencias
+                </p>
+                <p
+                  className="mt-2"
+                  style={{
+                    fontFamily: "var(--font-body)",
+                    fontSize: "15px",
+                    color: "var(--ash)",
+                  }}
+                >
                   Prueba con otros filtros o categorías
                 </p>
                 <button
                   onClick={limpiarFiltros}
-                  className="mt-4 bg-lila text-oscuro font-bold px-5 py-2 rounded-lg text-sm hover:bg-lila-soft transition"
+                  className="mt-6 rounded-[2px] transition"
+                  style={{
+                    fontFamily: "var(--font-tag)",
+                    fontWeight: 600,
+                    fontSize: "11px",
+                    letterSpacing: "0.16em",
+                    textTransform: "uppercase",
+                    padding: "11px 28px",
+                    background: "var(--gold)",
+                    color: "var(--noir)",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--gold-light)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "var(--gold)")}
                 >
                   Limpiar filtros
                 </button>

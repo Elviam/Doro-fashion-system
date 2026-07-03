@@ -1,14 +1,380 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import Toast from "../components/Toast";
+import useTitulo from "../hooks/useTitulo";
 
+// ---------------------------------------------------------------------------
+// Fonts — same as Login / Home
+// ---------------------------------------------------------------------------
+const FontLoader = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Josefin+Sans:wght@300;400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
+  `}</style>
+);
+
+// ---------------------------------------------------------------------------
+// Scoped styles
+// ---------------------------------------------------------------------------
+const RegisterStyles = () => (
+  <style>{`
+    .reg-root {
+      display: flex;
+      min-height: 100vh;
+      width: 100%;
+      background: var(--noir);
+      overflow-x: hidden;
+      box-sizing: border-box;
+    }
+
+    /* ── Left branding panel ── */
+    .reg-brand-panel {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      flex: 0 0 340px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 52px 44px;
+      background: var(--noir-soft);
+      border-right: 1px solid var(--border-gold-20);
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    /* ── Right form panel ── */
+    .reg-form-panel {
+      flex: 1 1 0;
+      min-height: 100vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      background: var(--ivory);
+      padding: 64px 60px 72px;
+      box-sizing: border-box;
+      border-left: 1px solid var(--border-gold-20);
+    }
+
+    .reg-form-inner {
+      width: 100%;
+      max-width: 520px;
+    }
+
+    /* ── Back arrow ── */
+    .reg-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-tag);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #5C4A2A;
+      text-decoration: none;
+      margin-bottom: 40px;
+      transition: color 0.2s, gap 0.2s;
+    }
+    .reg-back svg { transition: transform 0.2s; }
+    .reg-back:hover { color: var(--noir); gap: 11px; }
+    .reg-back:hover svg { transform: translateX(-3px); }
+
+    /* ── Gold divider ── */
+    .reg-gold-line {
+      display: block;
+      width: 90px;
+      height: 1px;
+      margin-bottom: 24px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    /* ── Section separator ── */
+    .reg-section-sep {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 28px 0 20px;
+    }
+    .reg-section-sep span {
+      font-family: var(--font-tag);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--gold-dark);
+      white-space: nowrap;
+    }
+    .reg-section-sep::before,
+    .reg-section-sep::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-gold-25);
+    }
+
+    /* ── Label ── */
+    /* #4A3F37 on #F7F0E6 = ~6.8:1 — passes AA */
+    .reg-label {
+      display: block;
+      font-family: var(--font-tag);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #4A3F37;
+      margin-bottom: 7px;
+    }
+    .reg-label .req { color: #b94040; margin-left: 2px; }
+
+    /* ── Input wrapper ── */
+    .reg-input-wrap { position: relative; }
+    .reg-input-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9C8B79;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+    }
+
+    /* ── Input ── */
+    .reg-input {
+      width: 100%;
+      padding: 13px 16px 13px 42px;
+      background: #FEFEFE;
+      border: 1px solid var(--border-gold-25);
+      border-radius: 2px;
+      font-family: var(--font-body);
+      font-size: 15px;
+      color: var(--noir);
+      outline: none;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      box-sizing: border-box;
+      -webkit-appearance: none;
+    }
+    .reg-input::placeholder { color: rgba(80,70,60,0.3); }
+    .reg-input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px var(--gold-08);
+    }
+    .reg-input.has-error { border-color: #b94040; }
+    .reg-input:disabled { opacity: 0.5; cursor: not-allowed; }
+    .reg-input.with-toggle { padding-right: 44px; }
+    .reg-input.uppercase-input { text-transform: uppercase; }
+
+    /* ── Toggle button (show/hide password) ── */
+    .reg-toggle-btn {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      color: #9C8B79;
+      transition: color 0.2s;
+      line-height: 0;
+    }
+    .reg-toggle-btn:hover { color: #5C4A2A; }
+
+    /* ── Field error ── */
+    .reg-field-error {
+      font-family: var(--font-tag);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #b94040;
+      margin-top: 5px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ── Field hint ── */
+    .reg-field-hint {
+      font-family: var(--font-body);
+      font-size: 12px;
+      color: #9C8B79;
+      margin-top: 5px;
+      font-style: italic;
+    }
+
+    /* ── Password strength bars ── */
+    .reg-strength-bars { display: flex; gap: 4px; margin-top: 6px; }
+    .reg-strength-bar {
+      flex: 1;
+      height: 2px;
+      border-radius: 0;
+      background: var(--border-gold-20);
+      transition: background 0.3s;
+    }
+    .reg-strength-bar.weak   { background: #D04E37; }
+    .reg-strength-bar.medium { background: #E0A020; }
+    .reg-strength-bar.strong { background: #4A8C38; }
+    .reg-strength-label {
+      font-family: var(--font-tag);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 5px;
+    }
+    .reg-strength-label.weak   { color: #D04E37; }
+    .reg-strength-label.medium { color: #E0A020; }
+    .reg-strength-label.strong { color: #4A8C38; }
+
+    /* ── Submit button ── */
+    .reg-btn-submit {
+      width: 100%;
+      padding: 15px 24px;
+      background: var(--noir);
+      color: var(--gold-light);
+      border: 1px solid var(--noir);
+      border-radius: 2px;
+      font-family: var(--font-tag);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.25s, color 0.25s, border-color 0.25s, transform 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 32px;
+    }
+    .reg-btn-submit:hover:not(:disabled) {
+      background: var(--gold-dark);
+      border-color: var(--gold-dark);
+      color: var(--ivory);
+      transform: translateY(-1px);
+    }
+    .reg-btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Login link ── */
+    .reg-login-link {
+      font-family: var(--font-tag);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #5C4A2A;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(92,74,42,0.4);
+      padding-bottom: 1px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .reg-login-link:hover { color: var(--noir); border-color: var(--noir); }
+
+    /* ── Checkbox ── */
+    .reg-checkbox-wrap {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .reg-checkbox-box {
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
+      border: 1px solid var(--border-gold-40);
+      background: #FEFEFE;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .reg-checkbox-box.checked {
+      background: var(--gold);
+      border-color: var(--gold);
+    }
+    .reg-checkbox-text {
+      font-family: var(--font-body);
+      font-size: 14px;
+      color: var(--noir);
+      line-height: 1.65;
+    }
+    .reg-checkbox-text button {
+      font-family: var(--font-tag);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #5C4A2A;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.2s;
+    }
+    .reg-checkbox-text button:hover { color: var(--noir); }
+
+    /* ── Grid helpers ── */
+    .reg-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    /* ── Footer text ── */
+    .reg-footer-text {
+      font-family: var(--font-tag);
+      font-size: 10px;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: #8c6030;
+      text-align: center;
+      margin-top: 36px;
+    }
+
+    /* ══════════════════════════════════════════
+       RESPONSIVE — Tablet (≤ 900px)
+    ══════════════════════════════════════════ */
+    @media (max-width: 900px) {
+      .reg-brand-panel { display: none; }
+      .reg-form-panel {
+        padding: 52px 40px 64px;
+        border-left: none;
+      }
+    }
+
+    /* ══════════════════════════════════════════
+       RESPONSIVE — Mobile (≤ 540px)
+    ══════════════════════════════════════════ */
+    @media (max-width: 540px) {
+      .reg-form-panel { padding: 48px 20px 56px; }
+      .reg-grid-2 { grid-template-columns: 1fr; }
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  `}</style>
+);
+
+// ---------------------------------------------------------------------------
+// Validation
+// ---------------------------------------------------------------------------
 const RFC_REGEX = /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/i;
 const TEL_REGEX = /^\+?[\d\s\-()]{10,15}$/;
 
 function validate(form) {
   const err = {};
-
   if (!form.nombre.trim())
     err.nombre = "El nombre es obligatorio.";
   else if (form.nombre.trim().length < 2)
@@ -17,7 +383,7 @@ function validate(form) {
   if (!form.rfc.trim())
     err.rfc = "El RFC es obligatorio.";
   else if (!RFC_REGEX.test(form.rfc.trim()))
-    err.rfc = "RFC inválido. Ej: GARM850101AB3";
+    err.rfc = "RFC inválido — ej: GARM850101AB3";
 
   if (!form.email.trim())
     err.email = "El email es obligatorio.";
@@ -27,7 +393,7 @@ function validate(form) {
   if (!form.telefono.trim())
     err.telefono = "El teléfono es obligatorio.";
   else if (!TEL_REGEX.test(form.telefono.trim()))
-    err.telefono = "Ingresa un teléfono válido (10 dígitos).";
+    err.telefono = "Mínimo 10 dígitos.";
 
   if (!form.usuario.trim())
     err.usuario = "El usuario es obligatorio.";
@@ -52,76 +418,82 @@ function validate(form) {
   return err;
 }
 
+// ---------------------------------------------------------------------------
+// Password strength
+// ---------------------------------------------------------------------------
 function getStrength(pwd) {
   if (!pwd) return null;
   let score = 0;
   if (pwd.length >= 6) score++;
   if (/[A-Z]/.test(pwd) && /[0-9]/.test(pwd)) score++;
   if (/[^A-Za-z0-9]/.test(pwd)) score++;
-  return [
-    { label: "Débil",    barColor: "bg-rojo",     textColor: "text-rojo",     bars: 1 },
-    { label: "Moderada", barColor: "bg-amarillo",  textColor: "text-amarillo", bars: 2 },
-    { label: "Fuerte",   barColor: "bg-verde",     textColor: "text-verde",    bars: 3 },
-  ][(score - 1)] ?? { label: "Débil", barColor: "bg-rojo", textColor: "text-rojo", bars: 1 };
+  const levels = [
+    { label: "Débil",    key: "weak",   bars: 1 },
+    { label: "Moderada", key: "medium", bars: 2 },
+    { label: "Fuerte",   key: "strong", bars: 3 },
+  ];
+  return levels[score - 1] ?? levels[0];
 }
 
-function SectionDivider({ icon, label }) {
-  return (
-    <div className="flex items-center gap-2 mb-4">
-      <i className={`bi ${icon} text-xs text-text-muted`}></i>
-      <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
-        {label}
-      </span>
-      <div className="flex-1 h-px bg-lila/10" />
-    </div>
-  );
-}
+// ---------------------------------------------------------------------------
+// D'oro wordmark — same as Home / Login
+// ---------------------------------------------------------------------------
+const DoroWordmark = ({ size = 22, color = "var(--gold-light)" }) => (
+  <div style={{
+    fontFamily: "var(--font-display)",
+    fontSize: size,
+    fontWeight: 300,
+    letterSpacing: "0.22em",
+    color,
+    userSelect: "none",
+    display: "flex",
+    alignItems: "baseline",
+    gap: "2px",
+  }}>
+    D
+    <span style={{ fontStyle: "italic", color: "var(--gold)", marginRight: "1px" }}>'</span>
+    ORO
+  </div>
+);
 
+// ---------------------------------------------------------------------------
+// Reusable field wrapper
+// ---------------------------------------------------------------------------
 function Field({ label, id, icon, error, hint, required, children }) {
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-[10px] font-bold uppercase tracking-wider text-lila-mid flex items-center gap-1">
-        {label}
-        {required && <span className="text-rojo">*</span>}
+    <div>
+      <label className="reg-label" htmlFor={id}>
+        {label}{required && <span className="req"> *</span>}
       </label>
-      <div className="relative">
-        <i className={`bi ${icon} absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-text-muted pointer-events-none`} />
+      <div className="reg-input-wrap">
+        <span className="reg-input-icon">
+          <i className={`bi ${icon}`} style={{ fontSize: "14px" }} />
+        </span>
         {children}
       </div>
       {error && (
-        <p className="text-[11px] text-rojo flex items-center gap-1">
-          <i className="bi bi-exclamation-circle text-xs" />
+        <p className="reg-field-error">
+          <i className="bi bi-exclamation-circle" style={{ fontSize: "11px" }} />
           {error}
         </p>
       )}
-      {hint && !error && (
-        <p className="text-[11px] text-text-muted">{hint}</p>
-      )}
+      {hint && !error && <p className="reg-field-hint">{hint}</p>}
     </div>
   );
 }
 
-const baseInput =
-  "w-full bg-oscuro text-lila border border-lila/15 rounded-xl " +
-  "pl-9 pr-4 py-2.5 text-sm font-poppins outline-none " +
-  "placeholder-lila/20 transition-all duration-200 " +
-  "hover:border-lila/35 focus:border-lila/55 focus:ring-1 focus:ring-lila/15";
-
-const errorInput = "border-rojo/50 focus:border-rojo/60 focus:ring-rojo/15";
-
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 export default function Register() {
-  const navigate     = useNavigate();
+  useTitulo("Crear Cuenta — D'oro");
+
+  const navigate = useNavigate();
   const { register } = useAuth();
 
   const [form, setForm] = useState({
-    nombre:   "",
-    rfc:      "",
-    email:    "",
-    telefono: "",
-    usuario:  "",
-    password: "",
-    confirm:  "",
-    terminos: false,
+    nombre: "", rfc: "", email: "", telefono: "",
+    usuario: "", password: "", confirm: "", terminos: false,
   });
 
   const [showPass,    setShowPass]    = useState(false);
@@ -140,12 +512,8 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const localErrors = validate(form);
-    if (Object.keys(localErrors).length > 0) {
-      setErrors(localErrors);
-      return;
-    }
+    if (Object.keys(localErrors).length > 0) { setErrors(localErrors); return; }
 
     setLoading(true);
     try {
@@ -157,286 +525,421 @@ export default function Register() {
         usuario:  form.usuario.trim().toLowerCase(),
         password: form.password,
       });
-
-      setToast({ message: "¡Cuenta creada exitosamente!", type: "success" });
+      setToast({ message: "Cuenta creada correctamente.", type: "success" });
       setTimeout(() => navigate("/tienda"), 1200);
-
     } catch (err) {
-      if (err.field) {
-        setErrors({ [err.field]: err.message });
-      } else {
-        setToast({ message: err.message ?? "Error al crear la cuenta.", type: "error" });
-      }
+      if (err.field) setErrors({ [err.field]: err.message });
+      else setToast({ message: err.message ?? "Error al crear la cuenta.", type: "error" });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-oscuro flex items-center justify-center p-4 font-poppins">
-
+    <>
+      <FontLoader />
+      <RegisterStyles />
       <Toast
         message={toast.message}
         type={toast.type}
         onClose={() => setToast({ message: "", type: "error" })}
       />
 
-      <div className="flex w-full max-w-4xl rounded-2xl overflow-hidden shadow-2xl">
+      <div className="reg-root">
 
-        <div
-          className="hidden lg:flex flex-col justify-between w-[38%] p-10 relative overflow-hidden"
-          style={{ background: "#221E3A" }}
-        >
-          <div className="absolute w-64 h-64 rounded-full border border-lila/8 -top-20 -right-20 pointer-events-none" />
-          <div className="absolute w-40 h-40 rounded-full border border-lila/6 -bottom-10 -left-10 pointer-events-none" />
+        {/* ── Left branding panel ── */}
+        <aside className="reg-brand-panel">
 
-          <div>
-            <p className="text-5xl font-black text-lila tracking-widest leading-none font-cinzel">
-              AURA
-            </p>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-text-muted mt-1.5">
-              Tienda en línea
+          {/* Top: wordmark + tagline */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <DoroWordmark size={22} />
+            <p style={{
+              fontFamily: "var(--font-tag)",
+              fontSize: "10px",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: "rgba(214,171,52,0.5)",
+              margin: 0,
+            }}>
+              Alta Moda · Desde 1986
             </p>
           </div>
 
+          {/* Mid: headline + benefits */}
           <div>
-            <h2 className="text-base font-bold text-lila leading-snug mb-2">
+            <div style={{ width: "36px", height: "1px", background: "var(--gold)", marginBottom: "24px" }} />
+            <h2 style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "clamp(22px, 2.4vw, 28px)",
+              fontWeight: 300,
+              fontStyle: "italic",
+              color: "var(--snow)",
+              lineHeight: 1.25,
+              margin: "0 0 12px",
+            }}>
               Bienvenido,<br />crea tu cuenta
             </h2>
-            <p className="text-xs text-text-muted leading-relaxed mb-5">
-              Regístrate para acceder a tus pedidos y ofertas exclusivas.
+            <p style={{
+              fontFamily: "var(--font-body)",
+              fontSize: "14px",
+              color: "var(--ash)",
+              lineHeight: 1.7,
+              fontStyle: "italic",
+              margin: "0 0 28px",
+            }}>
+              Regístrate para acceder a tus pedidos y a piezas en edición limitada.
             </p>
+
             {[
-              { dot: "bg-verde",    text: "Historial de compras" },
-              { dot: "bg-azul",     text: "Seguimiento de pedidos" },
-              { dot: "bg-amarillo", text: "Ofertas exclusivas" },
-            ].map(({ dot, text }) => (
-              <div key={text} className="flex items-center gap-2.5 mb-2.5">
-                <span className={`w-1.5 h-1.5 rounded-full ${dot} flex-shrink-0`} />
-                <span className="text-xs text-lila-mid">{text}</span>
+              { icon: "bi-bag-check",    text: "Historial de compras"      },
+              { icon: "bi-truck",        text: "Seguimiento de pedidos"    },
+              { icon: "bi-gem",          text: "Piezas certificadas"       },
+              { icon: "bi-shield-check", text: "Pagos seguros y protegidos"},
+            ].map(({ icon, text }) => (
+              <div key={text} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
+                <i
+                  className={`bi ${icon}`}
+                  style={{ fontSize: "13px", color: "var(--gold)", width: "16px", flexShrink: 0 }}
+                />
+                <span style={{ fontFamily: "var(--font-tag)", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ash)" }}>
+                  {text}
+                </span>
               </div>
             ))}
+
+            <div style={{ width: "36px", height: "1px", background: "var(--gold)", marginTop: "8px" }} />
           </div>
 
-          <p className="text-[10px] text-text-muted/40">
-            © 2026 AURA · Todos los derechos reservados
-          </p>
-        </div>
-
-        <div className="flex-1 bg-bg-card p-8 md:p-10 flex flex-col justify-center">
-
-          <div className="mb-6">
-            <h1 className="text-lg font-bold text-lila">Crear usuario</h1>
-            <p className="text-xs text-text-muted mt-1">
-              Los campos con <span className="text-rojo">*</span> son obligatorios
+          {/* Bottom: cities + copyright */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <p style={{
+              fontFamily: "var(--font-tag)",
+              fontSize: "9px",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: "rgba(214,171,52,0.5)",
+              margin: 0,
+            }}>
+              Milán · París · Ciudad de México
+            </p>
+            <p style={{
+              fontFamily: "var(--font-tag)",
+              fontSize: "9px",
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "rgba(247,240,230,0.18)",
+              margin: 0,
+            }}>
+              © 2026 D'oro Maison
             </p>
           </div>
+        </aside>
 
-          <form onSubmit={handleSubmit} noValidate className="space-y-5">
+        {/* ── Right form panel ── */}
+        <main className="reg-form-panel">
+          <div className="reg-form-inner">
 
-            <div>
-              <SectionDivider icon="bi-person" label="Datos personales" />
-              <div className="grid grid-cols-2 gap-4">
+            {/* Back arrow */}
+            <Link to="/login" className="reg-back" aria-label="Regresar al inicio de sesión">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5M12 5l-7 7 7 7" />
+              </svg>
+              Iniciar sesión
+            </Link>
 
-                <Field label="Nombre" id="nombre" icon="bi-person" required error={errors.nombre}>
+            {/* Header */}
+            <span className="reg-gold-line" />
+
+            <p style={{
+              fontFamily: "var(--font-tag)",
+              fontSize: "11px",
+              fontWeight: 400,
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              color: "#5C4A2A",
+              margin: "0 0 12px",
+            }}>
+              Nueva cuenta
+            </p>
+
+            <h1 style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "clamp(30px, 3.5vw, 38px)",
+              fontWeight: 300,
+              fontStyle: "italic",
+              color: "var(--noir)",
+              lineHeight: 1.15,
+              margin: "0 0 6px",
+              letterSpacing: "0.03em",
+            }}>
+              Crear una cuenta
+            </h1>
+
+            <p style={{
+              fontFamily: "var(--font-body)",
+              fontSize: "13px",
+              color: "#9C8B79",
+              margin: "0 0 8px",
+            }}>
+              Los campos con <span style={{ color: "#b94040" }}>*</span> son obligatorios.
+            </p>
+
+            <form onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+
+              {/* ── Section: Personal data ── */}
+              <div className="reg-section-sep">
+                <span>Datos personales</span>
+              </div>
+
+              <div className="reg-grid-2">
+                <Field label="Nombre completo" id="nombre" icon="bi-person" required error={errors.nombre}>
                   <input
                     id="nombre" type="text" placeholder="María García"
                     value={form.nombre} onChange={handleChange("nombre")}
-                    className={`${baseInput} ${errors.nombre ? errorInput : ""}`}
+                    className={`reg-input${errors.nombre ? " has-error" : ""}`}
                     autoComplete="name" disabled={loading}
                   />
                 </Field>
 
-                <Field
-                  label="RFC" id="rfc" icon="bi-card-text" required
-                  error={errors.rfc} hint="Ej: GARM850101AB3"
-                >
+                <Field label="RFC" id="rfc" icon="bi-card-text" required error={errors.rfc} hint="Ej: GARM850101AB3">
                   <input
                     id="rfc" type="text" placeholder="GARM850101AB3"
                     value={form.rfc} onChange={handleChange("rfc")}
-                    className={`${baseInput} uppercase ${errors.rfc ? errorInput : ""}`}
+                    className={`reg-input uppercase-input${errors.rfc ? " has-error" : ""}`}
                     autoComplete="off" disabled={loading} maxLength={13}
                   />
                 </Field>
-
               </div>
-            </div>
 
-            <div>
-              <SectionDivider icon="bi-envelope" label="Contacto" />
-              <div className="grid grid-cols-2 gap-4">
+              {/* ── Section: Contact ── */}
+              <div className="reg-section-sep">
+                <span>Contacto</span>
+              </div>
 
-                <Field label="Email" id="email" icon="bi-envelope" required error={errors.email}>
+              <div className="reg-grid-2">
+                <Field label="Correo electrónico" id="email" icon="bi-envelope" required error={errors.email}>
                   <input
-                    id="email" type="email" placeholder="tucorreo@ejemplo.com"
+                    id="email" type="email" placeholder="correo@ejemplo.com"
                     value={form.email} onChange={handleChange("email")}
-                    className={`${baseInput} ${errors.email ? errorInput : ""}`}
+                    className={`reg-input${errors.email ? " has-error" : ""}`}
                     autoComplete="email" disabled={loading}
                   />
                 </Field>
 
-                <Field label="Teléfono" id="telefono" icon="bi-telephone" required error={errors.telefono}>
+                <Field label="Teléfono" id="telefono" icon="bi-telephone" required error={errors.telefono} hint="10 dígitos mínimo">
                   <input
                     id="telefono" type="tel" placeholder="464 123 4567"
                     value={form.telefono} onChange={handleChange("telefono")}
-                    className={`${baseInput} ${errors.telefono ? errorInput : ""}`}
+                    className={`reg-input${errors.telefono ? " has-error" : ""}`}
                     autoComplete="tel" disabled={loading}
                   />
                 </Field>
-
               </div>
-            </div>
 
-            <div>
-              <SectionDivider icon="bi-lock" label="Acceso" />
-              <div className="space-y-3">
+              {/* ── Section: Access ── */}
+              <div className="reg-section-sep">
+                <span>Credenciales de acceso</span>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
 
                 <Field
-                  label="Usuario" id="usuario" icon="bi-at"
-                  error={errors.usuario} hint="Mínimo 3 caracteres, sin espacios">
+                  label="Nombre de usuario" id="usuario" icon="bi-at" required
+                  error={errors.usuario} hint="Mínimo 3 caracteres, sin espacios"
+                >
                   <input
                     id="usuario" type="text" placeholder="maria_garcia"
                     value={form.usuario} onChange={handleChange("usuario")}
-                    className={`${baseInput} ${errors.usuario ? errorInput : ""}`}
+                    className={`reg-input${errors.usuario ? " has-error" : ""}`}
                     autoComplete="username" disabled={loading}
                   />
                 </Field>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="reg-grid-2">
 
-                  <div className="flex flex-col gap-1">
-                    <label htmlFor="password" className="text-[10px] font-bold uppercase tracking-wider text-lila-mid">
-                      Contraseña
+                  {/* Password */}
+                  <div>
+                    <label className="reg-label" htmlFor="password">
+                      Contraseña<span className="req"> *</span>
                     </label>
-                    <div className="relative">
-                      <i className="bi bi-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-text-muted pointer-events-none" />
+                    <div className="reg-input-wrap">
+                      <span className="reg-input-icon">
+                        <i className="bi bi-lock" style={{ fontSize: "14px" }} />
+                      </span>
                       <input
                         id="password"
                         type={showPass ? "text" : "password"}
                         placeholder="••••••••"
                         value={form.password}
                         onChange={handleChange("password")}
-                        className={`${baseInput} pr-10 ${errors.password ? errorInput : ""}`}
+                        className={`reg-input with-toggle${errors.password ? " has-error" : ""}`}
                         autoComplete="new-password" disabled={loading}
                       />
                       <button
-                        type="button" onClick={() => setShowPass((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-lila-mid transition-colors cursor-pointer bg-transparent border-none"
-                        aria-label="Mostrar contraseña"
+                        type="button"
+                        onClick={() => setShowPass((v) => !v)}
+                        className="reg-toggle-btn"
+                        aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
                       >
-                        <i className={`bi ${showPass ? "bi-eye-slash" : "bi-eye"} text-sm`} />
+                        {showPass ? <EyeOff size={16} strokeWidth={1.5} /> : <Eye size={16} strokeWidth={1.5} />}
                       </button>
                     </div>
-                    <div className="flex gap-1 mt-1">
-                      {[0, 1, 2].map((i) => (
-                        <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${
-                          strength && i < strength.bars ? strength.barColor : "bg-lila/10"
-                        }`} />
-                      ))}
-                    </div>
+
+                    {/* Strength bars */}
+                    {form.password && (
+                      <div className="reg-strength-bars">
+                        {[0, 1, 2].map((i) => (
+                          <div
+                            key={i}
+                            className={`reg-strength-bar${strength && i < strength.bars ? ` ${strength.key}` : ""}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+
                     {errors.password ? (
-                      <p className="text-[11px] text-rojo flex items-center gap-1">
-                        <i className="bi bi-exclamation-circle text-xs" />{errors.password}
+                      <p className="reg-field-error">
+                        <i className="bi bi-exclamation-circle" style={{ fontSize: "11px" }} />
+                        {errors.password}
                       </p>
                     ) : form.password && strength ? (
-                      <p className={`text-[11px] ${strength.textColor}`}>
+                      <p className={`reg-strength-label ${strength.key}`}>
                         Seguridad: {strength.label}
                       </p>
                     ) : (
-                      <p className="text-[11px] text-text-muted">Mínimo 6 caracteres</p>
+                      <p className="reg-field-hint">Mínimo 6 caracteres</p>
                     )}
                   </div>
 
-                  <div className="flex flex-col gap-1">
-                    <label htmlFor="confirm" className="text-[10px] font-bold uppercase tracking-wider text-lila-mid">
-                      Confirmar contraseña
+                  {/* Confirm password */}
+                  <div>
+                    <label className="reg-label" htmlFor="confirm">
+                      Confirmar contraseña<span className="req"> *</span>
                     </label>
-                    <div className="relative">
-                      <i className="bi bi-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-text-muted pointer-events-none" />
+                    <div className="reg-input-wrap">
+                      <span className="reg-input-icon">
+                        <i className="bi bi-lock-fill" style={{ fontSize: "14px" }} />
+                      </span>
                       <input
                         id="confirm"
                         type={showConfirm ? "text" : "password"}
                         placeholder="••••••••"
                         value={form.confirm}
                         onChange={handleChange("confirm")}
-                        className={`${baseInput} pr-10 ${errors.confirm ? errorInput : ""}`}
+                        className={`reg-input with-toggle${errors.confirm ? " has-error" : ""}`}
                         autoComplete="new-password" disabled={loading}
                       />
                       <button
-                        type="button" onClick={() => setShowConfirm((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-lila-mid transition-colors cursor-pointer bg-transparent border-none"
-                        aria-label="Mostrar contraseña">
-                        <i className={`bi ${showConfirm ? "bi-eye-slash" : "bi-eye"} text-sm`} />
+                        type="button"
+                        onClick={() => setShowConfirm((v) => !v)}
+                        className="reg-toggle-btn"
+                        aria-label={showConfirm ? "Ocultar contraseña" : "Mostrar contraseña"}
+                      >
+                        {showConfirm ? <EyeOff size={16} strokeWidth={1.5} /> : <Eye size={16} strokeWidth={1.5} />}
                       </button>
                     </div>
+
                     {errors.confirm ? (
-                      <p className="text-[11px] text-rojo flex items-center gap-1">
-                        <i className="bi bi-exclamation-circle text-xs" />{errors.confirm}
+                      <p className="reg-field-error">
+                        <i className="bi bi-exclamation-circle" style={{ fontSize: "11px" }} />
+                        {errors.confirm}
                       </p>
                     ) : form.confirm && form.password ? (
-                      <p className={`text-[11px] flex items-center gap-1 ${
-                        form.password === form.confirm ? "text-verde" : "text-rojo"
-                      }`}>
-                        <i className={`bi ${form.password === form.confirm ? "bi-check-circle" : "bi-x-circle"} text-xs`} />
+                      <p style={{
+                        fontFamily: "var(--font-tag)",
+                        fontSize: "10px",
+                        letterSpacing: "0.1em",
+                        textTransform: "uppercase",
+                        marginTop: "5px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        color: form.password === form.confirm ? "#4A8C38" : "#D04E37",
+                      }}>
+                        <i className={`bi ${form.password === form.confirm ? "bi-check-circle" : "bi-x-circle"}`} style={{ fontSize: "11px" }} />
                         {form.password === form.confirm ? "Coinciden" : "No coinciden"}
                       </p>
                     ) : null}
                   </div>
-
                 </div>
               </div>
-            </div>
 
-            <div>
-              <label className="flex items-start gap-2.5 cursor-pointer group">
-                <input
-                  type="checkbox" checked={form.terminos}
-                  onChange={handleChange("terminos")}
-                  className="mt-0.5 accent-lila cursor-pointer flex-shrink-0"
-                  disabled={loading}
-                />
-                <span className="text-xs text-text-muted leading-relaxed group-hover:text-lila-soft transition-colors">
-                  Acepto los{" "}
-                  <button type="button" className="text-lila-mid font-semibold hover:text-lila bg-transparent border-none cursor-pointer p-0">
-                    Términos y condiciones
-                  </button>{" "}
-                  y el{" "}
-                  <button type="button" className="text-lila-mid font-semibold hover:text-lila bg-transparent border-none cursor-pointer p-0">
-                    Aviso de privacidad
-                  </button>.
-                </span>
-              </label>
-              {errors.terminos && (
-                <p className="text-[11px] text-rojo flex items-center gap-1 mt-1 ml-6">
-                  <i className="bi bi-exclamation-circle text-xs" />{errors.terminos}
-                </p>
-              )}
-            </div>
+              {/* ── Terms ── */}
+              <div style={{ marginTop: "28px" }}>
+                <label className="reg-checkbox-wrap" htmlFor="terminos">
+                  <input
+                    id="terminos" type="checkbox"
+                    checked={form.terminos}
+                    onChange={handleChange("terminos")}
+                    disabled={loading}
+                    style={{ display: "none" }}
+                  />
+                  <span className={`reg-checkbox-box${form.terminos ? " checked" : ""}`}>
+                    {form.terminos && (
+                      <i className="bi bi-check" style={{ fontSize: "12px", color: "var(--noir)", lineHeight: 1 }} />
+                    )}
+                  </span>
+                  <span className="reg-checkbox-text">
+                    Acepto los{" "}
+                    <button type="button">Términos y condiciones</button>{" "}
+                    y el{" "}
+                    <button type="button">Aviso de privacidad</button>.
+                  </span>
+                </label>
+                {errors.terminos && (
+                  <p className="reg-field-error" style={{ marginTop: "6px", marginLeft: "26px" }}>
+                    <i className="bi bi-exclamation-circle" style={{ fontSize: "11px" }} />
+                    {errors.terminos}
+                  </p>
+                )}
+              </div>
 
-            <button
-              type="submit" disabled={loading}
-              className="w-full bg-lila text-oscuro font-bold text-sm rounded-xl py-3
-                         hover:bg-lila-soft transition-all active:scale-[0.98] cursor-pointer
-                         disabled:opacity-60 disabled:cursor-not-allowed
-                         flex items-center justify-center gap-2">
-              {loading ? (
-                <><i className="bi bi-arrow-repeat animate-spin text-base" />Creando cuenta...</>
-              ) : (
-                <><i className="bi bi-person-plus text-base" />Crear cuenta</>
-              )}
-            </button>
-
-            <p className="text-center text-xs text-text-muted">
-              ¿Ya tienes una cuenta?{" "}
+              {/* ── Submit ── */}
               <button
-                type="button" onClick={() => navigate("/login")}
-                className="text-lila-mid font-bold hover:text-lila transition-colors bg-transparent border-none cursor-pointer p-0">
-                Inicia sesión
+                type="submit"
+                disabled={loading}
+                className="reg-btn-submit"
+              >
+                {loading ? (
+                  <>
+                    <span style={{
+                      width: "12px", height: "12px",
+                      border: "1.5px solid currentColor",
+                      borderTopColor: "transparent",
+                      borderRadius: "50%",
+                      display: "inline-block",
+                      animation: "spin 0.7s linear infinite",
+                    }} />
+                    Creando cuenta...
+                  </>
+                ) : "Crear cuenta"}
               </button>
-            </p>
-          </form>
-        </div>
+
+              {/* ── Divider + login CTA ── */}
+              <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "24px" }}>
+                <div style={{ flex: 1, height: "1px", background: "var(--border-gold-20)" }} />
+                <span style={{
+                  fontFamily: "var(--font-tag)",
+                  fontSize: "10px",
+                  letterSpacing: "0.2em",
+                  textTransform: "uppercase",
+                  color: "#8c6030",
+                  whiteSpace: "nowrap",
+                }}>
+                  ¿Ya tienes una cuenta?
+                </span>
+                <div style={{ flex: 1, height: "1px", background: "var(--border-gold-20)" }} />
+              </div>
+
+              <div style={{ textAlign: "center", marginTop: "16px" }}>
+                <Link to="/login" className="reg-login-link">Iniciar sesión</Link>
+              </div>
+            </form>
+
+            <p className="reg-footer-text">D'oro · Compromiso con nuestros clientes</p>
+          </div>
+        </main>
       </div>
-    </div>
+    </>
   );
 }

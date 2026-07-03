@@ -47,10 +47,10 @@ export default function ModalConfirmacion({
     },
     confirmar: {
       iconClass:   "bi bi-exclamation",
-      borderColor: "border-morado/30 dark:border-lila/30",
-      iconBorder:  "border-morado dark:border-lila",
-      iconColor:   "text-morado dark:text-lila",
-      titleColor:  "text-morado dark:text-lila",
+      borderColor: "border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)]",
+      iconBorder:  "border-[var(--gold)]",
+      iconColor:   "text-[var(--gold-dark)] dark:text-[var(--gold-light)]",
+      titleColor:  "text-[var(--gold-dark)] dark:text-[var(--gold-light)]",
     },
     eliminar: {
       iconClass:   "bi bi-trash",
@@ -61,38 +61,26 @@ export default function ModalConfirmacion({
     },
   }[tipo] || {
     iconClass: "bi bi-exclamation",
-    borderColor: "border-lila/30",
-    iconBorder: "border-lila",
-    iconColor: "text-lila",
-    titleColor: "text-lila",
+    borderColor: "border-[var(--border-gold-40)]",
+    iconBorder: "border-[var(--gold)]",
+    iconColor: "text-[var(--gold-dark)]",
+    titleColor: "text-[var(--gold-dark)]",
   };
 
   const esExito = tipo === "exito";
 
   return (
     <div
-      className={`
-        fixed inset-0 z-120 flex items-center justify-center p-4 backdrop-blur-sm transition-colors duration-300
-        bg-oscuro/40
-        dark:bg-black/60
-      `}
+      className="fixed inset-0 z-[120] flex items-center justify-center p-4 backdrop-blur-sm transition-colors duration-300 bg-[var(--noir)]/40 dark:bg-black/60"
       onClick={onCancelar}
     >
       <div
-        className={`
-          relative w-full max-w-sm border shadow-2xl p-8 sm:p-10 transition-colors duration-300
-          bg-blanco/90 ${config.borderColor}
-          dark:bg-oscuro/80 dark:${config.borderColor}
-        `}
+        className={`relative w-full max-w-sm border shadow-2xl p-8 sm:p-10 transition-colors duration-300 rounded-[2px] bg-[var(--snow)]/95 dark:bg-[var(--noir)]/90 ${config.borderColor}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onCancelar}
-          className={`
-            absolute right-6 top-6 transition-colors text-xl cursor-pointer
-            text-morado/60 hover:text-morado
-            dark:text-lila/60 dark:hover:text-lila
-          `}
+          className="absolute right-6 top-6 transition-colors text-xl cursor-pointer text-[var(--noir-soft)]/70 hover:text-[var(--noir-soft)] dark:text-[var(--ash)] dark:hover:text-[var(--snow)]"
           aria-label="Cerrar modal"
           disabled={cargando}
         >
@@ -106,20 +94,12 @@ export default function ModalConfirmacion({
         </div>
 
         {/* Título */}
-        <h2 className={`
-          font-poppins text-2xl tracking-widest border-b pb-4 mb-6 leading-snug uppercase transition-colors
-          border-morado/30 ${config.titleColor}
-          dark:border-lila/30 dark:${config.titleColor}
-        `}>
+        <h2 className={`font-tag text-2xl lg:text-3xl tracking-widest border-b pb-4 mb-6 leading-snug uppercase transition-colors border-[var(--border-gold-25)] ${config.titleColor}`}>
           {titulo}
         </h2>
 
         {mensaje && (
-          <p className={`
-            font-poppins text-md leading-relaxed mb-6 transition-colors
-            text-morado/80
-            dark:text-lila/80
-          `}>
+          <p className="font-body text-base lg:text-lg leading-relaxed mb-6 transition-colors text-[var(--noir-soft)] dark:text-[var(--ash)]">
             {mensaje}
           </p>
         )}
@@ -129,7 +109,7 @@ export default function ModalConfirmacion({
             <Boton
               variante="secundario"
               onClick={onCancelar}
-              className="flex-1 font-poppins h-11 uppercase tracking-widest text-xs transition-colors"
+              className="flex-1 font-tag h-11 uppercase tracking-widest text-xs lg:text-sm transition-colors"
             >
               {textoCancelar}
             </Boton>
@@ -137,10 +117,7 @@ export default function ModalConfirmacion({
             {tipo === "eliminar" ? (
               <button
                 onClick={onConfirmar}
-                className={`
-                  flex-1 h-11 bg-transparent font-poppins text-xs tracking-widest uppercase transition-colors rounded-lg cursor-pointer
-                  border border-rojo/60 text-rojo hover:bg-rojo hover:text-blanco
-                `}
+                className="flex-1 h-11 bg-transparent font-tag text-xs lg:text-sm tracking-widest uppercase transition-colors rounded-[2px] cursor-pointer border border-rojo/60 text-rojo hover:bg-rojo hover:text-[var(--snow)]"
               >
                 {textoConfirmar}
               </button>
@@ -148,7 +125,7 @@ export default function ModalConfirmacion({
               <Boton
                 variante="claro"
                 onClick={onConfirmar}
-                className="flex-1 font-poppins h-11 uppercase tracking-widest text-xs"
+                className="flex-1 font-tag h-11 uppercase tracking-widest text-xs lg:text-sm"
               >
                 {textoConfirmar}
               </Boton>
@@ -156,13 +133,9 @@ export default function ModalConfirmacion({
           </div>
         )}
 
-        {/* Firma AURA */}
-        <div className={`
-          mt-10 font-cinzel tracking-widest text-xl transition-colors
-          text-morado/90
-          dark:text-lila/90
-        `}>
-          A U R A
+        {/* Firma DORO */}
+        <div className="mt-10 font-display tracking-widest text-xl lg:text-2xl transition-colors text-[var(--noir-soft)] dark:text-[var(--gold-light)]">
+          D'ORO
         </div>
       </div>
     </div>

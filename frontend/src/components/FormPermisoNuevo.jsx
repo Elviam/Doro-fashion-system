@@ -47,7 +47,7 @@ export default function FormPermisoNuevo({ onGuardar, onClose, isOpen = true }) 
   };
 
   const tituloPersonalizado = (
-    <span className="text-xl font-bold uppercase tracking-widest transition-colors text-morado dark:text-blanco m-0 block">
+    <span className="text-xl lg:text-2xl font-tag font-bold uppercase tracking-widest transition-colors text-[var(--noir)] dark:text-[var(--snow)] m-0 block">
       Crear Nuevo Permiso
     </span>
   );
@@ -72,7 +72,7 @@ export default function FormPermisoNuevo({ onGuardar, onClose, isOpen = true }) 
         titulo={tituloPersonalizado}
         footer={footerAcciones}
       >
-        <div className="font-poppins pt-2 pb-4">
+        <div className="font-body pt-2 pb-4">
           <form className="flex flex-col gap-4">
             <Input label="Código del Permiso" name="code" value={formData.code} onChange={handleChange} placeholder="Ej. roles:create" requerido />
             <Input label="Nombre Legible" name="nombre" value={formData.nombre} onChange={handleChange} placeholder="Ej. Crear Rol" requerido />

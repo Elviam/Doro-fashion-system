@@ -1,7 +1,7 @@
 export default function ModalUserNotFound({ onClose }) {
   return (
     <dialog id="user_not_found_modal" className="modal">
-      <div className="modal-box bg-oscuro/60 backdrop-blur-md border border-rojo/30 text-lila p-8 sm:p-10 max-w-lg rounded-none shadow-2xl">
+      <div className="modal-box bg-[var(--noir)]/60 backdrop-blur-md border border-rojo/30 text-[var(--snow)] p-8 sm:p-10 max-w-lg rounded-none shadow-2xl">
         <form method="dialog">
           <button
             type="button"
@@ -17,15 +17,15 @@ export default function ModalUserNotFound({ onClose }) {
           </div>
         </div>
 
-        <h3 className="font-poppins text-2xl tracking-widest border-b border-rojo/30 pb-4 mb-8 leading-snug text-rojo">
+        <h3 className="font-display text-xl lg:text-2xl tracking-widest border-b border-rojo/30 pb-4 mb-8 leading-snug text-rojo">
           USUARIO NO <br/> ENCONTRADO
         </h3>
 
-        <div className="font-poppins space-y-4 text-[15px] leading-relaxed text-center px-2">
+        <div className="font-body space-y-4 text-sm lg:text-base leading-relaxed text-center px-2">
           <p>
             No encontramos una cuenta asociada a este usuario.
           </p>
-          <p className="text-sm text-text-muted">
+          <p className="text-xs lg:text-sm text-[var(--ash)]">
             Verifica que el usuario sea correcto e intenta de nuevo.
           </p>
         </div>
@@ -33,13 +33,13 @@ export default function ModalUserNotFound({ onClose }) {
         <div className="mt-10 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 bg-lila text-oscuro font-bold text-sm rounded-lg py-2.5 hover:bg-lila-soft transition-all">
+            className="font-tag flex-1 bg-[var(--gold)] text-[var(--noir)] font-bold text-sm lg:text-base rounded-[2px] py-2.5 hover:bg-[var(--gold-light)] transition-all">
             Volver
           </button>
         </div>
 
-        <div className="mt-8 font-cinzel tracking-widest text-xl opacity-90">
-          A U R A
+        <div className="mt-8 font-display tracking-widest text-lg lg:text-xl opacity-90">
+          D'ORO
         </div>
       </div>
 

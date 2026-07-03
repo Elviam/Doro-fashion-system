@@ -184,7 +184,7 @@ export default function Clientes() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-[var(--snow)] dark:bg-[var(--noir-soft)]">
       <div className="flex-1 p-6 lg:p-8 space-y-6 transition-colors duration-300">
         
         <Encabezado 
@@ -235,13 +235,13 @@ export default function Clientes() {
         <Tabla encabezados={encabezadosClientes}>
           {loading ? (
             <tr>
-              <td colSpan={6} className="text-center py-10 text-sm opacity-50 text-morado dark:text-lila">
+              <td colSpan={6} className="text-center py-10 text-sm lg:text-base font-body text-[var(--noir-soft)]">
                 Cargando clientes...
               </td>
             </tr>
           ) : clientesFiltrados.length === 0 ? (
             <tr>
-              <td colSpan={6} className="text-center py-10 text-sm opacity-50 text-morado dark:text-lila">
+              <td colSpan={6} className="text-center py-10 text-sm lg:text-base font-body text-[var(--noir-soft)]">
                 No hay resultados
               </td>
             </tr>
@@ -249,12 +249,12 @@ export default function Clientes() {
             clientesFiltrados.map((usuario) => (
               <tr
                 key={usuario.id}
-                className="border-b transition-colors border-morado/5 dark:border-lila/5 hover:bg-lila/30 dark:hover:bg-oscuro/40"
+                className="border-b transition-colors border-[var(--border-gold-20)] hover:bg-[var(--gold-08)] dark:hover:bg-[var(--gold-08)]"
               >
-                <td className="p-4 text-center text-sm whitespace-nowrap font-medium text-oscuro dark:text-blanco">{usuario.nombre}</td>
-                <td className="p-4 text-center text-sm whitespace-nowrap text-oscuro dark:text-blanco">{usuario.rfc}</td>
-                <td className="p-4 text-center text-sm whitespace-nowrap text-gris dark:text-text-muted">{usuario.email}</td>
-                <td className="p-4 text-center text-sm whitespace-nowrap text-oscuro dark:text-blanco">{usuario.telefono}</td>
+                <td className="p-4 text-center text-sm lg:text-base whitespace-nowrap font-medium font-body text-[var(--noir)] dark:text-[var(--snow)]">{usuario.nombre}</td>
+                <td className="p-4 text-center text-sm lg:text-base whitespace-nowrap font-body text-[var(--noir)] dark:text-[var(--snow)]">{usuario.rfc}</td>
+                <td className="p-4 text-center text-sm lg:text-base whitespace-nowrap font-body text-[var(--noir-soft)] dark:text-[var(--snow)]">{usuario.email}</td>
+                <td className="p-4 text-center text-sm lg:text-base whitespace-nowrap font-body text-[var(--noir)] dark:text-[var(--snow)]">{usuario.telefono}</td>
                 <td className="p-4 text-center whitespace-nowrap">
                   <Etiquetas contenido={usuario.estado} />
                 </td>

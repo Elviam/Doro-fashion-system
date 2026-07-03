@@ -74,40 +74,46 @@ export default function HeaderTienda({
   }, []);
 
   return (
-    <header className={`sticky top-0 z-40 bg-oscuro/95 backdrop-blur-md border-b border-lila/10 transition-transform duration-300 md:translate-y-0 ${visible ? "translate-y-0" : "-translate-y-full"}`}>
-      
-      <div className="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-10 py-3 md:py-4 flex flex-col md:grid md:grid-cols-[auto_1fr_auto] items-center gap-3 md:gap-6 box-border">
-        
+    <header
+      className={`sticky top-0 z-40 bg-[var(--noir)] backdrop-blur-md border-b border-[var(--border-gold-20)] transition-transform duration-300 md:translate-y-0 ${visible ? "translate-y-0" : "-translate-y-full"}`}
+    >
+
+      <div className="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-10 py-2 md:py-2.5 flex flex-col md:grid md:grid-cols-[auto_1fr_auto] items-center gap-2 md:gap-5 box-border">
+
         <div className="w-full flex flex-row md:contents items-center justify-between gap-4">
-          
+
+          {/* Logo */}
           <div className="flex items-baseline gap-1.5 shrink-0 select-none">
             <h1
-              className="text-2xl sm:text-3xl md:text-4xl text-lila tracking-tight leading-none drop-shadow-[0_0_18px_rgba(231,214,255,0.25)]"
-              style={{ fontFamily: "'Cinzel Decorative', serif" }}
+              className="font-display text-xl sm:text-2xl md:text-2xl lg:text-3xl tracking-tight leading-none text-[var(--gold-light)]"
+              style={{ fontWeight: 300, letterSpacing: "0.08em" }}
             >
-              AURA
+              D<span className="italic text-[var(--gold)]">'</span>ORO
             </h1>
-            <span className="text-[8px] sm:text-[10px] tracking-[2px] sm:tracking-[4px] text-lila-mid uppercase font-semibold">Boutique</span>
+            <span className="font-tag text-[7px] sm:text-[9px] tracking-[2px] sm:tracking-[3px] text-[var(--ash)] uppercase font-semibold">
+              Boutique
+            </span>
           </div>
 
-          <div className="flex items-center gap-1.5 md:hidden shrink-0">
+          {/* Acciones — móvil (mismo estilo que desktop) */}
+          <div className="flex items-center gap-1 md:hidden shrink-0">
             <div className="relative">
               <button
                 ref={usuarioRef}
                 onClick={() => setMostrarDropdownUsuario(!mostrarDropdownUsuario)}
-                className="w-9 h-9 rounded-full text-lila hover:bg-lila/10 flex items-center justify-center transition active:scale-95"
+                className="w-8 h-8 rounded-[2px] text-[var(--gold-light)] hover:bg-[var(--gold-08)] flex items-center justify-center transition"
                 title="Mi cuenta"
               >
-                <i className="bi bi-person text-lg" />
+                <i className="bi bi-person text-base" />
               </button>
 
               {mostrarDropdownUsuario && (
                 <div
                   ref={dropdownRef}
-                  className="absolute top-full right-0 mt-2 w-48 bg-[#1A1730] border border-lila/20 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-1 duration-150"
+                  className="absolute top-full right-0 mt-2 w-44 bg-[var(--noir-soft)] border border-[var(--border-gold-20)] rounded-[2px] shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-1 duration-150"
                 >
-                  <div className="px-4 py-2.5 border-b border-lila/10 bg-black/20">
-                    <p className="m-0 text-[10px] font-bold uppercase tracking-widest text-lila-soft">
+                  <div className="px-3 py-2 border-b border-[var(--border-gold-20)] bg-black/20">
+                    <p className="m-0 font-tag text-[9px] font-bold uppercase tracking-widest text-[var(--ash)]">
                       Mi Cuenta
                     </p>
                   </div>
@@ -117,9 +123,9 @@ export default function HeaderTienda({
                       navigate("/perfil");
                       setMostrarDropdownUsuario(false);
                     }}
-                    className="w-full px-4 py-2.5 text-left hover:bg-lila/10 transition-colors flex items-center gap-3 text-xs font-medium text-lila"
+                    className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-[var(--snow)]"
                   >
-                    <i className="bi bi-person-fill text-sm"></i>
+                    <i className="bi bi-person-fill text-xs"></i>
                     Mi Perfil
                   </button>
 
@@ -128,19 +134,23 @@ export default function HeaderTienda({
                       onLogout();
                       setMostrarDropdownUsuario(false);
                     }}
-                    className="w-full px-4 py-2.5 text-left hover:bg-lila/10 transition-colors flex items-center gap-3 text-xs font-medium text-rojo"
+                    className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-rojo"
                   >
-                    <i className="bi bi-box-arrow-right text-sm"></i>
+                    <i className="bi bi-box-arrow-right text-xs"></i>
                     Cerrar sesión
                   </button>
                 </div>
               )}
             </div>
 
-            <button onClick={onAbrirWishlist} className="relative w-9 h-9 rounded-full text-lila hover:bg-lila/10 flex items-center justify-center transition active:scale-95" title="Wishlist">
-              <i className="bi bi-heart text-base" />
+            <button
+              onClick={onAbrirWishlist}
+              className="relative w-8 h-8 rounded-[2px] text-[var(--gold-light)] hover:bg-[var(--gold-08)] flex items-center justify-center transition"
+              title="Wishlist"
+            >
+              <i className="bi bi-heart text-sm" />
               {cantidadWishlist > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-rojo text-blanco text-[9px] font-bold flex items-center justify-center border border-oscuro">
+                <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-rojo text-[var(--snow)] text-[8px] font-bold flex items-center justify-center border border-[var(--noir)]">
                   {cantidadWishlist}
                 </span>
               )}
@@ -148,12 +158,12 @@ export default function HeaderTienda({
 
             <button
               onClick={onAbrirCarrito}
-              className="relative w-9 h-9 rounded-full bg-lila text-oscuro hover:bg-lila-soft flex items-center justify-center transition active:scale-95 shadow-md"
+              className="relative w-8 h-8 rounded-[2px] bg-[var(--gold)] text-[var(--noir)] hover:bg-[var(--gold-light)] flex items-center justify-center transition"
               title="Carrito"
             >
-              <i className="bi bi-bag text-base" />
+              <i className="bi bi-bag text-sm" />
               {cantidadCarrito > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-rojo text-blanco text-[9px] font-bold flex items-center justify-center border border-oscuro">
+                <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-rojo text-[var(--snow)] text-[8px] font-bold flex items-center justify-center border border-[var(--noir)]">
                   {cantidadCarrito}
                 </span>
               )}
@@ -162,44 +172,46 @@ export default function HeaderTienda({
             {userCanAccessDashboard(usuario) && (
               <button
                 onClick={onIrAlDashboard}
-                className="w-9 h-9 rounded-full text-verde hover:bg-verde hover:text-oscuro flex items-center justify-center transition active:scale-95"
+                className="w-8 h-8 rounded-[2px] text-verde hover:bg-verde hover:text-[var(--noir)] flex items-center justify-center transition"
                 title="Ir al dashboard"
               >
-                <i className="bi bi-speedometer2 text-base" />
+                <i className="bi bi-speedometer2 text-sm" />
               </button>
             )}
           </div>
         </div>
 
+        {/* Buscador */}
         <div className="relative w-full box-border">
-          <i className="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-lila-soft/50 text-sm" />
+          <i className="bi bi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ash)] text-xs" />
           <input
             value={busqueda}
             onChange={(e) => { setBusqueda(e.target.value); if (!e.target.value) onBuscar(); }}
             onKeyDown={(e) => e.key === "Enter" && onBuscar()}
             placeholder="Busca prendas, categorías…"
-            className="w-full bg-bg-card/40 text-lila border border-lila/20 rounded-full pl-11 pr-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none hover:border-lila/40 focus:border-lila focus:ring-1 focus:ring-lila transition placeholder-lila/30 box-border"
+            className="w-full bg-[var(--noir-soft)] text-[var(--snow)] border border-[var(--border-gold-20)] rounded-[2px] pl-9 pr-4 py-1.5 sm:py-2 font-body text-xs sm:text-sm outline-none hover:border-[var(--border-gold-40)] focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)] transition placeholder-[var(--ash)] box-border"
           />
         </div>
 
-        <div className="hidden md:flex items-center gap-2 justify-end shrink-0">
+        {/* Acciones — desktop */}
+        <div className="hidden md:flex items-center gap-1.5 justify-end shrink-0">
           <div className="relative">
             <button
               ref={usuarioRef}
               onClick={() => setMostrarDropdownUsuario(!mostrarDropdownUsuario)}
-              className="w-10 h-10 rounded-full text-lila hover:bg-lila/10 flex items-center justify-center transition active:scale-95"
+              className="w-8 h-8 rounded-[2px] text-[var(--gold-light)] hover:bg-[var(--gold-08)] flex items-center justify-center transition"
               title="Mi cuenta"
             >
-              <i className="bi bi-person text-lg" />
+              <i className="bi bi-person text-base" />
             </button>
 
             {mostrarDropdownUsuario && (
               <div
                 ref={dropdownRef}
-                className="absolute top-full right-0 mt-2 w-48 bg-[#1A1730] border border-lila/20 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-1 duration-150"
+                className="absolute top-full right-0 mt-2 w-44 bg-[var(--noir-soft)] border border-[var(--border-gold-20)] rounded-[2px] shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-1 duration-150"
               >
-                <div className="px-4 py-2.5 border-b border-lila/10 bg-black/20">
-                  <p className="m-0 text-[10px] font-bold uppercase tracking-widest text-lila-soft">
+                <div className="px-3 py-2 border-b border-[var(--border-gold-20)] bg-black/20">
+                  <p className="m-0 font-tag text-[9px] font-bold uppercase tracking-widest text-[var(--ash)]">
                     Mi Cuenta
                   </p>
                 </div>
@@ -209,9 +221,9 @@ export default function HeaderTienda({
                     navigate("/perfil");
                     setMostrarDropdownUsuario(false);
                   }}
-                  className="w-full px-4 py-2.5 text-left hover:bg-lila/10 transition-colors flex items-center gap-3 text-xs font-medium text-lila"
+                  className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-[var(--snow)]"
                 >
-                  <i className="bi bi-person-fill text-sm"></i>
+                  <i className="bi bi-person-fill text-xs"></i>
                   Mi Perfil
                 </button>
 
@@ -220,28 +232,36 @@ export default function HeaderTienda({
                     onLogout();
                     setMostrarDropdownUsuario(false);
                   }}
-                  className="w-full px-4 py-2.5 text-left hover:bg-lila/10 transition-colors flex items-center gap-3 text-xs font-medium text-rojo"
+                  className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-rojo"
                 >
-                  <i className="bi bi-box-arrow-right text-sm"></i>
+                  <i className="bi bi-box-arrow-right text-xs"></i>
                   Cerrar sesión
                 </button>
               </div>
             )}
           </div>
 
-          <button onClick={onAbrirWishlist} className="relative w-10 h-10 rounded-full text-lila hover:bg-lila/10 flex items-center justify-center transition active:scale-95" title="Wishlist">
-            <i className="bi bi-heart text-lg" />
+          <button
+            onClick={onAbrirWishlist}
+            className="relative w-8 h-8 rounded-[2px] text-[var(--gold-light)] hover:bg-[var(--gold-08)] flex items-center justify-center transition"
+            title="Wishlist"
+          >
+            <i className="bi bi-heart text-sm" />
             {cantidadWishlist > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rojo text-blanco text-[10px] font-bold flex items-center justify-center border-2 border-oscuro">
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-rojo text-[var(--snow)] text-[9px] font-bold flex items-center justify-center border-2 border-[var(--noir)]">
                 {cantidadWishlist}
               </span>
             )}
           </button>
 
-          <button onClick={onAbrirCarrito} className="relative w-10 h-10 rounded-full bg-lila text-oscuro hover:bg-lila-soft flex items-center justify-center transition active:scale-95 shadow-md" title="Carrito">
-            <i className="bi bi-bag text-lg" />
+          <button
+            onClick={onAbrirCarrito}
+            className="relative w-8 h-8 rounded-[2px] bg-[var(--gold)] text-[var(--noir)] hover:bg-[var(--gold-light)] flex items-center justify-center transition"
+            title="Carrito"
+          >
+            <i className="bi bi-bag text-sm" />
             {cantidadCarrito > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rojo text-blanco text-[10px] font-bold flex items-center justify-center border-2 border-oscuro">
+              <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-rojo text-[var(--snow)] text-[9px] font-bold flex items-center justify-center border-2 border-[var(--noir)]">
                 {cantidadCarrito}
               </span>
             )}
@@ -250,48 +270,53 @@ export default function HeaderTienda({
           {userCanAccessDashboard(usuario) && (
             <button
               onClick={onIrAlDashboard}
-              className="w-10 h-10 rounded-full text-verde hover:bg-verde hover:text-oscuro flex items-center justify-center transition active:scale-95"
+              className="w-8 h-8 rounded-[2px] text-verde hover:bg-verde hover:text-[var(--noir)] flex items-center justify-center transition"
               title="Ir al dashboard"
             >
-              <i className="bi bi-speedometer2 text-lg" />
+              <i className="bi bi-speedometer2 text-sm" />
             </button>
           )}
         </div>
       </div>
 
-      <div className="md:hidden w-full border-t border-lila/5 overflow-x-auto scrollbar-none bg-black/10">
-        <div className="flex items-center gap-1 px-4 py-2 min-w-max">
+      {/* Categorías — móvil */}
+      <div className="md:hidden w-full border-t border-[var(--border-gold-20)] overflow-x-auto scrollbar-none bg-black/10">
+        <div className="flex items-center gap-1 px-4 py-1.5 min-w-max">
           {categorias.map((cat) => (
             <button
               key={cat.id}
               onClick={() => onSeleccionarCategoria(cat.id)}
-              className={`px-3 py-1.5 text-[11px] font-bold tracking-wider uppercase rounded-full transition-all box-border whitespace-nowrap active:scale-95 ${
+              className={`relative px-2.5 py-1.5 font-tag text-[11px] sm:text-sm font-semibold tracking-wide uppercase whitespace-nowrap transition-colors ${
                 categoriaActiva === cat.id
-                  ? "bg-lila text-oscuro shadow-md"
-                  : "text-lila-soft bg-lila/5 hover:bg-lila/10"
+                  ? "text-[var(--snow)]"
+                  : "text-[var(--ash)] hover:text-[var(--snow)]"
               }`}
             >
               {cat.label}
+              {categoriaActiva === cat.id && (
+                <span className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full bg-[var(--gold)] shadow-[0_0_10px_rgba(214,171,52,0.6)]" />
+              )}
             </button>
           ))}
         </div>
       </div>
 
-      <nav className="hidden md:block border-t border-lila/5 overflow-x-auto custom-scrollbar">
+      {/* Categorías — desktop */}
+      <nav className="hidden md:block border-t border-[var(--border-gold-20)] overflow-x-auto custom-scrollbar">
         <div className="flex items-center justify-center gap-1 min-w-max mx-auto px-6 lg:px-10">
           {categorias.map((cat) => (
             <button
               key={cat.id}
               onClick={() => onSeleccionarCategoria(cat.id)}
-              className={`relative px-4 py-3 text-[13px] font-semibold tracking-wide uppercase whitespace-nowrap transition-colors ${
+              className={`relative px-3.5 py-2.5 font-tag text-[12px] font-semibold tracking-wide uppercase whitespace-nowrap transition-colors ${
                 categoriaActiva === cat.id
-                  ? "text-blanco"
-                  : "text-lila-soft hover:text-blanco"
+                  ? "text-[var(--snow)]"
+                  : "text-[var(--ash)] hover:text-[var(--snow)]"
               }`}
             >
               {cat.label}
               {categoriaActiva === cat.id && (
-                <span className="absolute left-3 right-3 -bottom-px h-[2px] rounded-full bg-lila shadow-[0_0_10px_rgba(231,214,255,0.6)]" />
+                <span className="absolute left-3 right-3 -bottom-px h-[2px] rounded-full bg-[var(--gold)] shadow-[0_0_10px_rgba(214,171,52,0.6)]" />
               )}
             </button>
           ))}

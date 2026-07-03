@@ -8,6 +8,7 @@ export default {
   theme: {
     extend: {
       colors: {
+        // ── Paleta general del sistema ──────────────────────
         lila: "#E7D6FF",
         "lila-mid": "#A68DC8",
         "lila-soft": "#C9B8E8",
@@ -22,6 +23,17 @@ export default {
         azul: "#7EC9ED",
         rosa: "#ED8ABA",
         naranja: "#FAA86B",
+
+        // ── Paleta D'oro ────────────────────────────────────
+        gold: "#C9A84C",
+        "gold-light": "#E8D49A",
+        "gold-dark": "#7A5C1E",
+        ivory: "#F7F0E6",
+        "ivory-deep": "#EDE4D4",
+        noir: "#0D0D0D",
+        "noir-soft": "#1A1A1A",
+        ash: "#8C8075",
+        snow: "#FEFEFE",
       },
     },
   },

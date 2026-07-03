@@ -4,14 +4,15 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+  /* ── Paleta general del sistema ─────────────────────── */
   --color-lila-pastel: #F8F3FF;
   --color-lila: #E7D6FF;
   --color-lila-mid: #A68DC8;
   --color-lila-soft: #C9B8E8;
   --color-morado: #7750AD;
 
-  --color-oscuro: #2C2A4A;       
-  --color-oscuro-card: #3A3660; 
+  --color-oscuro: #2C2A4A;
+  --color-oscuro-card: #3A3660;
   --color-bg-card: #231E3C;
 
   --color-bg: #F8F5F2;
@@ -20,25 +21,42 @@
   --color-text-muted: #5A5870;
   --color-gris: #727285;
 
-  --color-error-bg: #572444; 
+  --color-error-bg: #572444;
   --color-error-text: #FFCCE5;
 
-  --color-verde: #A3E378;  
-  --color-rojo: #FF6B6B;   
-  --color-amarillo: #F7CB57; 
+  --color-verde: #A3E378;
+  --color-rojo: #FF6B6B;
+  --color-amarillo: #F7CB57;
 
-  --color-azul: #7EC9ED;    
-  --color-rosa: #ED8ABA;    
-  --color-naranja: #FAA86B; 
+  --color-azul: #7EC9ED;
+  --color-rosa: #ED8ABA;
+  --color-naranja: #FAA86B;
 
-  --font-cinzel: 'Cinzel Decorative', serif; 
-  --font-baskervville: 'Baskervville', serif; 
+  --font-cinzel: 'Cinzel Decorative', serif;
+  --font-baskervville: 'Baskervville', serif;
   --font-poppins: 'Poppins', sans-serif;
+
+  /* ── Paleta D'oro ──────────────────────────────────── */
+  --color-gold: #C9A84C;
+  --color-gold-light: #E8D49A;
+  --color-gold-dark: #7A5C1E;
+  --color-ivory: #F7F0E6;
+  --color-ivory-deep: #EDE4D4;
+  --color-noir: #0D0D0D;
+  --color-noir-soft: #1A1A1A;
+  --color-ash: #8C8075;
+  --color-snow: #FEFEFE;
+
+  --font-display: 'Cormorant Garamond', serif;
+  --font-tag: 'Josefin Sans', sans-serif;
+  --font-body: 'EB Garamond', serif;
 }
+
 :root {
+  /* ── Paleta general del sistema ─────────────────────── */
   --color-lila: #E7D6FF;
   --color-oscuro: #2C2A4A;
-  --color-oscuro-card: #3A3660;
+  --color-oscuro-card: #efbc5d;
   --color-lila-mid: #A68DC8;
   --color-lila-soft: #C9B8E8;
   --color-lila-pastel: #F8F3FF;
@@ -46,4 +64,38 @@
   --color-blanco: #FFFFFF;
   --color-text-muted: #5A5870;
   --color-gris: #727285;
+
+  /* ── Paleta D'oro ──────────────────────────────────── */
+  --gold: #d6ab34;
+  --gold-light: #f0d78b;
+  --gold-dark: #7A5C1E;
+  --gold-08: rgba(201, 168, 76, 0.08);
+  --gold-15: rgba(201, 168, 76, 0.15);
+  --gold-30: rgba(201, 168, 76, 0.30);
+  --gold-50: rgba(201, 168, 76, 0.50);
+  --gold-60: rgba(201, 168, 76, 0.60);
+
+  --ivory: #dcd0bf;
+  --ivory-deep: #EDE4D4;
+  --noir: #0D0D0D;
+  --noir-soft: #1A1A1A;
+  --ash: #81786f;
+  --snow: #FEFEFE;
+
+  --snow-25: rgba(254, 254, 254, 0.25);
+  --snow-45: rgba(254, 254, 254, 0.45);
+  --snow-78: rgba(254, 254, 254, 0.78);
+
+  --noir-overlay-38: rgba(13, 13, 13, 0.38);
+  --noir-overlay-55: rgba(13, 13, 13, 0.55);
+  --noir-overlay-78: rgba(13, 13, 13, 0.78);
+
+  --border-gold-20: rgba(201, 168, 76, 0.20);
+  --border-gold-25: rgba(201, 168, 76, 0.25);
+  --border-gold-40: rgba(201, 168, 76, 0.40);
+  --border-gold-55: rgba(201, 168, 76, 0.55);
+
+  --font-display: 'Cormorant Garamond', serif;
+  --font-tag: 'Josefin Sans', sans-serif;
+  --font-body: 'EB Garamond', serif;
 }

@@ -11,6 +11,7 @@ import useTitulo from "../hooks/useTitulo";
 const LIMIT = 7;
 const API_URL = import.meta.env.VITE_API_URL;
 
+// Colores semánticos por tipo de acción — se mantienen como indicadores visuales
 const ACTION_CFG = {
   CREATE:        { label: "CREATE",  bg: "rgba(74,222,128,0.12)",  border: "rgba(74,222,128,0.35)",  color: "#84B140" },
   UPDATE:        { label: "UPDATE",  bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.35)",  color: "#E0DA66" },
@@ -47,12 +48,12 @@ function fmtDateShort(iso) {
 
 function ActionBadge({ action }) {
   const cfg = ACTION_CFG[action] || {
-    label: action, bg: "rgba(167,139,250,0.12)",
-    border: "rgba(167,139,250,0.35)", color: "#a78bfa",
+    label: action, bg: "rgba(201,168,76,0.12)",
+    border: "rgba(201,168,76,0.35)", color: "#C9A84C",
   };
   return (
     <span
-      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold"
+      className="inline-flex items-center px-2 py-0.5 rounded-[2px] text-xs font-tag font-semibold"
       style={{ background: cfg.bg, border: `0.5px solid ${cfg.border}`, color: cfg.color }}
     >
       {cfg.label}
@@ -63,11 +64,11 @@ function ActionBadge({ action }) {
 function ResourceBadge({ resource }) {
   return (
     <span
-      className="inline-block px-2 py-0.5 rounded text-xs font-medium"
+      className="inline-block px-2 py-0.5 rounded-[2px] text-xs font-tag font-medium"
       style={{
-        background: "rgba(99,102,241,0.12)",
-        border: "0.5px solid rgba(99,102,241,0.25)",
-        color: "#a5b4fc",
+        background: "rgba(201,168,76,0.10)",
+        border: "0.5px solid rgba(201,168,76,0.30)",
+        color: "#C9A84C",
       }}
     >
       {resource}
@@ -79,10 +80,10 @@ export default function Auditoria() {
   const { token } = useAuth();
   useTitulo("Auditoría");
 
-  const [logs,      setLogs]     = useState([]);
-  const [total,     setTotal]    = useState(0);
+  const [logs,     setLogs]     = useState([]);
+  const [total,    setTotal]    = useState(0);
   const [cargando, setCargando] = useState(true);
-  const [error,     setError]    = useState(null);
+  const [error,    setError]    = useState(null);
 
   const [kpis, setKpis] = useState({ total: 0, crear: 0, actualizar: 0, eliminar: 0 });
 
@@ -195,7 +196,7 @@ export default function Auditoria() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 w-full">
         {[
-          { id: "all",    label: "Total registros",  value: kpis.total,      sub: "Todos los eventos",                                                                                   accent: "#a78bfa", icon: "bi bi-file-earmark-text" },
+          { id: "all",    label: "Total registros",  value: kpis.total,      sub: "Todos los eventos",                                                                                   accent: "#C9A84C", icon: "bi bi-file-earmark-text" },
           { id: "CREATE", label: "Creaciones",        value: kpis.crear,      sub: kpis.total ? `${Math.round((kpis.crear      / kpis.total) * 100)}% del total` : "—", accent: "#84B140", icon: "bi bi-plus-circle"       },
           { id: "UPDATE", label: "Actualizaciones",   value: kpis.actualizar, sub: kpis.total ? `${Math.round((kpis.actualizar / kpis.total) * 100)}% del total` : "—", accent: "#E0DA66", icon: "bi bi-pencil-square"     },
           { id: "DELETE", label: "Eliminaciones",     value: kpis.eliminar,   sub: kpis.total ? `${Math.round((kpis.eliminar   / kpis.total) * 100)}% del total` : "—", accent: "#D04E37", icon: "bi bi-trash"             },
@@ -203,12 +204,12 @@ export default function Auditoria() {
           <div
             key={k.id}
             style={{
-              opacity:    modoKPI === k.id || modoKPI === "all" ? 1 : 0.55,
-              outline:    modoKPI === k.id ? `1.5px solid ${k.accent}40` : "none",
-              borderRadius: 12,
-              transition: "opacity 0.2s, outline 0.2s",
+              opacity:      modoKPI === k.id || modoKPI === "all" ? 1 : 0.55,
+              outline:      modoKPI === k.id ? `1.5px solid ${k.accent}40` : "none",
+              borderRadius: 2,
+              transition:   "opacity 0.2s, outline 0.2s",
             }}
-            className="w-full min-w-0" 
+            className="w-full min-w-0"
           >
             <Tarjetas
               label={k.label}
@@ -237,23 +238,23 @@ export default function Auditoria() {
         placeholderFiltro2="Todos los recursos"
       />
 
-      <div className="w-full overflow-x-auto rounded-lg shadow-sm">
+      <div className="w-full overflow-x-auto rounded-[2px] shadow-sm">
         <Tabla encabezados={encabezados}>
           {cargando ? (
             <tr>
-              <td colSpan={6} className="text-center py-10 text-sm opacity-50 text-oscuro dark:text-lila">
+              <td colSpan={6} className="text-center py-10 text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">
                 <i className="bi bi-arrow-repeat animate-spin mr-2" />Cargando...
               </td>
             </tr>
           ) : error ? (
             <tr>
-              <td colSpan={6} className="p-8 text-center text-sm text-rojo">
+              <td colSpan={6} className="p-8 text-center text-sm lg:text-base text-rojo">
                 <i className="bi bi-exclamation-circle mr-2" />{error}
               </td>
             </tr>
           ) : logs.length === 0 ? (
             <tr>
-              <td colSpan={6} className="text-center py-10 text-sm opacity-50 text-oscuro dark:text-lila">
+              <td colSpan={6} className="text-center py-10 text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">
                 Sin registros que coincidan con los filtros
               </td>
             </tr>
@@ -264,7 +265,7 @@ export default function Auditoria() {
                 <tr
                   key={l.id}
                   onClick={() => handleVerDetalle(l)}
-                  className="border-b hover:bg-lila/30 dark:hover:bg-oscuro/40 transition-colors cursor-pointer"
+                  className="border-b border-[var(--border-gold-20)] hover:bg-[var(--gold-08)] transition-colors cursor-pointer"
                 >
                   <td className="p-3 md:p-4 text-center">
                     <ActionBadge action={l.action} />
@@ -272,16 +273,16 @@ export default function Auditoria() {
                   <td className="p-3 md:p-4 text-center">
                     <ResourceBadge resource={l.resource} />
                   </td>
-                  <td className="p-3 md:p-4 text-center font-mono text-xs text-oscuro dark:text-lila-soft hidden md:table-cell">
+                  <td className="p-3 md:p-4 text-center font-mono text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)] hidden md:table-cell">
                     {l.resourceId || "—"}
                   </td>
-                  <td className="p-3 md:p-4 text-center text-sm font-medium text-oscuro dark:text-blanco">
+                  <td className="p-3 md:p-4 text-center text-sm lg:text-base font-medium text-[var(--noir)] dark:text-[var(--snow)]">
                     {l.usuario || "—"}
                   </td>
-                  <td className="p-3 md:p-4 text-center text-xs text-oscuro dark:text-lila-soft/80 hidden lg:table-cell max-w-[140px] truncate overflow-hidden whitespace-nowrap">
+                  <td className="p-3 md:p-4 text-center text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)] hidden lg:table-cell max-w-[140px] truncate overflow-hidden whitespace-nowrap">
                     {detailKeys || "—"}
                   </td>
-                  <td className="p-3 md:p-4 text-center text-xs text-oscuro dark:text-lila-soft/60">
+                  <td className="p-3 md:p-4 text-center text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">
                     {fmtDateShort(l.createdAt)}
                   </td>
                 </tr>

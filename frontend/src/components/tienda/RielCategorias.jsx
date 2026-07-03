@@ -1,4 +1,4 @@
-const categorias = [
+export const categorias = [
   { id: "todas",      label: "Todas",      icono: "bi-grid-3x3-gap"    },
   { id: "Playeras",   label: "Playeras",   icono: "bi-bag-heart"       },
   { id: "Blusas",     label: "Blusas",     icono: "bi-flower1"         },
@@ -24,27 +24,27 @@ export default function RielCategorias({ categoriaActiva, onSeleccionarCategoria
           <button
             key={cat.id}
             onClick={() => onSeleccionarCategoria(cat.id)}
-            className={`flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all ${
+            className={`flex flex-col items-center gap-2 p-3 rounded-[2px] border transition-all ${
               activa
-                ? "bg-lila/10 border-lila/40"
-                : "border-transparent hover:bg-lila/5 hover:border-lila/20"
+                ? "bg-[var(--gold-08)] border-[var(--border-gold-40)]"
+                : "border-transparent hover:bg-[var(--gold-08)] hover:border-[var(--border-gold-20)]"
             }`}
           >
             {/* Círculo con ícono */}
             <div
               className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all ${
                 activa
-                  ? "bg-lila/20 border-lila/50"
-                  : "bg-bg-card border-lila/15"
+                  ? "bg-[var(--gold-08)] border-[var(--gold)]"
+                  : "bg-[var(--noir-soft)] border-[var(--border-gold-20)]"
               }`}
             >
-              <i className={`bi ${cat.icono} text-xl ${activa ? "text-lila" : "text-lila-soft"}`} />
+              <i className={`bi ${cat.icono} text-xl lg:text-2xl ${activa ? "text-[var(--gold-light)]" : "text-[var(--ash)]"}`} />
             </div>
 
             {/* Nombre */}
             <span
-              className={`text-xs font-semibold text-center leading-tight ${
-                activa ? "text-blanco" : "text-lila-soft"
+              className={`font-tag text-xs lg:text-sm font-semibold text-center leading-tight uppercase tracking-wide ${
+                activa ? "text-[var(--snow)]" : "text-[var(--ash)]"
               }`}
             >
               {cat.label}

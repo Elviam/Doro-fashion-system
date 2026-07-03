@@ -292,7 +292,7 @@ export default function ModalCheckout({ onCerrar, carrito, onPedidoConfirmado, u
                   <div className="bg-bg-card border border-lila/15 rounded-xl p-5">
                     <p className="text-sm font-bold text-blanco">Transferencia SPEI</p>
                     <p className="mt-2 text-xs text-lila-soft">CLABE: <b className="text-lila">012 180 01234567890 1</b></p>
-                    <p className="text-xs text-lila-soft">Beneficiario: <b className="text-lila">AURA Boutique SA de CV</b></p>
+                    <p className="text-xs text-lila-soft">Beneficiario: <b className="text-lila">D'ORO Boutique SA de CV</b></p>
                   </div>
                 )}
               </div>

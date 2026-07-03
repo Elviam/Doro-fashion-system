@@ -3,23 +3,23 @@ export default function Etiquetas({ contenido }) {
   const estilos = {
     // --- ESTADOS ---
     Activo: `
-      bg-verde/30 text-verde border-verde/50 
-      dark:bg-verde/20 dark:border-verde/30
+      bg-green-600/15 text-green-700 border-green-600/60
+      dark:bg-verde/20 dark:text-verde dark:border-verde/30
     `,
 
     Confirmado: `
-      bg-verde/30 text-verde border-verde/50 
-      dark:bg-verde/20 dark:border-verde/30
+      bg-green-600/15 text-green-700 border-green-600/60
+      dark:bg-verde/20 dark:text-verde dark:border-verde/30
     `,
     
     Inactivo: `
-      bg-rojo/30 text-rojo border-rojo/50 
-      dark:bg-rojo/20 dark:border-rojo/30
+      bg-red-600/15 text-red-700 border-red-600/60
+      dark:bg-rojo/20 dark:text-rojo dark:border-rojo/30
     `,
 
     Cancelado: `
-      bg-rojo/30 text-rojo border-rojo/50 
-      dark:bg-rojo/20 dark:border-rojo/30
+      bg-red-600/15 text-red-700 border-red-600/60
+      dark:bg-rojo/20 dark:text-rojo dark:border-rojo/30
     `,
     
     Pendiente: `
@@ -39,8 +39,8 @@ export default function Etiquetas({ contenido }) {
     `,
 
     pagado: `
-      bg-verde/30 text-verde border-verde/50 
-      dark:bg-verde/20 dark:border-verde/30
+      bg-green-600/15 text-green-700 border-green-600/60
+      dark:bg-verde/20 dark:text-verde dark:border-verde/30
     `,
 
     enviado: `
@@ -49,33 +49,37 @@ export default function Etiquetas({ contenido }) {
     `,
 
     entregado: `
-      bg-verde/30 text-verde border-verde/50 
-      dark:bg-verde/20 dark:border-verde/30
+      bg-green-600/15 text-green-700 border-green-600/60
+      dark:bg-verde/20 dark:text-verde dark:border-verde/30
     `,
 
     cancelado: `
-      bg-rojo/30 text-rojo border-rojo/50 
-      dark:bg-rojo/20 dark:border-rojo/30
+      bg-red-600/15 text-red-700 border-red-600/60
+      dark:bg-rojo/20 dark:text-rojo dark:border-rojo/30
     `,
 
     // --- ROLES ---
     Admin: `
-      bg-morado/20 text-morado border-morado/40 
-      dark:bg-morado/30 dark:text-lila-soft dark:border-morado/50
+      bg-amarillo/60 text-[var(--gold-dark)] border-[var(--gold)] font-bold
+      dark:bg-amarillo/30 dark:text-white dark:border-[var(--gold)]
+    `,
+    ADMIN: `
+      bg-amarillo/60 text-negro border-[var(--gold)] font-bold
+      dark:bg-amarillo/30 dark:text-white dark:border-[var(--gold)]
     `,
 
     GERENTE: `
-      bg-azul/30 text-azul border-azul/50 
-      dark:bg-azul/20 dark:border-azul/30
+      bg-blue-700/20 text-blue-800 border-blue-700/60
+      dark:bg-azul/20 dark:text-azul dark:border-azul/30
     `,
 
     BODEGUERO: `
-      bg-amarillo/40 text-amarillo border-amarillo/60 
-      dark:bg-amarillo/20 dark:text-amarillo dark:border-amarillo/30
+      bg-gris/20 text-gris/100 border-gris/60 
+      dark:bg-gris/20 dark:text-negro dark:border-gris/30
     `,
 
     VENDEDOR: `
-      bg-naranja/30 text-naranja border-naranja/50 
+      bg-orange-300/25 text-orange-800 border-orange-700/60
       dark:bg-naranja/20 dark:text-naranja dark:border-naranja/30
     `,
 
@@ -91,8 +95,8 @@ export default function Etiquetas({ contenido }) {
 
     // --- DEFAULT ---
     Default: `
-      bg-lila-soft/40 text-morado border-lila-soft/60 
-      dark:bg-lila-soft/20 dark:text-lila-soft dark:border-lila-soft/30
+      bg-[var(--gold)]/15 text-[var(--gold-dark)] border-[var(--border-gold-40)] 
+      dark:bg-[var(--gold-08)] dark:text-[var(--ash)] dark:border-[var(--border-gold-20)]
     `
   };
 
@@ -101,9 +105,8 @@ export default function Etiquetas({ contenido }) {
   return (
     <span
       className={`
-        inline-block w-28 text-center py-1 rounded-full text-xs uppercase tracking-wider border shadow-sm transition-colors duration-300
-        font-semibold 
-        dark:font-normal 
+        inline-block w-28 lg:w-32 text-center py-1 lg:py-1.5 rounded-[2px] text-xs lg:text-sm uppercase tracking-wider border shadow-sm transition-colors duration-300
+        font-tag font-semibold
         ${clasesActuales}
       `}
     >

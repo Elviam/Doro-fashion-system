@@ -1,5 +1,5 @@
-const CLOUD_NAME = "loregiron"; 
-const UPLOAD_PRESET = "AURA_PRODUCTOS"; 
+const CLOUD_NAME = "m"; 
+const UPLOAD_PRESET = "DORO_PRODUCTOS"; 
 
 export const uploadImageToCloudinary = async (file) => {
   if (!file) return null;

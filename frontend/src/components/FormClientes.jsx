@@ -67,7 +67,7 @@ export default function FormClientes({ cliente, esNuevo, onClose, onGuardar, isO
 
   // Header
   const tituloPersonalizado = (
-    <h2 className="text-xl font-bold uppercase tracking-widest transition-colors text-morado dark:text-blanco m-0">
+    <h2 className="text-xl lg:text-2xl font-tag font-bold uppercase tracking-widest transition-colors text-[var(--noir)] dark:text-[var(--snow)] m-0">
       {esNuevo ? "Nuevo Cliente" : "Editar Cliente"}
     </h2>
   );
@@ -93,7 +93,7 @@ export default function FormClientes({ cliente, esNuevo, onClose, onGuardar, isO
         titulo={tituloPersonalizado}
         footer={footerAcciones}
       >
-        <div className="font-poppins pt-2 pb-4">
+        <div className="font-body pt-2 pb-4">
           <form className="flex flex-col gap-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               

@@ -307,19 +307,19 @@ async sendPasswordResetEmail(email, code) {
       port: process.env.MAIL_PORT || 587,
       secure: false,
       auth: {
-        user: process.env.MAIL_USER || 'auraclothes.salamanca@gmail.com',
+        user: process.env.MAIL_USER || 'doroclothes@gmail.com',
         pass: process.env.MAIL_PASSWORD
       }
     })
 
     const mailOptions = {
-      from: process.env.MAIL_USER || 'auraclothes.salamanca@gmail.com',
+      from: process.env.MAIL_USER || 'doroclothes@gmail.com',
       to: email,
-      subject: 'Código para restablecer tu contraseña - AURA',
+      subject: 'Código para restablecer tu contraseña - DORO',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background-color: #221E3A; padding: 20px; text-align: center; color: #B8A7E2;">
-            <h1 style="margin: 0; font-size: 32px; letter-spacing: 2px;">AURA</h1>
+            <h1 style="margin: 0; font-size: 32px; letter-spacing: 2px;">D'ORO</h1>
             <p style="margin: 5px 0; font-size: 12px; letter-spacing: 1px;">Tienda en línea</p>
           </div>
           
@@ -342,7 +342,7 @@ async sendPasswordResetEmail(email, code) {
           </div>
           
           <div style="background-color: #f9f9f9; padding: 20px; text-align: center; color: #999; font-size: 11px;">
-            <p style="margin: 0;">© 2026 AURA · Todos los derechos reservados</p>
+            <p style="margin: 0;">© 2026 D'ORO · Todos los derechos reservados</p>
           </div>
         </div>
       `

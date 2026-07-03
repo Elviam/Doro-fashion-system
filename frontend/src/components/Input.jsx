@@ -39,9 +39,9 @@ export default function Input({
     <div className={`flex flex-col gap-1.5 ${className}`}>
       {label && (
         <label className={`
-          text-[11px] font-bold uppercase tracking-wider pl-1 transition-colors
-          text-morado
-          dark:text-lila-mid
+          text-[11px] lg:text-xs font-tag uppercase tracking-wider pl-1 transition-colors
+          text-[var(--gold-dark)]
+          dark:text-[var(--gold-light)]
         `}>
           {label} {requerido && !deshabilitado && <span className="text-rojo">*</span>}
         </label>
@@ -57,10 +57,10 @@ export default function Input({
           disabled={deshabilitado} 
           rows="3"
           className={`
-            w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none transition-all resize-none
-            bg-blanco text-oscuro border-morado/20 focus:border-morado placeholder-gris/50
-            dark:bg-bg-card dark:text-blanco dark:border-lila/20 dark:focus:border-lila dark:placeholder-lila-soft/50
-            ${deshabilitado ? 'opacity-60 cursor-not-allowed bg-gris/10 dark:bg-oscuro' : ''}
+            w-full border rounded-[2px] px-4 py-2.5 text-sm lg:text-base focus:outline-none transition-all resize-none
+            bg-[var(--snow)] text-[var(--noir)] border-[var(--border-gold-40)] focus:border-[var(--gold-dark)] placeholder-[var(--noir-soft)]
+            dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)] dark:focus:border-[var(--gold-light)] dark:placeholder-[var(--ash)]
+            ${deshabilitado ? 'opacity-60 cursor-not-allowed bg-[var(--gold-08)] dark:bg-[var(--noir-soft)]' : ''}
           `}
         />
       ) : tipo === "select" ? (
@@ -70,10 +70,10 @@ export default function Input({
             disabled={deshabilitado}
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className={`
-              border rounded-lg px-4 py-2.5 text-sm cursor-pointer outline-none transition-colors shadow-sm flex items-center justify-between w-full h-10
-              bg-blanco text-oscuro border-morado/20 hover:border-morado
-              dark:bg-bg-card dark:text-lila dark:border-lila/20 dark:hover:border-lila
-              ${deshabilitado ? 'opacity-60 cursor-not-allowed bg-gris/10 dark:bg-oscuro' : ''}
+              border rounded-[2px] px-4 py-2.5 text-sm lg:text-base cursor-pointer outline-none transition-colors shadow-sm flex items-center justify-between w-full h-10
+              bg-[var(--snow)] text-[var(--noir)] border-[var(--border-gold-40)] hover:border-[var(--gold-dark)]
+              dark:bg-[var(--noir)] dark:text-[var(--gold-light)] dark:border-[var(--border-gold-20)] dark:hover:border-[var(--gold-light)]
+              ${deshabilitado ? 'opacity-60 cursor-not-allowed bg-[var(--gold-08)] dark:bg-[var(--noir-soft)]' : ''}
             `}
           >
             <span className="font-medium truncate">{value || placeholder || "Seleccionar..."}</span>
@@ -82,9 +82,9 @@ export default function Input({
 
           {isDropdownOpen && !deshabilitado && (
             <ul className={`
-              absolute left-0 w-full max-h-48 overflow-y-auto rounded-lg shadow-xl z-50 py-1 scrollbar-hide border transition-colors
-              bg-blanco border-morado/20
-              dark:bg-bg-card dark:border-lila/20
+              absolute left-0 w-full max-h-48 overflow-y-auto rounded-[2px] shadow-xl z-50 py-1 scrollbar-hide border transition-colors
+              bg-[var(--snow)] border-[var(--border-gold-40)]
+              dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)]
               ${abrirHaciaArriba ? "bottom-full mb-2" : "top-full mt-2"} /* ✨ MAGIA: Controlamos la dirección aquí */
             `}>
               {opciones.map((opcion, i) => (
@@ -95,9 +95,9 @@ export default function Input({
                     setIsDropdownOpen(false);
                   }}
                   className={`
-                    px-4 py-2.5 text-sm cursor-pointer transition-colors
-                    text-oscuro hover:bg-morado hover:text-blanco
-                    dark:text-lila dark:hover:bg-lila dark:hover:text-oscuro
+                    px-4 py-2.5 text-sm lg:text-base cursor-pointer transition-colors
+                    text-[var(--noir)] hover:bg-[var(--gold-dark)] hover:text-[var(--snow)]
+                    dark:text-[var(--gold-light)] dark:hover:bg-[var(--gold-light)] dark:hover:text-[var(--noir)]
                   `}
                 >
                   {opcion}
@@ -117,11 +117,11 @@ export default function Input({
             required={requerido} 
             disabled={deshabilitado}
             className={`
-              w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none transition-all
-              bg-blanco text-oscuro border-morado/20 focus:border-morado placeholder-gris/50
-              dark:bg-bg-card dark:text-blanco dark:border-lila/20 dark:focus:border-lila dark:placeholder-lila-soft/50
+              w-full border rounded-[2px] px-4 py-2.5 text-sm lg:text-base focus:outline-none transition-all
+              bg-[var(--snow)] text-[var(--noir)] border-[var(--border-gold-40)] focus:border-[var(--gold-dark)] placeholder-[var(--noir-soft)]
+              dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)] dark:focus:border-[var(--gold-light)] dark:placeholder-[var(--ash)]
               pr-8 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none
-              ${deshabilitado ? 'opacity-60 cursor-not-allowed bg-gris/10 dark:bg-oscuro' : ''}
+              ${deshabilitado ? 'opacity-60 cursor-not-allowed bg-[var(--gold-08)] dark:bg-[var(--noir-soft)]' : ''}
             `}
           />
           <div className="absolute right-2 flex flex-col gap-0.5">
@@ -130,9 +130,9 @@ export default function Input({
               onClick={() => handleNumberChange(1)} 
               disabled={deshabilitado} 
               className={`
-                transition-colors leading-none
-                text-morado/50 hover:text-morado
-                dark:text-lila-soft dark:hover:text-lila
+                transition-colors leading-none opacity-60 hover:opacity-100
+                text-[var(--gold-dark)]
+                dark:text-[var(--gold-light)]
               `}
             >
               <i className="bi bi-caret-up-fill text-[10px]"></i>
@@ -142,9 +142,9 @@ export default function Input({
               onClick={() => handleNumberChange(-1)} 
               disabled={deshabilitado} 
               className={`
-                transition-colors leading-none
-                text-morado/50 hover:text-morado
-                dark:text-lila-soft dark:hover:text-lila
+                transition-colors leading-none opacity-60 hover:opacity-100
+                text-[var(--gold-dark)]
+                dark:text-[var(--gold-light)]
               `}
             >
               <i className="bi bi-caret-down-fill text-[10px]"></i>
@@ -161,10 +161,10 @@ export default function Input({
           required={requerido} 
           disabled={deshabilitado}
           className={`
-            w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none transition-all
-            bg-blanco text-oscuro border-morado/20 focus:border-morado placeholder-gris/50
-            dark:bg-bg-card dark:text-blanco dark:border-lila/20 dark:focus:border-lila dark:placeholder-lila-soft/50
-            ${deshabilitado ? 'opacity-60 cursor-not-allowed bg-gris/10 dark:bg-oscuro' : ''}
+            w-full border rounded-[2px] px-4 py-2.5 text-sm lg:text-base focus:outline-none transition-all
+            bg-[var(--snow)] text-[var(--noir)] border-[var(--border-gold-40)] focus:border-[var(--gold-dark)] placeholder-[var(--noir-soft)]
+            dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)] dark:focus:border-[var(--gold-light)] dark:placeholder-[var(--ash)]
+            ${deshabilitado ? 'opacity-60 cursor-not-allowed bg-[var(--gold-08)] dark:bg-[var(--noir-soft)]' : ''}
           `}
         />
       )}

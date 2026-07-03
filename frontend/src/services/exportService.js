@@ -72,7 +72,7 @@ export function exportarPDF(titulo, columnas, filas) {
     doc.setPage(i)
     doc.setFontSize(7)
     doc.setTextColor(...C.soft)
-    doc.text('AURA', 14, pageH - 6)
+    doc.text("D'ORO", 14, pageH - 6)
     doc.text(`Página ${i} de ${pages}`, pageW - 14, pageH - 6, { align: 'right' })
   }
 
@@ -81,7 +81,7 @@ export function exportarPDF(titulo, columnas, filas) {
 
 export async function exportarExcel(titulo, columnas, filas) {
   const wb = new ExcelJS.Workbook()
-  wb.creator = 'AURA'
+  wb.creator = "D'ORO"
   wb.created = new Date()
 
   const ws = wb.addWorksheet(titulo, {

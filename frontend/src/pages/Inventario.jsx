@@ -136,6 +136,21 @@ function extraerStockActual(det) {
   return s !== undefined && s !== null ? Number(s) : null;
 }
 
+// ── Botón de ajuste inline — reutilizable en ambas tablas ──
+function BtnAjuste({ onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="relative group bg-transparent border-none cursor-pointer text-lg lg:text-xl outline-none transition-all opacity-70 hover:opacity-100 text-[var(--noir-soft)] hover:text-[var(--gold-dark)] dark:text-[var(--ash)] dark:hover:text-[var(--gold-light)]"
+      title="Ajustar stock"
+    >
+      <i className="bi bi-pencil inline-block transition-transform group-hover:scale-125" />
+      <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-body px-3 py-1.5 rounded-[2px] whitespace-nowrap shadow-xl z-50 pointer-events-none bg-[var(--noir)] text-[var(--snow)] dark:bg-[var(--noir-soft)] dark:border dark:border-[var(--border-gold-20)]">
+        Ajustar stock
+      </span>
+    </button>
+  );
+}
 
 function ModalDetalleMovimiento({ isOpen, onClose, log, onAjustar }) {
   if (!isOpen || !log) return null;
@@ -157,52 +172,52 @@ function ModalDetalleMovimiento({ isOpen, onClose, log, onAjustar }) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} titulo="Detalle del Movimiento" footer={footerModal} ancho="max-w-lg">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5 font-body">
 
         <div className="flex items-center gap-3">
           <Etiquetas contenido={ACTION_TO_LABEL[log.action] || "Default"} />
-          <span className="text-sm text-oscuro/60 dark:text-blanco/50">
+          <span className="text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">
             {ACTION_TO_TEXT[log.action] || log.action}
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-lila/5 dark:bg-oscuro/40 border border-lila/10">
+        <div className="grid grid-cols-2 gap-4 p-4 rounded-[2px] bg-[var(--gold-08)] border border-[var(--border-gold-40)] dark:bg-[var(--noir)]/40 dark:border-[var(--border-gold-20)]">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-oscuro/40 dark:text-blanco/30 mb-1">SKU</p>
-            <p className="text-sm font-mono font-bold text-lila">{sku}</p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">SKU</p>
+            <p className="text-sm font-mono font-bold text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{sku}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-oscuro/40 dark:text-blanco/30 mb-1">Producto</p>
-            <p className="text-sm font-medium text-oscuro dark:text-blanco">{nombre}</p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Producto</p>
+            <p className="text-sm lg:text-base font-medium text-[var(--noir)] dark:text-[var(--snow)]">{nombre}</p>
           </div>
           {stockActual !== null && (
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-oscuro/40 dark:text-blanco/30 mb-1">Stock resultante</p>
+              <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Stock resultante</p>
               <p className={`text-lg font-bold ${getColorStock(stockActual)}`}>{stockActual}</p>
             </div>
           )}
           {det.stockMinimo !== undefined && (
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-oscuro/40 dark:text-blanco/30 mb-1">Stock mínimo</p>
-              <p className="text-sm font-medium text-oscuro dark:text-blanco">{det.stockMinimo}</p>
+              <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Stock mínimo</p>
+              <p className="text-sm lg:text-base font-medium text-[var(--noir)] dark:text-[var(--snow)]">{det.stockMinimo}</p>
             </div>
           )}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-oscuro/40 dark:text-blanco/30 mb-1">Usuario</p>
-            <p className="text-sm text-oscuro dark:text-blanco">{log.usuario || "—"}</p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Usuario</p>
+            <p className="text-sm lg:text-base text-[var(--noir)] dark:text-[var(--snow)]">{log.usuario || "—"}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-oscuro/40 dark:text-blanco/30 mb-1">Referencia</p>
-            <p className="text-xs font-mono text-oscuro/60 dark:text-lila-soft">
+            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Referencia</p>
+            <p className="text-xs font-mono text-[var(--noir-soft)] dark:text-[var(--ash)]">
               {log.resourceId ? `#${log.resourceId.slice(-8).toUpperCase()}` : "—"}
             </p>
           </div>
           <div className="col-span-2">
-            <p className="text-[10px] uppercase tracking-wider text-oscuro/40 dark:text-blanco/30 mb-1">Fecha y hora</p>
-            <p className="text-sm text-oscuro dark:text-blanco capitalize">
+            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Fecha y hora</p>
+            <p className="text-sm lg:text-base text-[var(--noir)] dark:text-[var(--snow)] capitalize">
               {fmtDateFull(log.createdAt || log.timestamp)}
             </p>
           </div>
@@ -210,14 +225,14 @@ function ModalDetalleMovimiento({ isOpen, onClose, log, onAjustar }) {
 
         {cambios.length > 0 && (
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-oscuro/40 dark:text-blanco/30 mb-2">
+            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-2">
               Campos modificados ({cambios.length})
             </p>
             <div className="flex flex-wrap gap-1.5">
               {cambios.map((c) => (
                 <span key={c}
-                  className="text-[10px] px-2 py-0.5 rounded-full font-mono"
-                  style={{ background: "rgba(167,139,250,0.12)", border: "0.5px solid rgba(167,139,250,0.3)", color: "#a78bfa" }}>
+                  className="text-[10px] px-2 py-0.5 rounded-[2px] font-mono font-tag"
+                  style={{ background: "rgba(201,168,76,0.10)", border: "0.5px solid rgba(201,168,76,0.30)", color: "#C9A84C" }}>
                   {c}
                 </span>
               ))}
@@ -297,8 +312,9 @@ function ModalAjusteManual({ isOpen, onClose, onGuardar, guardando, skuInicial =
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} titulo="Ajuste Manual de Stock" footer={footerModal} ancho="max-w-md">
-      <div className="mb-5 px-3 py-2 rounded-lg text-xs"
-        style={{ background: "rgba(167,139,250,0.08)", border: "0.5px solid rgba(167,139,250,0.25)", color: "#a78bfa" }}>
+      {/* Banner informativo — acento dorado */}
+      <div className="mb-5 px-3 py-2 rounded-[2px] text-xs font-body"
+        style={{ background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.30)", color: "#C9A84C" }}>
         <i className="bi bi-info-circle mr-1.5" />
         Este ajuste quedará registrado en el Kardex con tu usuario y el motivo indicado.
       </div>
@@ -399,7 +415,7 @@ function TablaStock({ productosDB, busqueda, filtroEstado, onFilaClick, onAjusta
       <Tabla encabezados={encabezados}>
         {filasPaginadas.length === 0 ? (
           <tr>
-            <td colSpan={8} className="text-center py-14 text-sm opacity-50 text-oscuro dark:text-lila">
+            <td colSpan={8} className="text-center py-14 text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">
               <i className="bi bi-inbox mr-2" />Sin resultados
             </td>
           </tr>
@@ -410,26 +426,17 @@ function TablaStock({ productosDB, busqueda, filtroEstado, onFilaClick, onAjusta
             return (
               <tr key={`${f.id}-${f.talla}-${i}`}
                 onClick={() => onFilaClick(f)}
-                className="border-b hover:bg-lila/30 dark:hover:bg-oscuro/40 transition-colors cursor-pointer"
+                className="border-b border-[var(--border-gold-20)] hover:bg-[var(--gold-08)] transition-colors cursor-pointer"
                 title="Clic para ver detalle">
-                <td className="p-4 text-center text-xs font-mono text-lila">{f.sku}</td>
-                <td className="p-4 text-center text-sm font-medium text-oscuro dark:text-blanco">{f.nombre}</td>
+                <td className="p-4 text-center text-xs lg:text-sm font-mono text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{f.sku}</td>
+                <td className="p-4 text-center text-sm lg:text-base font-medium text-[var(--noir)] dark:text-[var(--snow)]">{f.nombre}</td>
                 <td className="p-4 text-center"><Etiquetas contenido={f.categoria} /></td>
-                <td className="p-4 text-center text-sm text-oscuro/70 dark:text-blanco/60">{f.talla}</td>
-                <td className={`p-4 text-center text-sm font-bold ${getColorStock(f.stock)}`}>{f.stock}</td>
-                <td className="p-4 text-center text-xs text-oscuro/50 dark:text-blanco/40">{f.stockMinimo}</td>
+                <td className="p-4 text-center text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">{f.talla}</td>
+                <td className={`p-4 text-center text-sm lg:text-base font-bold ${getColorStock(f.stock)}`}>{f.stock}</td>
+                <td className="p-4 text-center text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">{f.stockMinimo}</td>
                 <td className="p-4 text-center"><Etiquetas contenido={etiqueta} /></td>
                 <td className="p-4 text-center">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onAjustarClick({ sku: f.sku, talla: f.talla }); }}
-                    className="relative group bg-transparent border-none cursor-pointer text-md outline-none transition-all opacity-70 hover:opacity-100 text-lila-mid hover:text-amarillo dark:text-lila-soft dark:hover:text-amarillo"
-                    title="Ajustar stock"
-                  >
-                    <i className="bi bi-pencil inline-block transition-transform group-hover:scale-125" />
-                    <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl z-50 pointer-events-none bg-oscuro text-blanco">
-                      Ajustar stock
-                    </span>
-                  </button>
+                  <BtnAjuste onClick={(e) => { e.stopPropagation(); onAjustarClick({ sku: f.sku, talla: f.talla }); }} />
                 </td>
               </tr>
             );
@@ -478,49 +485,50 @@ function ModalDetalleStock({ isOpen, onClose, fila, onAjustar }) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} titulo="Detalle de Stock" footer={footerModal} ancho="max-w-md">
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5 font-body">
 
         <div className="flex items-center gap-3">
           <Etiquetas contenido={etiqueta} />
-          <span className="text-sm text-oscuro/60 dark:text-blanco/50 capitalize">{estado}</span>
+          <span className="text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)] capitalize">{estado}</span>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-lila/5 dark:bg-oscuro/40 border border-lila/10">
+        <div className="grid grid-cols-2 gap-4 p-4 rounded-[2px] bg-[var(--gold-08)] border border-[var(--border-gold-40)] dark:bg-[var(--noir)]/40 dark:border-[var(--border-gold-20)]">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-oscuro/40 dark:text-blanco/30 mb-1">SKU</p>
-            <p className="text-sm font-mono font-bold text-lila">{fila.sku}</p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">SKU</p>
+            <p className="text-sm font-mono font-bold text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{fila.sku}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-oscuro/40 dark:text-blanco/30 mb-1">Producto</p>
-            <p className="text-sm font-medium text-oscuro dark:text-blanco">{fila.nombre}</p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Producto</p>
+            <p className="text-sm lg:text-base font-medium text-[var(--noir)] dark:text-[var(--snow)]">{fila.nombre}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-oscuro/40 dark:text-blanco/30 mb-1">Talla / Variante</p>
-            <p className="text-sm text-oscuro dark:text-blanco">{fila.talla}</p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Talla / Variante</p>
+            <p className="text-sm lg:text-base text-[var(--noir)] dark:text-[var(--snow)]">{fila.talla}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-oscuro/40 dark:text-blanco/30 mb-1">Categoría</p>
-            <p className="text-sm text-oscuro dark:text-blanco">{fila.categoria}</p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Categoría</p>
+            <p className="text-sm lg:text-base text-[var(--noir)] dark:text-[var(--snow)]">{fila.categoria}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-oscuro/40 dark:text-blanco/30 mb-1">Stock actual</p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Stock actual</p>
             <p className={`text-2xl font-bold ${getColorStock(fila.stock)}`}>{fila.stock}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-oscuro/40 dark:text-blanco/30 mb-1">Stock mínimo</p>
-            <p className="text-2xl font-bold text-oscuro dark:text-blanco">{fila.stockMinimo}</p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Stock mínimo</p>
+            <p className="text-2xl font-bold text-[var(--noir)] dark:text-[var(--snow)]">{fila.stockMinimo}</p>
           </div>
         </div>
 
+        {/* Banners de alerta — colores semánticos conservados */}
         {estado === "critico" && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
+          <div className="flex items-center gap-2 px-3 py-2 rounded-[2px] text-xs font-body"
             style={{ background: "rgba(208,78,55,0.08)", border: "0.5px solid rgba(208,78,55,0.3)", color: "#D04E37" }}>
             <i className="bi bi-exclamation-triangle" />
             Stock por debajo del mínimo requerido. Se recomienda reponer inventario.
           </div>
         )}
         {estado === "bajo" && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
+          <div className="flex items-center gap-2 px-3 py-2 rounded-[2px] text-xs font-body"
             style={{ background: "rgba(224,218,102,0.08)", border: "0.5px solid rgba(224,218,102,0.3)", color: "#E0DA66" }}>
             <i className="bi bi-exclamation-circle" />
             Stock bajo. Considera reabastecer pronto.
@@ -549,10 +557,10 @@ export default function Inventario() {
   const [filtroEstado, setFiltroEstado] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
 
-  const [logSeleccionado, setLogSeleccionado] = useState(null);
+  const [logSeleccionado,     setLogSeleccionado]     = useState(null);
   const [isDetalleKardexOpen, setIsDetalleKardexOpen] = useState(false);
 
-  const [filaSeleccionada, setFilaSeleccionada] = useState(null);
+  const [filaSeleccionada,   setFilaSeleccionada]   = useState(null);
   const [isDetalleStockOpen, setIsDetalleStockOpen] = useState(false);
 
   const [isAjusteOpen, setIsAjusteOpen] = useState(false);
@@ -565,15 +573,8 @@ export default function Inventario() {
 
   const showToast = (message, type = "success") => setToast({ message, type });
 
-  const abrirDetalleKardex = (log) => {
-    setLogSeleccionado(log);
-    setIsDetalleKardexOpen(true);
-  };
-
-  const abrirDetalleStock = (fila) => {
-    setFilaSeleccionada(fila);
-    setIsDetalleStockOpen(true);
-  };
+  const abrirDetalleKardex = (log) => { setLogSeleccionado(log); setIsDetalleKardexOpen(true); };
+  const abrirDetalleStock  = (fila) => { setFilaSeleccionada(fila); setIsDetalleStockOpen(true); };
 
   const abrirAjuste = ({ sku = "", talla = "" } = {}) => {
     setAjusteSku(sku);
@@ -637,13 +638,10 @@ export default function Inventario() {
 
   const valorCosto = productosDB.reduce((acc, p) =>
     acc + calcularStockTotal(p.inventario) * (Number(p.precioCompra) || 0), 0);
-
   const valorVenta = productosDB.reduce((acc, p) =>
     acc + calcularStockTotal(p.inventario) * (Number(p.precioVenta || p.pVenta) || 0), 0);
-
   const articulosTotales = productosDB.reduce(
     (acc, p) => acc + calcularStockTotal(p.inventario), 0);
-
   const alertasCriticas = productosDB.filter((p) => {
     const stock  = calcularStockTotal(p.inventario);
     const minimo = Number(p.stockMinimo) || 5;
@@ -701,7 +699,7 @@ export default function Inventario() {
   const encabezadosKardex = ["Movimiento", "SKU / Producto", "Referencia", "Stock", "Usuario", "Fecha", "Acciones"];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+    <div className="p-4 sm:p-6 lg:p-8 flex flex-col gap-6 font-body">
 
       <Toast message={toast.message} type={toast.type}
         onClose={() => setToast({ message: "", type: "success" })} />
@@ -711,52 +709,47 @@ export default function Inventario() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Tarjetas label="Valor Inventario (Costo)"
           value={`$${valorCosto.toLocaleString("es-MX", { maximumFractionDigits: 0 })}`}
-          sub="Capital invertido" accent="#a78bfa" icon="bi bi-currency-dollar" />
+          sub="Capital invertido" accent="#C9A84C" icon="bi bi-currency-dollar" />
         <Tarjetas label="Valor Inventario (Venta)"
           value={`$${valorVenta.toLocaleString("es-MX", { maximumFractionDigits: 0 })}`}
           sub="Ganancia potencial" accent="#84B140" icon="bi bi-graph-up-arrow" />
         <Tarjetas label="Artículos Totales"
           value={articulosTotales.toLocaleString("es-MX")}
-          sub="Unidades físicas bajo techo" accent="#38bdf8" icon="bi bi-boxes" />
+          sub="Unidades físicas bajo techo" accent="#538f96" icon="bi bi-boxes" />
         <Tarjetas label="Alertas Críticas" value={alertasCriticas}
           sub={alertasCriticas > 0 ? "Productos en stock mínimo" : "Sin alertas activas"}
           accent={alertasCriticas > 0 ? "#D04E37" : "#84B140"}
           icon={alertasCriticas > 0 ? "bi bi-exclamation-triangle" : "bi bi-shield-check"} />
       </div>
 
+      {/* Selector de vista — Kardex / Stock */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-1 p-1 rounded-xl border border-lila/20 bg-blanco dark:bg-bg-card">
+        <div className="flex items-center gap-1 p-1 rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)]">
           <button
             onClick={() => handleCambiarVista("kardex")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-[2px] text-sm lg:text-base font-tag font-semibold transition-all duration-200 ${
               vistaActiva === "kardex"
-                ? "bg-lila text-oscuro shadow-sm"
-                : "text-oscuro/60 dark:text-blanco/50 hover:text-oscuro dark:hover:text-blanco"
+                ? "bg-[var(--gold)] text-[var(--noir)] shadow-sm"
+                : "text-[var(--noir-soft)] dark:text-[var(--ash)] hover:text-[var(--noir)] dark:hover:text-[var(--snow)]"
             }`}
           >
             <i className="bi bi-journal-text" /> Kardex
           </button>
           <button
             onClick={() => handleCambiarVista("stock")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-[2px] text-sm lg:text-base font-tag font-semibold transition-all duration-200 ${
               vistaActiva === "stock"
-                ? "bg-lila text-oscuro shadow-sm"
-                : "text-oscuro/60 dark:text-blanco/50 hover:text-oscuro dark:hover:text-blanco"
+                ? "bg-[var(--gold)] text-[var(--noir)] shadow-sm"
+                : "text-[var(--noir-soft)] dark:text-[var(--ash)] hover:text-[var(--noir)] dark:hover:text-[var(--snow)]"
             }`}
           >
             <i className="bi bi-boxes" /> Stock
           </button>
         </div>
 
-        <div className="flex items-center gap-4 flex-1 justify-between ml-2">
-          <p className="text-xs text-oscuro/50 dark:text-blanco/40 hidden sm:block">
-            {vistaActiva === "kardex"
-              ? "Clic en una fila para ver el detalle · usa el ícono para ajustar stock."
-              : "Clic en una fila para ver el detalle · usa el ícono para ajustar stock."
-            }
-          </p>
-    
-        </div>
+        <p className="text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)] hidden sm:block">
+          Clic en una fila para ver el detalle · usa el ícono para ajustar stock.
+        </p>
       </div>
 
       {vistaActiva === "kardex" ? (
@@ -782,19 +775,19 @@ export default function Inventario() {
           <Tabla encabezados={encabezadosKardex}>
             {cargando ? (
               <tr>
-                <td colSpan={7} className="text-center py-14 text-sm opacity-50 text-oscuro dark:text-lila">
+                <td colSpan={7} className="text-center py-14 text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">
                   <i className="bi bi-arrow-repeat animate-spin mr-2" />Cargando historial…
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-sm text-rojo">
+                <td colSpan={7} className="p-8 text-center text-sm lg:text-base text-rojo">
                   <i className="bi bi-exclamation-circle mr-2" />{error}
                 </td>
               </tr>
             ) : logs.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-14 text-sm opacity-50 text-oscuro dark:text-lila">
+                <td colSpan={7} className="text-center py-14 text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">
                   <i className="bi bi-inbox mr-2" />Sin movimientos que coincidan con los filtros
                 </td>
               </tr>
@@ -809,44 +802,35 @@ export default function Inventario() {
                 return (
                   <tr key={l.id}
                     onClick={() => abrirDetalleKardex(l)}
-                    className="border-b hover:bg-lila/30 dark:hover:bg-oscuro/40 transition-colors cursor-pointer"
+                    className="border-b border-[var(--border-gold-20)] hover:bg-[var(--gold-08)] transition-colors cursor-pointer"
                     title="Clic para ver detalle">
                     <td className="p-3 md:p-4 text-center">
                       <Etiquetas contenido={ACTION_TO_LABEL[l.action] || "Default"} />
-                      <span className="block text-[10px] text-oscuro/40 dark:text-blanco/30 mt-0.5">
+                      <span className="block text-[10px] text-[var(--noir-soft)] dark:text-[var(--ash)] mt-0.5">
                         {ACTION_TO_TEXT[l.action] || l.action}
                       </span>
                     </td>
                     <td className="p-3 md:p-4 text-center">
-                      <span className="block text-xs font-mono text-lila">{sku}</span>
-                      <span className="block text-xs text-oscuro dark:text-blanco/80 truncate max-w-[120px] mx-auto">{nombre}</span>
+                      <span className="block text-xs font-mono text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{sku}</span>
+                      <span className="block text-xs lg:text-sm text-[var(--noir)] dark:text-[var(--snow)] truncate max-w-[120px] mx-auto">{nombre}</span>
                     </td>
-                    <td className="p-3 md:p-4 text-center font-mono text-xs text-oscuro/50 dark:text-lila-soft/60 hidden lg:table-cell">
+                    <td className="p-3 md:p-4 text-center font-mono text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)] hidden lg:table-cell">
                       {refId}
                     </td>
-                    <td className="p-3 md:p-4 text-center text-sm font-bold">
+                    <td className="p-3 md:p-4 text-center text-sm lg:text-base font-bold">
                       {stockActual !== null
                         ? <span className={getColorStock(stockActual)}>{stockActual}</span>
-                        : <span className="text-oscuro/30 dark:text-blanco/20 text-xs">—</span>
+                        : <span className="text-[var(--noir-soft)] dark:text-[var(--ash)] text-xs">—</span>
                       }
                     </td>
-                    <td className="p-3 md:p-4 text-center text-sm text-oscuro dark:text-blanco">
+                    <td className="p-3 md:p-4 text-center text-sm lg:text-base text-[var(--noir)] dark:text-[var(--snow)]">
                       {l.usuario || "—"}
                     </td>
-                    <td className="p-3 md:p-4 text-center text-xs text-oscuro/50 dark:text-lila-soft/60">
+                    <td className="p-3 md:p-4 text-center text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">
                       {fmtDateShort(l.createdAt || l.timestamp)}
                     </td>
                     <td className="p-3 md:p-4 text-center">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); abrirAjuste({ sku: sku !== "—" ? sku : "" }); }}
-                        className="relative group bg-transparent border-none cursor-pointer text-md outline-none transition-all opacity-70 hover:opacity-100 text-lila-mid hover:text-amarillo dark:text-lila-soft dark:hover:text-amarillo"
-                        title="Ajustar stock"
-                      >
-                        <i className="bi bi-pencil inline-block transition-transform group-hover:scale-125" />
-                        <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl z-50 pointer-events-none bg-oscuro text-blanco">
-                          Ajustar stock
-                        </span>
-                      </button>
+                      <BtnAjuste onClick={(e) => { e.stopPropagation(); abrirAjuste({ sku: sku !== "—" ? sku : "" }); }} />
                     </td>
                   </tr>
                 );
@@ -893,9 +877,7 @@ export default function Inventario() {
         />
       )}
 
-      
-
-            <ModalDetalleMovimiento
+      <ModalDetalleMovimiento
         isOpen={isDetalleKardexOpen}
         onClose={() => setIsDetalleKardexOpen(false)}
         log={logSeleccionado}

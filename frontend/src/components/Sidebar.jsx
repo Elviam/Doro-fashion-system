@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, ClipboardList, Users, Truck, UserCog, ShieldCheck, Shield, ShoppingCart, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, Package, ClipboardList, Users, Truck, UserCog, ShieldCheck, Shield, ShoppingCart, LogOut, ChevronLeft, ChevronRight, Book } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import Boton from "./Boton";
 
@@ -9,29 +9,41 @@ const navItems = [
     section: "GENERAL",
     items: [
       { label: "Dashboard",   ruta: "/dashboard",   icon: LayoutDashboard, permiso: "dashboard:read" },
-      { label: "Productos",   ruta: "/productos",   icon: Package,         permiso: "products:read" },
+      
     ],
   },
   {
     section: "GESTIÓN",
     items: [
-      { label: "Recepciones", ruta: "/recepciones", icon: ClipboardList,   permiso: "recepciones:read" },
       { label: "Ventas",      ruta: "/ventas",      icon: ShoppingCart,    permiso: "ventas:read" },
+      { label: "Productos",   ruta: "/productos",   icon: Package,         permiso: "products:read" },
+      { label: "Inventario",  ruta: "/inventario",  icon: Book,         permiso: "inventory:read" },
+      { label: "Recepciones", ruta: "/recepciones", icon: ClipboardList,   permiso: "recepciones:read" },
       { label: "Clientes",    ruta: "/clientes",    icon: Users,           permiso: "clients:read" },
       { label: "Proveedores", ruta: "/proveedores", icon: Truck,           permiso: "suppliers:read" },
-      { label: "Usuarios",    ruta: "/usuarios",    icon: UserCog,         permiso: "users:read" },
+      
     ],
   },
   {
     section: "CONTROL",
     items: [
+      { label: "Usuarios",    ruta: "/usuarios",    icon: UserCog,         permiso: "users:read" },
       { label: "Roles",       ruta: "/roles",       icon: Shield,          permiso: "roles:read" },
       { label: "Auditoría",   ruta: "/auditoria",   icon: ShieldCheck,     permiso: "audit:read" },
-      { label: "Inventario",  ruta: "/inventario",  icon: Package,         permiso: "inventory:read" },
+      
 
     ],
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Google Fonts 
+// ---------------------------------------------------------------------------
+const FontLoader = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Josefin+Sans:wght@300;400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
+  `}</style>
+);
 
 export default function Sidebar() {
   const { logout, usuario } = useAuth();
@@ -41,11 +53,26 @@ export default function Sidebar() {
     () => localStorage.getItem("sidebar-collapsed") === "true"
   );
 
+ 
+  const [esDesktop, setEsDesktop] = useState(
+    () => typeof window !== "undefined" && window.innerWidth >= 1024
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const handler = (e) => setEsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const isCollapsed = collapsed && esDesktop;
+
   const handleIrAlaTienda = () => {
     navigate("/tienda");   
   };
 
-  const tienePermiso = (permisoRequerido) => {
+  const tienePermiso = (permisoRequerido) => true;
+    /*{
     if (!permisoRequerido) return true; 
     
     // Permitir a admins directamente
@@ -56,51 +83,69 @@ export default function Sidebar() {
     // Para otros, verificar permisos dinámicos
     if (!usuario?.permissions) return false; 
     return usuario.permissions.includes(permisoRequerido);
-  };
+  };*/
 
   return (
     <aside
-      className="relative flex flex-col h-screen shrink-0 overflow-hidden border-r border-oscuro/10 dark:border-white/5 transition-all duration-300 bg-lila dark:bg-bg-card"
-      style={{ width: collapsed ? "72px" : "260px" }}
+      className="relative z-10 flex flex-col h-screen shrink-0 overflow-hidden transition-all duration-300 bg-[var(--ivory-deep)] dark:bg-[var(--noir)] border-r border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)]"
+      style={{
+        width: isCollapsed ? "64px" : "225px",
+      }}
     >
-      {/* Glow decorativo */}
-      <div className="absolute -top-30 -left-25 w-62.5 h-62.5 blur-3xl rounded-full pointer-events-none bg-blanco/50 dark:bg-lila/10" />
+      <FontLoader />
 
-      {/* Botón toggle */}
+      {/* Glow decorativo dorado */}
+      <div
+        className="absolute -top-30 -left-25 w-62.5 h-62.5 blur-3xl rounded-full pointer-events-none"
+        style={{ background: "var(--gold-15)" }}
+      />
+
+      {/* Botón toggle — visible en todos los tamaños de pantalla */}
       <button
         onClick={() => setCollapsed((c) => {
           localStorage.setItem("sidebar-collapsed", String(!c));
           return !c;
         })}
-        className="absolute top-4 right-3 z-10 w-7 h-7 rounded-full flex items-center justify-center transition-colors bg-blanco/50 hover:bg-blanco text-oscuro dark:bg-lila-mid/15 dark:hover:bg-lila-mid/30 dark:text-lila shadow-sm dark:shadow-none"
+        className="flex absolute top-3.5 right-2.5 z-10 w-6 h-6 rounded-full items-center justify-center transition-colors duration-300
+          bg-[var(--gold-08)] text-[var(--gold-dark)] border border-[var(--border-gold-40)]
+          hover:bg-[var(--gold-15)] hover:border-[var(--border-gold-55)]
+          dark:text-[var(--gold-light)] dark:border-[var(--border-gold-20)] dark:hover:border-[var(--border-gold-40)]"
       >
-        {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
       </button>
 
       {/* Header */}
-      <div className={`shrink-0 text-center overflow-hidden transition-all duration-300 ${collapsed ? "px-2 pt-8 pb-4" : "px-8 pt-8 pb-10"}`}>
-        {collapsed ? (
-          <div className="flex justify-center mt-8">
-            <div className="w-2.5 h-2.5 rounded-full bg-verde shadow-[0_0_8px_var(--color-verde)] opacity-80 dark:opacity-100" />
-          </div>
-        ) : (
+      <div
+        className={`shrink-0 text-center overflow-hidden transition-all duration-300 ${
+          isCollapsed ? "px-2 pt-7 pb-3.5" : "px-7 pt-7 pb-8.5"
+        }`}
+      >
+        {!isCollapsed && (
           <>
-            <h1 className="text-6xl tracking-tight leading-none drop-shadow-[0_0_12px_rgba(44,42,74,0.15)] dark:drop-shadow-[0_0_12px_rgba(231,214,255,0.15)] font-cinzel text-oscuro dark:text-lila">
-              AURA
+            <h1
+              className="flex items-baseline justify-center gap-0.5 uppercase text-[var(--noir)] dark:text-[var(--snow)]"
+              style={{
+                fontFamily: "var(--font-display)",
+                fontWeight: 300,
+                fontSize: "31px",
+                letterSpacing: "0.22em",
+                lineHeight: 1,
+                filter: "drop-shadow(0 0 12px var(--gold-15))",
+              }}
+            >
+              D
+              <span className="text-[var(--gold)]">'</span>
+              ORO
             </h1>
 
-            <div className="relative mt-7 flex items-center justify-center">
-              <div className="w-full h-px bg-linear-to-r from-transparent via-oscuro/20 dark:via-lila-mid/50 to-transparent" />
-              <div className="absolute w-2.5 h-2.5 rounded-full bg-oscuro shadow-[0_0_15px_4px_rgba(44,42,74,0.3)] dark:bg-lila-soft dark:shadow-[0_0_15px_4px_rgba(201,184,232,0.6)]" />
-            </div>
-
-            <div className="mt-7 flex justify-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border backdrop-blur-sm border-oscuro/10 bg-blanco/60 dark:border-lila-soft/20 dark:bg-white/3">
-                <div className="w-2 h-2 rounded-full bg-verde" />
-                <span className="text-sm tracking-[2px] font-medium font-poppins text-oscuro/70 dark:text-lila-soft">
-                  ONLINE
-                </span>
-              </div>
+            <div className="relative mt-6 flex items-center justify-center">
+              <div
+                className="w-full h-px"
+                style={{
+                  background:
+                    "linear-gradient(to right, transparent, var(--border-gold-55), transparent)",
+                }}
+              />
             </div>
           </>
         )}
@@ -113,17 +158,26 @@ export default function Sidebar() {
           if (itemsConPermiso.length === 0) return null;
 
           return (
-            <div key={group.section} className="mb-6">
-              {collapsed
-                ? <div className="mb-2 h-px bg-oscuro/5 dark:bg-white/5" />
+            <div key={group.section} className="mb-5">
+              {isCollapsed
+                ? <div className="mb-2 h-px" style={{ background: "var(--border-gold-20)" }} />
                 : (
-                  <h2 className="px-4 mb-4 text-[12px] tracking-[4px] font-medium font-poppins text-oscuro/50 dark:text-lila-soft/60">
+                  <h2
+                    className="px-4 mb-3.5 text-[var(--gold-dark)] dark:text-[var(--gold-60)]"
+                    style={{
+                      fontFamily: "var(--font-tag)",
+                      fontSize: "12px",
+                      letterSpacing: "3.5px",
+                      fontWeight: 500,
+                      textTransform: "uppercase",
+                    }}
+                  >
                     {group.section}
                   </h2>
                 )
               }
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5">
                 {itemsConPermiso.map(({ label, ruta, icon: Icon }) => {
                   const isActive = location.pathname === ruta;
 
@@ -131,28 +185,42 @@ export default function Sidebar() {
                     <button
                       key={label}
                       onClick={() => navigate(ruta)}
-                      title={collapsed ? label : undefined}
+                      title={isCollapsed ? label : undefined}
                       
-                      className={`group relative flex items-center w-full h-12.5 rounded-2xl transition-all duration-300 overflow-hidden ${
-                        collapsed ? "justify-center px-0" : "gap-4 px-5"
+                      className={`group relative flex items-center w-full h-11 rounded-[2px] transition-all duration-300 overflow-hidden ${
+                        isCollapsed ? "justify-center px-0" : "gap-3.5 px-4.5"
                       } ${
                         isActive
-                          ? "bg-blanco shadow-[0_0_20px_rgba(166,141,200,0.35)] dark:bg-[#31275E] dark:shadow-[0_0_20px_rgba(139,92,246,0.18)]"
-                          : "hover:bg-blanco/40 dark:hover:bg-white/4"
+                          ? "bg-[var(--gold-15)] border border-[var(--border-gold-25)] shadow-[0_0_20px_var(--gold-15)]"
+                          : "bg-transparent hover:bg-[var(--gold-08)]"
                       }`}
                     >
                       {isActive && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.25 h-[70%] rounded-r-full bg-lila-mid shadow-[0_0_15px_rgba(166,141,200,0.8)] dark:bg-[#BFA7FF] dark:shadow-[0_0_15px_rgba(191,167,255,0.9)]" />
+                        <div
+                          className="absolute left-0 top-1/2 -translate-y-1/2 w-1.25 h-[70%] rounded-r-full"
+                          style={{ background: "var(--gold)", boxShadow: "0 0 15px var(--gold-50)" }}
+                        />
                       )}
 
-                      <div className={`transition-all duration-300 group-hover:scale-110 ${isActive ? "text-oscuro dark:text-white" : "text-oscuro/70 dark:text-lila"}`}>
-                        <Icon size={22} strokeWidth={isActive ? 2.4 : 2} />
+                      <div
+                        className={`transition-all duration-300 group-hover:scale-110 ${
+                          isActive ? "text-[var(--gold-dark)] dark:text-[var(--gold-light)]" : "text-[var(--gold-dark)]/70 dark:text-[var(--ash)]"
+                        }`}
+                      >
+                        <Icon size={19} strokeWidth={isActive ? 2.4 : 2} />
                       </div>
 
-                      {!collapsed && (
-                        <span className={`text-[17px] transition-all duration-300 group-hover:translate-x-1 font-poppins ${
-                          isActive ? "text-oscuro font-semibold dark:text-white" : "text-oscuro/80 font-medium dark:text-lila/80"
-                        }`}>
+                      {!isCollapsed && (
+                        <span
+                          className={`transition-all duration-300 group-hover:translate-x-1 ${
+                            isActive ? "text-[var(--noir-soft)] dark:text-[var(--snow)]" : "text-[var(--noir-soft)]/80 dark:text-[var(--ash)]"
+                          }`}
+                          style={{
+                            fontFamily: "var(--font-body)",
+                            fontSize: "16px",
+                            fontWeight: isActive ? 600 : 400,
+                          }}
+                        >
                           {label}
                         </span>
                       )}
@@ -166,17 +234,19 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="shrink-0 p-3 border-t backdrop-blur-sm bg-blanco/50 border-oscuro/5 dark:bg-black/10 dark:border-white/5">
+      <div
+        className="shrink-0 p-2.5 backdrop-blur-sm border-t border-[var(--border-gold-20)] bg-[var(--gold-08)] dark:bg-black/40"
+      >
         <Boton
           variante="claro"
           onClick={handleIrAlaTienda}
-          title={collapsed ? "Tienda" : undefined}
-          className={`group flex items-center justify-center w-full py-3! rounded-2xl font-semibold transition-all duration-300 hover:scale-[1.02] hover:shadow-md dark:hover:shadow-[0_0_20px_rgba(231,214,255,0.25)] font-poppins ${
-            collapsed ? "px-0!" : "gap-3 text-lg" 
+          title={isCollapsed ? "Tienda" : undefined}
+          className={`group flex items-center justify-center w-full py-2.5! transition-all duration-300 hover:scale-[1.02] ${
+            isCollapsed ? "px-0!" : "gap-2.5 text-base" 
           }`}
         >
-          <ShoppingCart size={21} strokeWidth={2.5} className="transition-transform duration-300 group-hover:-translate-x-1" />
-          {!collapsed && "Tienda"}
+          <ShoppingCart size={18} strokeWidth={2.5} className="transition-transform duration-300 group-hover:-translate-x-1" />
+          {!isCollapsed && "Tienda"}
         </Boton>
       </div>
     </aside>

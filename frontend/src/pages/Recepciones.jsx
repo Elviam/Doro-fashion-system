@@ -141,8 +141,8 @@ export default function Recepciones() {
           <Tarjetas 
             label="Historial"       
             value={stats.total}       
-            sub="todas las recepciones" 
-            accent="#A68DC8" 
+            sub="Todas las recepciones" 
+            accent="#717171" 
             icon="bi bi-layers"        
             onClick={() => { 
               setFiltro(""); 
@@ -155,8 +155,8 @@ export default function Recepciones() {
           <Tarjetas 
             label="Recepciones" 
             value={stats.estaSemana} 
-            sub="últimos 7 días"    
-            accent="#7C6AF7" 
+            sub="Últimos 7 días"    
+            accent="#805d85" 
             icon="bi bi-calendar-event"      
             onClick={() => { 
               setFiltro(""); 
@@ -184,7 +184,7 @@ export default function Recepciones() {
             label="Draft"       
             value={stats.draft}       
             sub="en borrador" 
-            accent="#c9c225" 
+            accent="#bf9d40" 
             icon="bi bi-pencil-square" 
             onClick={() => { 
               setFiltroTiempo("todos"); 

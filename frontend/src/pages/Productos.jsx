@@ -267,41 +267,42 @@ export default function Productos() {
         onActualizar={fetchProductos} 
       />
 
-      <div className="flex flex-col xl:flex-row gap-6 mb-8 w-full">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full xl:w-7/12">
-          <Tarjetas 
-            label="Total productos" 
-            value={totalProd} 
-            sub="Registrados" 
-            icon="bi bi-box-seam" 
-            onClick={() => { setFiltro(""); setPaginaActiva(1); }}
-            isActive={filtro === ""}
-          />
-          
-          <Tarjetas 
-            label="Productos Activos" 
-            value={activosProd} 
-            sub={`${activosPorc}% del catálogo`} 
-            accent="#28B463" 
-            icon="bi bi-check-circle" 
-            onClick={() => { setFiltro(filtro === "Activo" ? "" : "Activo"); setPaginaActiva(1); }}
-            isActive={filtro === "Activo"}
-          />
-          
-          <Tarjetas 
-            label="Productos Inactivos" 
-            value={inactivosProd} 
-            sub={`${inactivosPorc}% del catálogo`} 
-            accent="#C0392B" 
-            icon="bi bi-x-circle" 
-            onClick={() => { setFiltro(filtro === "Inactivo" ? "" : "Inactivo"); setPaginaActiva(1); }}
-            isActive={filtro === "Inactivo"}
-          />
-        </div>
+      <div className="flex flex-col lg:flex-row gap-5 mb-7 w-full">
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 w-full lg:w-[calc(58.333%-10px)]">
+    <Tarjetas 
+      label="Total productos" 
+      value={totalProd} 
+      sub="Registrados" 
+      icon="bi bi-box-seam" 
+      onClick={() => { setFiltro(""); setPaginaActiva(1); }}
+      isActive={filtro === ""}
+    />
+    
+    <Tarjetas 
+      label="Productos Activos" 
+      value={activosProd} 
+      sub={`${activosPorc}% del catálogo`} 
+      accent="#28B463" 
+      icon="bi bi-check-circle" 
+      onClick={() => { setFiltro(filtro === "Activo" ? "" : "Activo"); setPaginaActiva(1); }}
+      isActive={filtro === "Activo"}
+    />
+    
+    <Tarjetas 
+      label="Productos Inactivos" 
+      value={inactivosProd} 
+      sub={`${inactivosPorc}% del catálogo`} 
+      accent="#C0392B" 
+      icon="bi bi-x-circle" 
+      onClick={() => { setFiltro(filtro === "Inactivo" ? "" : "Inactivo"); setPaginaActiva(1); }}
+      isActive={filtro === "Inactivo"}
+    />
+  </div>
 
-        <BarraCategorias productosDB={productosDB} />
-      </div>
-
+  <div className="w-full lg:w-[calc(41.666%-10px)]">
+    <BarraCategorias productosDB={productosDB} />
+  </div>
+</div>
       <ToolBar 
         filtro={filtro} 
         setFiltro={setFiltro} 

@@ -121,8 +121,8 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
 
   if (!puedeEditar && !esNuevo) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} ancho="max-w-md" titulo={<span className="text-xl font-bold text-morado dark:text-blanco block m-0">Acceso Denegado</span>}>
-        <div className="p-6 text-center text-gris dark:text-lila-soft">
+      <Modal isOpen={isOpen} onClose={onClose} ancho="max-w-md" titulo={<span className="text-xl font-display font-bold text-[var(--noir)] dark:text-[var(--snow)] block m-0">Acceso Denegado</span>}>
+        <div className="p-6 text-center text-[var(--noir-soft)] dark:text-[var(--ash)]">
           <i className="bi bi-shield-lock text-4xl mb-3 block text-rojo"></i>
           <p>No tienes permisos suficientes para editar perfiles de usuario.</p>
           <Boton className="mt-6 w-full flex justify-center" onClick={onClose}>Entendido</Boton>
@@ -132,7 +132,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
   }
 
   const tituloPersonalizado = (
-    <span className="text-xl font-bold uppercase tracking-widest transition-colors text-morado dark:text-blanco m-0 block">
+    <span className="text-xl font-display font-bold uppercase tracking-widest transition-colors text-[var(--noir)] dark:text-[var(--snow)] m-0 block">
       {esNuevo ? "Crear Usuario" : "Editar Usuario"}
     </span>
   );
@@ -157,10 +157,10 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
         titulo={tituloPersonalizado}
         footer={footerAcciones}
       >
-        <div className="font-poppins pt-2 pb-4">
+        <div className="font-body pt-2 pb-4">
           
           {Object.keys(errores).length > 0 && (
-            <div className="mb-6 px-4 py-3 rounded-xl text-sm font-semibold border bg-rojo/10 text-rojo border-rojo/20 flex items-center">
+            <div className="mb-6 px-4 py-3 rounded-[2px] text-sm lg:text-base font-semibold border bg-rojo/10 text-red-700 dark:text-rojo border-rojo/20 flex items-center">
               <i className="bi bi-exclamation-triangle-fill mr-2"></i>
               Por favor, corrige los errores antes de continuar.
             </div>
@@ -170,11 +170,11 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
             
             {/* Sección: Datos Personales */}
             <div className={`
-              p-5 rounded-xl border transition-colors shadow-sm
-              bg-blanco border-morado/20
-              dark:bg-oscuro/20 dark:border-lila/5 dark:shadow-none
+              p-5 rounded-[2px] border transition-colors shadow-sm
+              bg-[var(--snow)] border-[var(--border-gold-40)]
+              dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
             `}>
-              <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-morado dark:text-lila">
+              <h3 className="text-sm lg:text-base font-tag uppercase flex items-center gap-2 mb-4 text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
                 <i className="bi bi-person-vcard"></i> Datos Personales
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -188,11 +188,11 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
 
             {/* Sección: Credenciales */}
             <div className={`
-              p-5 rounded-xl border transition-colors shadow-sm
-              bg-blanco border-morado/20
-              dark:bg-oscuro/20 dark:border-lila/5 dark:shadow-none
+              p-5 rounded-[2px] border transition-colors shadow-sm
+              bg-[var(--snow)] border-[var(--border-gold-40)]
+              dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
             `}>
-              <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-morado dark:text-lila">
+              <h3 className="text-sm lg:text-base font-tag uppercase flex items-center gap-2 mb-4 text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
                 <i className="bi bi-key"></i> Credenciales de Acceso
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -219,11 +219,11 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
 
             {/* Sección: Permisos */}
             <div className={`
-              p-5 rounded-xl border transition-colors shadow-sm
-              bg-blanco border-morado/20
-              dark:bg-oscuro/20 dark:border-lila/5 dark:shadow-none
+              p-5 rounded-[2px] border transition-colors shadow-sm
+              bg-[var(--snow)] border-[var(--border-gold-40)]
+              dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
             `}>
-              <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-morado dark:text-lila">
+              <h3 className="text-sm lg:text-base font-tag uppercase flex items-center gap-2 mb-4 text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
                 <i className="bi bi-shield-lock"></i> Rol y Estado
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

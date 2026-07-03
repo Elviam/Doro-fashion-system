@@ -155,14 +155,26 @@ export default function Tabla({
   const sortedRows = usandoNuevoSistema ? getSortedRows() : [];
 
   if (!encabezadosProcesados || encabezadosProcesados.length === 0) {
-    return <div className="p-4 text-oscuro dark:text-lila-soft text-center transition-colors duration-300">Tabla sin encabezados</div>;
+    return (
+      <div className="p-4 text-center font-body text-[var(--noir-soft)] dark:text-[var(--ash)]">
+        Tabla sin encabezados
+      </div>
+    );
   }
 
   return (
-    <div className="bg-blanco border-gris/20 text-oscuro dark:text-lila-soft dark:bg-bg-card dark:border-lila/10 rounded-xl shadow-lg overflow-x-auto transition-colors duration-300">
+    <div
+      className="overflow-x-auto rounded-[2px] border transition-colors duration-300
+        bg-[var(--snow)] border-[var(--border-gold-40)] shadow-md
+        dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.25)]"
+    >
       <table className="w-full">
         <thead>
-          <tr className="text-oscuro dark:text-lila-soft border-b border-gris/20 dark:border-lila/10 bg-gris/5 dark:bg-oscuro/50 transition-colors duration-300">
+          <tr
+            className="border-b transition-colors duration-300
+              bg-[var(--ivory-deep)] border-[var(--border-gold-40)]
+              dark:bg-[var(--gold-08)] dark:border-[var(--border-gold-20)]"
+          >
             {encabezadosProcesados.map((header, idx) => {
               const isSortable = usandoNuevoSistema 
                 ? sortableFields.includes(header.key)
@@ -176,9 +188,9 @@ export default function Tabla({
                 <th 
                   key={idx}
                   onClick={() => handleSort(idx, header)}
-                  className={`p-4 text-center text-xs uppercase font-bold tracking-wider text-oscuro dark:text-lila-soft ${
-                    isSortable ? "cursor-pointer hover:text-gray-800 dark:hover:text-lila-mid transition-colors" : ""
-                  }`}
+                  className={`p-4 text-center font-tag text-[11px] lg:text-[13px] font-semibold uppercase tracking-[0.12em] transition-colors duration-300
+                    text-[var(--noir-soft)] dark:text-[var(--gold-light)]
+                    ${isSortable ? "cursor-pointer hover:text-[var(--gold-dark)] dark:hover:text-[var(--gold)]" : ""}`}
                 >
                   <div className="flex items-center justify-center gap-2">
                     {header.label}
@@ -191,14 +203,14 @@ export default function Tabla({
             })}
           </tr>
         </thead>
-        <tbody className="text-oscuro dark:text-lila-soft transition-colors duration-300">
+        <tbody className="font-body text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">
           {usandoNuevoSistema ? (
             // Nuevo sistema: datos + renderRow
             sortedRows.length === 0 ? (
               <tr>
                 <td 
                   colSpan={encabezadosProcesados.length} 
-                  className="text-center py-10 text-sm text-oscuro dark:text-lila-soft"
+                  className="text-center py-10 text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]"
                 >
                   No hay resultados
                 </td>

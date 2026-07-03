@@ -1,22 +1,24 @@
-export default function Tarjetas({ label, value, sub, accent = "#7C6AF7", icon, onClick, isActive }) {
+export default function Tarjetas({ label, value, sub, accent = "#C9A84C", icon, onClick, isActive }) {
   return (
     <div
       onClick={onClick}
-      className={`flex-1 rounded-xl p-6 shadow-lg hover:-translate-y-1 transition-all duration-300 w-full border
-        ${onClick ? "cursor-pointer hover:bg-lila/70 dark:hover:bg-oscuro/30" : ""} 
-        ${isActive ? "bg-lila/70 border-lila-soft shadow-xl shadow-lila-soft/60 text-morado dark:bg-oscuro dark:border-lila/50 dark:shadow-lila/40 dark:text-blanco" : "bg-blanco border-gris/20 text-morado dark:bg-bg-card dark:border-lila/20 dark:text-blanco"}
+      className={`flex-1 rounded-[2px] p-5 shadow-lg hover:-translate-y-1 transition-all duration-300 w-full border font-body
+        ${onClick ? "cursor-pointer hover:bg-[var(--gold-08)] dark:hover:bg-[var(--gold-08)]" : ""} 
+        ${isActive
+          ? "bg-[var(--gold-15)] border-[var(--border-gold-55)] shadow-xl shadow-[var(--gold-15)] text-[var(--noir)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-40)] dark:shadow-[var(--gold-15)] dark:text-[var(--snow)]"
+          : "bg-[var(--snow)] border-[var(--border-gold-20)] text-[var(--noir)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:text-[var(--snow)]"}
       `}
-      style={{ borderLeft: `8px solid ${accent}` }}
+      style={{ borderLeft: `7px solid ${accent}` }}
     >
       {/* Etiqueta e Ícono  */}
       <div className="flex justify-between items-center mb-2">
-        <p className={`m-0 text-sm font-medium uppercase tracking-wider ${isActive ? "text-morado dark:text-lila-soft" : "text-morado dark:text-lila-soft"}`}>
+        <p className="m-0 text-xs lg:text-sm font-tag font-medium uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--gold-light)]">
           {label}
         </p>
         
         {icon && (
           typeof icon === "string" ? (
-            <i className={`${icon} text-xl ${isActive ? "text-morado dark:text-lila-mid" : "text-morado dark:text-lila-mid"}`}></i>
+            <i className={`${icon} text-lg lg:text-xl text-[var(--gold-dark)] dark:text-[var(--gold)]`}></i>
           ) : (
             icon
           )
@@ -24,12 +26,12 @@ export default function Tarjetas({ label, value, sub, accent = "#7C6AF7", icon, 
       </div>
       
       {/* Valor principal */}
-      <p className={`my-2 text-3xl lg:text-4xl font-bold ${isActive ? "text-oscuro dark:text-blanco" : "text-oscuro dark:text-blanco"} tracking-tight`}>
+      <p className="my-1.5 text-3xl lg:text-4xl font-display font-medium text-[var(--noir)] dark:text-[var(--snow)] tracking-tight">
         {value}
       </p>
       
       {/* Subtexto */}
-      <p className={`m-0 text-xs font-medium ${isActive ? "text-gris dark:text-text-muted" : "text-gris dark:text-text-muted"}`}>
+      <p className="m-0 text-sm lg:text-xs font-medium text-[var(--noir-soft)] dark:text-[var(--ash)]">
         {sub}
       </p>
     </div>

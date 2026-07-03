@@ -38,7 +38,7 @@ export default function ModalRecepciones({
   // Header
   const tituloPersonalizado = (
     <div className="flex items-center gap-3">
-      <span className="px-4 py-1.5 rounded-full text-xs font-bold transition-colors bg-morado text-blanco dark:bg-lila/20 dark:text-lila">
+      <span className="px-4 py-1.5 rounded-[2px] text-xs lg:text-sm font-tag uppercase transition-colors bg-[var(--gold-dark)] text-[var(--snow)] dark:bg-[var(--gold-08)] dark:text-[var(--gold-light)]">
         {row.folio}
       </span>
       <Etiquetas contenido={estadoLabel} />
@@ -52,18 +52,18 @@ export default function ModalRecepciones({
       {/* Fechas */}
       <div className="flex gap-6 w-full sm:w-auto">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider transition-colors text-morado dark:text-lila-soft/50">
+          <p className="text-[10px] lg:text-[11px] font-tag font-bold uppercase tracking-wider transition-colors text-[var(--gold-dark)] dark:text-[var(--ash)]">
             Creado
           </p>
-          <p className="text-xs font-semibold text-gris dark:text-lila-mid transition-colors">
+          <p className="text-xs lg:text-sm font-semibold text-[var(--noir-soft)] dark:text-[var(--ash)] transition-colors">
             {formatDate(row.createdAt)}
           </p>
         </div>
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider transition-colors text-morado dark:text-lila-soft/50">
+          <p className="text-[10px] lg:text-[11px] font-tag font-bold uppercase tracking-wider transition-colors text-[var(--gold-dark)] dark:text-[var(--ash)]">
             Editado
           </p>
-          <p className="text-xs font-semibold text-gris dark:text-lila-mid transition-colors">
+          <p className="text-xs lg:text-sm font-semibold text-[var(--noir-soft)] dark:text-[var(--ash)] transition-colors">
             {formatDate(row.updatedAt)}
           </p>
         </div>
@@ -78,7 +78,7 @@ export default function ModalRecepciones({
             onEditar={() => onEditar(row)}
           />
           
-          <div className="hidden sm:block w-px h-8 bg-morado/20 dark:bg-lila/20"></div>
+          <div className="hidden sm:block w-px h-8 bg-[var(--border-gold-40)] dark:bg-[var(--border-gold-20)]"></div>
 
           <Boton 
             variante="oscuro" 
@@ -101,51 +101,51 @@ export default function ModalRecepciones({
       ancho="max-w-2xl"
       footer={footerContenido}
     >
-      <div className="font-poppins pt-2">
+      <div className="font-body pt-2">
         
         {/* Información Principal */}
-        <h2 className="text-xl font-extrabold mb-2 text-oscuro dark:text-blanco">{row.supplierNombre}</h2>
+        <h2 className="text-xl lg:text-2xl font-display font-extrabold mb-2 text-[var(--noir)] dark:text-[var(--snow)]">{row.supplierNombre}</h2>
         
         <div className="flex items-center gap-5">
-          <span className="flex items-center gap-1.5 text-sm transition-colors text-morado/80 dark:text-lila-soft">
-            <Calendar size={13} className="text-morado dark:text-lila-mid" />
+          <span className="flex items-center gap-1.5 text-sm lg:text-base transition-colors text-[var(--noir-soft)] dark:text-[var(--ash)]">
+            <Calendar size={13} className="text-[var(--gold-dark)] dark:text-[var(--gold-light)]" />
             {formatDate(row.fecha)}
           </span>
-          <span className="flex items-center gap-1.5 text-sm transition-colors text-morado/80 dark:text-lila-soft">
-            <User size={13} className="text-morado dark:text-lila-mid" />
+          <span className="flex items-center gap-1.5 text-sm lg:text-base transition-colors text-[var(--noir-soft)] dark:text-[var(--ash)]">
+            <User size={13} className="text-[var(--gold-dark)] dark:text-[var(--gold-light)]" />
             {row.createdBy || "—"}
           </span>
         </div>
         
         {row.comentarios && (
-          <p className="mt-4 text-sm text-gris dark:text-lila-soft transition-colors italic border-l-4 border-morado/20 pl-3">
+          <p className="mt-4 text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)] transition-colors italic border-l-4 border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] pl-3">
             "{row.comentarios}"
           </p>
         )}
 
         {/* Resumen */}
         <div className={`
-          mt-6 mb-6 rounded-xl overflow-hidden border transition-colors shadow-sm
-          bg-blanco border-morado/20
-          dark:bg-oscuro/40 dark:border-lila/20 dark:shadow-none
+          mt-6 mb-6 rounded-[2px] overflow-hidden border transition-colors shadow-sm
+          bg-[var(--snow)] border-[var(--border-gold-40)]
+          dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)] dark:shadow-none
         `}>
           <div className="grid grid-cols-3">
             {[
-              { label: "Items distintos",  value: row.items.length, color: "text-oscuro dark:text-blanco" },
-              { label: "Unidades totales", value: unidadesTotales,  color: "text-oscuro dark:text-blanco" },
-              { label: "Total",            value: formatMoney(row.total), color: "text-verde font-extrabold" },
+              { label: "Items distintos",  value: row.items.length, color: "text-[var(--noir)] dark:text-[var(--snow)]" },
+              { label: "Unidades totales", value: unidadesTotales,  color: "text-[var(--noir)] dark:text-[var(--snow)]" },
+              { label: "Total",            value: formatMoney(row.total), color: "text-green-700 dark:text-verde font-extrabold" },
             ].map((stat, i) => (
               <div 
                 key={i} 
                 className={`
                   px-4 py-3 text-center 
-                  ${i < 2 ? 'border-r border-morado/10 dark:border-lila/10' : ''}
+                  ${i < 2 ? 'border-r border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)]' : ''}
                 `}
               >
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1 transition-colors text-morado dark:text-lila-soft/50">
+                <p className="text-[10px] lg:text-[11px] font-tag font-bold uppercase tracking-wider mb-1 transition-colors text-[var(--gold-dark)] dark:text-[var(--ash)]">
                   {stat.label}
                 </p>
-                <p className={`text-xl md:text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                <p className={`text-xl md:text-2xl lg:text-3xl font-bold ${stat.color}`}>{stat.value}</p>
               </div>
             ))}
           </div>
@@ -153,7 +153,7 @@ export default function ModalRecepciones({
 
         {/* Lista de Items */}
         <div className="mb-2">
-          <p className="text-xs font-bold uppercase tracking-widest mb-3 transition-colors text-morado dark:text-lila-soft/50">
+          <p className="text-xs lg:text-sm font-tag font-bold uppercase tracking-widest mb-3 transition-colors text-[var(--gold-dark)] dark:text-[var(--ash)]">
             Detalles de Items
           </p>
           <div className="flex flex-col gap-3">
@@ -161,15 +161,15 @@ export default function ModalRecepciones({
               <div 
                 key={i} 
                 className={`
-                  flex flex-wrap md:flex-nowrap items-center gap-4 rounded-xl px-4 py-3 border transition-colors shadow-sm
-                  bg-blanco border-morado/20
-                  dark:bg-oscuro/40 dark:border-lila/20 dark:shadow-none
+                  flex flex-wrap md:flex-nowrap items-center gap-4 rounded-[2px] px-4 py-3 border transition-colors shadow-sm
+                  bg-[var(--snow)] border-[var(--border-gold-40)]
+                  dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)] dark:shadow-none
                 `}
               >
                 <div className={`
-                  w-11 h-11 rounded-xl flex items-center justify-center shrink-0 overflow-hidden border transition-colors
-                  bg-lila/10 border-morado/20 text-morado
-                  dark:bg-lila/5 dark:border-lila/20 dark:text-lila-mid
+                  w-11 h-11 rounded-[2px] flex items-center justify-center shrink-0 overflow-hidden border transition-colors
+                  bg-[var(--gold-08)] border-[var(--border-gold-40)] text-[var(--gold-dark)]
+                  dark:bg-[var(--gold-08)] dark:border-[var(--border-gold-20)] dark:text-[var(--ash)]
                 `}>
                   {item.imagen
                     ? <img src={item.imagen} alt={item.productNombre} className="w-full h-full object-cover" />
@@ -177,15 +177,15 @@ export default function ModalRecepciones({
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate text-oscuro dark:text-blanco">{item.sku}</p>
-                  <p className="text-xs text-gris dark:text-lila-soft transition-colors truncate">
+                  <p className="text-sm lg:text-base font-bold truncate text-[var(--noir)] dark:text-[var(--snow)]">{item.sku}</p>
+                  <p className="text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)] transition-colors truncate">
                     {item.productNombre}
                   </p>
                   {item.talla && (
                     <span className={`
-                      inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold border transition-colors
-                      bg-morado/10 text-morado border-morado/20
-                      dark:bg-lila/10 dark:text-lila dark:border-lila/20
+                      inline-block mt-1 px-2 py-0.5 rounded-[2px] text-[10px] lg:text-[11px] font-bold border transition-colors
+                      bg-[var(--gold-08)] text-[var(--gold-dark)] border-[var(--border-gold-40)]
+                      dark:bg-[var(--gold-08)] dark:text-[var(--gold-light)] dark:border-[var(--border-gold-20)]
                     `}>
                       Talla {item.talla}
                     </span>
@@ -199,10 +199,10 @@ export default function ModalRecepciones({
                     { label: "Subtotal",  value: formatMoney(item.subtotal) },
                   ].map((col) => (
                     <div key={col.label} className="text-center md:text-right">
-                      <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5 transition-colors text-morado dark:text-lila-soft/50">
+                      <p className="text-[10px] lg:text-[11px] font-tag font-bold uppercase tracking-wider mb-0.5 transition-colors text-[var(--gold-dark)] dark:text-[var(--ash)]">
                         {col.label}
                       </p>
-                      <p className="text-sm font-bold opacity-90 text-oscuro dark:text-blanco">{col.value}</p>
+                      <p className="text-sm lg:text-base font-bold opacity-90 text-[var(--noir)] dark:text-[var(--snow)]">{col.value}</p>
                     </div>
                   ))}
                 </div>

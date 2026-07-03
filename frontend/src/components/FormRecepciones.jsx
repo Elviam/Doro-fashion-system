@@ -203,10 +203,10 @@ export default function FormRecepciones({ row, esNuevo, onClose, onGuardar }) {
         onClose={handleIntentarCerrar}
         titulo={
           <div className="flex items-center gap-3">
-            <span className="px-4 py-1.5 rounded-full text-xs font-bold transition-colors bg-morado text-blanco dark:bg-lila/20 dark:text-lila">
+            <span className="px-4 py-1.5 rounded-[2px] text-xs lg:text-sm font-tag uppercase transition-colors bg-[var(--gold-dark)] text-[var(--snow)] dark:bg-[var(--gold-08)] dark:text-[var(--gold-light)]">
               {esNuevo ? "NUEVO" : form.folio}
             </span>
-            <span className="text-xl font-extrabold m-0">
+            <span className="text-xl font-display font-extrabold m-0 text-[var(--noir)] dark:text-[var(--snow)]">
               {esNuevo ? "Nueva Recepción" : "Editar Recepción"}
             </span>
           </div>
@@ -214,10 +214,10 @@ export default function FormRecepciones({ row, esNuevo, onClose, onGuardar }) {
         ancho="max-w-3xl"
         footer={footerAcciones}
       >
-        <div className="font-poppins pt-4">
+        <div className="font-body pt-4">
 
           {error && (
-            <div className="mb-6 px-4 py-3 rounded-xl text-sm font-semibold border bg-rojo/10 text-rojo border-rojo/20">
+            <div className="mb-6 px-4 py-3 rounded-[2px] text-sm lg:text-base font-semibold border bg-rojo/10 text-red-700 dark:text-rojo border-rojo/20">
               <i className="bi bi-exclamation-triangle-fill mr-2" />{error}
             </div>
           )}
@@ -232,10 +232,10 @@ export default function FormRecepciones({ row, esNuevo, onClose, onGuardar }) {
 
             {/* Folio automático en modo lectura */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-morado dark:text-lila-soft mb-1">
+              <label className="block text-[11px] lg:text-xs font-tag uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)] mb-1">
                 Folio
               </label>
-              <div className="w-full rounded-xl px-4 py-2.5 text-sm font-bold border transition-colors bg-lila/5 border-morado/10 text-morado/60 dark:bg-lila/5 dark:border-lila/10 dark:text-lila/50">
+              <div className="w-full rounded-[2px] px-4 py-2.5 text-sm lg:text-base font-bold border transition-colors bg-[var(--gold-08)] border-[var(--border-gold-25)] text-[var(--noir-soft)] dark:bg-[var(--gold-08)] dark:border-[var(--border-gold-20)] dark:text-[var(--ash)]">
                 {esNuevo ? (folioSiguiente || "Cargando...") : form.folio}
               </div>
             </div>
@@ -259,24 +259,24 @@ export default function FormRecepciones({ row, esNuevo, onClose, onGuardar }) {
             </div>
 
             <div className="md:col-span-2">
-              <div className="w-full rounded-xl px-4 py-3 text-center border transition-colors shadow-sm bg-blanco border-morado/20 dark:bg-oscuro/40 dark:border-lila/20 dark:shadow-none">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-morado dark:text-lila-mid mb-1">
+              <div className="w-full rounded-[2px] px-4 py-3 text-center border transition-colors shadow-sm bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)] dark:shadow-none">
+                <p className="text-[11px] lg:text-xs font-tag uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)] mb-1">
                   Total calculado
                 </p>
-                <p className="text-2xl font-extrabold text-verde">{formatMoney(totalCalculado)}</p>
+                <p className="text-2xl lg:text-3xl font-display font-extrabold text-green-700 dark:text-verde">{formatMoney(totalCalculado)}</p>
               </div>
             </div>
           </div>
 
           {/* Items */}
           <div>
-            <div className="flex items-center justify-between mb-4 border-b border-morado/10 dark:border-lila/10 pb-2">
-              <p className="text-sm font-bold uppercase tracking-wider text-morado dark:text-lila">
+            <div className="flex items-center justify-between mb-4 border-b border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)] pb-2">
+              <p className="text-sm lg:text-base font-tag uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
                 Items de Recepción
               </p>
               <button
                 onClick={agregarItem} type="button"
-                className="px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 bg-morado/10 text-morado hover:bg-morado/20 dark:bg-lila/20 dark:text-lila dark:hover:bg-lila/30"
+                className="px-4 py-1.5 rounded-[2px] text-xs lg:text-sm font-bold transition-all cursor-pointer flex items-center gap-1 bg-[var(--gold-08)] text-[var(--gold-dark)] hover:bg-[var(--gold-08)] dark:bg-[var(--gold-08)] dark:text-[var(--gold-light)] dark:hover:bg-[var(--gold-08)]"
               >
                 <i className="bi bi-plus-lg" /> Agregar item
               </button>
@@ -290,23 +290,23 @@ export default function FormRecepciones({ row, esNuevo, onClose, onGuardar }) {
                 return (
                   <div
                     key={i}
-                    className="rounded-xl px-4 py-4 border transition-colors shadow-sm bg-blanco border-morado/20 dark:bg-oscuro/40 dark:border-lila/20 dark:shadow-none"
+                    className="rounded-[2px] px-4 py-4 border transition-colors shadow-sm bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)] dark:shadow-none"
                   >
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 overflow-hidden border transition-colors bg-lila/10 border-morado/20 text-morado dark:bg-lila/5 dark:border-lila/20 dark:text-lila-mid">
+                        <div className="w-10 h-10 rounded-[2px] flex items-center justify-center shrink-0 overflow-hidden border transition-colors bg-[var(--gold-08)] border-[var(--border-gold-40)] text-[var(--gold-dark)] dark:bg-[var(--gold-08)] dark:border-[var(--border-gold-20)] dark:text-[var(--ash)]">
                           {item.imagen
                             ? <img src={item.imagen} alt={item.productNombre} className="w-full h-full object-cover" />
                             : <Package size={18} />}
                         </div>
-                        <span className="text-sm font-bold transition-colors text-morado dark:text-lila">
+                        <span className="text-sm lg:text-base font-bold transition-colors text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
                           Item {i + 1}
                         </span>
                       </div>
                       {form.items.length > 1 && (
                         <button
                           onClick={() => eliminarItem(i)}
-                          className="text-sm transition-opacity opacity-70 hover:opacity-100 cursor-pointer text-rojo"
+                          className="text-sm lg:text-base transition-opacity opacity-70 hover:opacity-100 cursor-pointer text-rojo"
                         >
                           <i className="bi bi-trash" /> Eliminar
                         </button>
@@ -324,16 +324,16 @@ export default function FormRecepciones({ row, esNuevo, onClose, onGuardar }) {
 
                     {tallas.length > 0 && (
                       <div className="mb-4">
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-morado dark:text-lila-soft mb-2">Talla</p>
+                        <p className="text-[11px] lg:text-xs font-tag uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)] mb-2">Talla</p>
                         <div className="flex flex-wrap gap-2">
                           {tallas.map((t) => (
                             <button
                               key={t} type="button"
                               onClick={() => handleTallaChange(i, t)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all
+                              className={`px-3 py-1.5 rounded-[2px] text-xs lg:text-sm font-bold border-2 transition-all
                                 ${item.talla === t
-                                  ? "bg-morado text-blanco border-morado dark:bg-lila dark:border-lila dark:text-oscuro"
-                                  : "border-morado/20 text-morado dark:border-lila/20 dark:text-lila hover:border-morado dark:hover:border-lila"
+                                  ? "bg-[var(--gold-dark)] text-[var(--snow)] border-[var(--gold-dark)] dark:bg-[var(--gold-light)] dark:border-[var(--gold-light)] dark:text-[var(--noir)]"
+                                  : "border-[var(--border-gold-40)] text-[var(--gold-dark)] dark:border-[var(--border-gold-20)] dark:text-[var(--gold-light)] hover:border-[var(--gold-dark)] dark:hover:border-[var(--gold-light)]"
                                 }`}
                             >
                               {t}
@@ -353,7 +353,7 @@ export default function FormRecepciones({ row, esNuevo, onClose, onGuardar }) {
               })}
 
               {form.items.length === 0 && (
-                <div className="text-center py-8 text-gris dark:text-lila-soft italic text-sm border-2 border-dashed border-morado/20 dark:border-lila/20 rounded-xl">
+                <div className="text-center py-8 text-[var(--noir-soft)] dark:text-[var(--ash)] italic text-sm lg:text-base border-2 border-dashed border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] rounded-[2px]">
                   {form.supplierId
                     ? 'No hay items. Haz clic en "Agregar item" para empezar.'
                     : "Selecciona un proveedor para poder agregar items."}

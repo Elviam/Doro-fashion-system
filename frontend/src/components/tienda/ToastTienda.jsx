@@ -1,26 +1,24 @@
 import { useEffect } from "react";
 
+// Semantic color config per toast type
 const config = {
   error: {
     iconClass:   "bi bi-bag-x",
-    borderColor: "border-rojo/40",
-    iconBorder:  "border-rojo",
-    iconColor:   "text-rojo",
-    titleColor:  "text-rojo",
+    borderColor: "rgba(244,63,94,0.4)",
+    iconColor:   "#F43F5E",
+    titleColor:  "#F43F5E",
   },
   exito: {
     iconClass:   "bi bi-bag-check",
-    borderColor: "border-verde/40",
-    iconBorder:  "border-verde",
-    iconColor:   "text-verde",
-    titleColor:  "text-verde",
+    borderColor: "rgba(74,222,128,0.4)",
+    iconColor:   "#4ADE80",
+    titleColor:  "#4ADE80",
   },
   aviso: {
     iconClass:   "bi bi-exclamation",
-    borderColor: "border-lila/40",
-    iconBorder:  "border-lila",
-    iconColor:   "text-lila",
-    titleColor:  "text-lila",
+    borderColor: "var(--border-gold-40)",
+    iconColor:   "var(--gold)",
+    titleColor:  "var(--gold)",
   },
 };
 
@@ -38,46 +36,98 @@ export default function ToastTienda({ toast, onCerrar }) {
   return (
     <div className="fixed bottom-6 right-6 z-[80] animate-fade-in-up">
       <div
-        className={`relative w-72 bg-oscuro/95 border shadow-2xl backdrop-blur-sm p-6 ${estilos.borderColor}`}
+        className="relative w-72 p-6"
+        style={{
+          background:   "rgba(13,13,13,0.96)",
+          border:       `1px solid ${estilos.borderColor}`,
+          borderRadius: "2px",
+          backdropFilter: "blur(12px)",
+          boxShadow:    "0 20px 60px rgba(13,13,13,0.5)",
+        }}
       >
-        {/* Botón cerrar */}
+        {/* Close button */}
         <button
           onClick={onCerrar}
-          className="absolute right-4 top-4 text-lila/50 hover:text-lila transition text-sm"
+          className="absolute right-4 top-4 transition"
+          style={{ color: "var(--ash)", background: "none", border: "none", cursor: "pointer", lineHeight: 1 }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--snow)")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--ash)")}
         >
-          <i className="bi bi-x-lg" />
+          <i className="bi bi-x-lg text-sm" />
         </button>
 
-        {/* Ícono */}
-        <div className={`w-10 h-10 rounded-full border flex items-center justify-center mb-3 ${estilos.iconBorder} ${estilos.iconColor}`}>
+        {/* Icon */}
+        <div
+          className="w-10 h-10 rounded-[2px] flex items-center justify-center mb-3"
+          style={{ border: `1px solid ${estilos.borderColor}`, color: estilos.iconColor }}
+        >
           <i className={`${estilos.iconClass} text-lg`} />
         </div>
 
-        {/* Título */}
-        <h3 className={`font-poppins text-sm tracking-widest uppercase border-b pb-3 mb-3 leading-snug ${estilos.borderColor} ${estilos.titleColor}`}>
+        {/* Title */}
+        <h3
+          className="pb-3 mb-3"
+          style={{
+            fontFamily:    "var(--font-tag)",
+            fontSize:      "10px",
+            fontWeight:    600,
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+            color:         estilos.titleColor,
+            borderBottom:  `1px solid ${estilos.borderColor}`,
+            margin:        0,
+            paddingBottom: "12px",
+            marginBottom:  "12px",
+          }}
+        >
           {toast.titulo}
         </h3>
 
-        {/* Mensaje */}
+        {/* Message */}
         {toast.mensaje && (
-          <p className="font-poppins text-xs text-lila/70 leading-relaxed">
+          <p style={{ fontFamily: "var(--font-body)", fontSize: "12px", color: "var(--ash)", lineHeight: 1.6, margin: 0 }}>
             {toast.mensaje}
           </p>
         )}
 
-        {/* Botón de acción */}
+        {/* Action button */}
         {toast.accion && (
           <button
             onClick={() => { toast.accion.onClick(); onCerrar(); }}
-            className={`mt-4 text-xs font-bold tracking-widest uppercase border px-4 py-1.5 transition hover:bg-lila/10 ${estilos.borderColor} ${estilos.titleColor}`}
+            className="mt-4 transition"
+            style={{
+              fontFamily:    "var(--font-tag)",
+              fontSize:      "9px",
+              fontWeight:    600,
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              padding:       "6px 14px",
+              background:    "transparent",
+              color:         estilos.titleColor,
+              border:        `1px solid ${estilos.borderColor}`,
+              borderRadius:  "2px",
+              cursor:        "pointer",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--gold-08)")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
           >
             {toast.accion.label}
           </button>
         )}
 
-        {/* Firma */}
-        <div className="mt-5 font-cinzel tracking-widest text-base text-lila/60">
-          A U R A
+        {/* D'oro wordmark */}
+        <div
+          className="mt-5"
+          style={{
+            fontFamily:    "var(--font-display)",
+            fontSize:      "14px",
+            fontWeight:    300,
+            letterSpacing: "0.22em",
+            color:         "rgba(214,171,52,0.35)",
+            userSelect:    "none",
+          }}
+        >
+          D<span style={{ fontStyle: "italic" }}>'</span>ORO
         </div>
       </div>
     </div>

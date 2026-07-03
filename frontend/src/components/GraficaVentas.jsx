@@ -18,14 +18,14 @@ export default function GraficaVentas({ data }) {
         <defs>
           {/* Gradiente Modo Claro */}
           <linearGradient id="vg-light" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#56538E" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="#56538E" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--gold-dark)" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="var(--gold-dark)" stopOpacity="0" />
           </linearGradient>
           
           {/* Gradiente Modo Oscuro */}
           <linearGradient id="vg-dark" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#E7D6FF" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#E7D6FF" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--gold-light)" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="var(--gold-light)" stopOpacity="0" />
           </linearGradient>
         </defs>
 
@@ -36,12 +36,12 @@ export default function GraficaVentas({ data }) {
               x1={pad.l} y1={y(t)} x2={W - pad.r} y2={y(t)} 
               stroke="currentColor" 
               strokeDasharray="2 4" 
-              className="text-morado/10 dark:text-lila/10" 
+              className="text-[var(--border-gold-25)] dark:text-[var(--border-gold-20)]" 
             />
             <text 
               x={pad.l - 8} y={y(t) + 4} textAnchor="end" fontSize="10" 
               fill="currentColor"
-              className="text-morado/50 dark:text-lila-soft/50"
+              className="font-tag text-[var(--noir-soft)] dark:text-[var(--ash)]"
             >
               {t >= 1000 ? `${(t / 1000).toFixed(0)}k` : t}
             </text>
@@ -53,7 +53,7 @@ export default function GraficaVentas({ data }) {
           <text 
             key={i} x={pad.l + i * xStep} y={H - 6} textAnchor="middle" fontSize="10" 
             fill="currentColor"
-            className="text-morado/50 dark:text-lila-soft/50"
+            className="font-tag text-[var(--noir-soft)] dark:text-[var(--ash)]"
           >
             {d.label}
           </text>
@@ -62,17 +62,17 @@ export default function GraficaVentas({ data }) {
         {/* --- DIBUJO MODO CLARO --- */}
         <g className="dark:hidden">
           <path d={area} fill="url(#vg-light)" />
-          <path d={linea} fill="none" stroke="#56538E" strokeWidth="2.5" />
-          <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="7" fill="#56538E" opacity="0.2" />
-          <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="4" fill="#56538E" />
+          <path d={linea} fill="none" stroke="var(--gold-dark)" strokeWidth="2.5" />
+          <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="7" fill="var(--gold-dark)" opacity="0.2" />
+          <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="4" fill="var(--gold-dark)" />
         </g>
 
         {/* --- DIBUJO MODO OSCURO --- */}
         <g className="hidden dark:block">
           <path d={area} fill="url(#vg-dark)" />
-          <path d={linea} fill="none" stroke="#E7D6FF" strokeWidth="2.5" />
-          <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="7" fill="#E7D6FF" opacity="0.2" />
-          <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="4" fill="#E7D6FF" />
+          <path d={linea} fill="none" stroke="var(--gold-light)" strokeWidth="2.5" />
+          <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="7" fill="var(--gold-light)" opacity="0.2" />
+          <circle cx={pts[pts.length - 1][0]} cy={pts[pts.length - 1][1]} r="4" fill="var(--gold-light)" />
         </g>
       </svg>
       </div>

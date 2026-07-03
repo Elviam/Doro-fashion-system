@@ -19,7 +19,7 @@ export default function BarraCategorias({ productosDB }) {
 
   const accesoriosPorc = totalProd > 0 ? Math.max(0, 100 - (superioresPorc + inferioresPorc + calzadoPorc)) : 0;
 
-  const tooltipBaseClasses = "absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-lila text-oscuro-card dark:bg-oscuro dark:text-blanco text-xs px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl z-50 pointer-events-none";
+  const tooltipBaseClasses = "absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-[var(--gold-light)] text-[var(--noir)] dark:bg-[var(--noir)] dark:text-[var(--snow)] text-xs px-2.5 py-1 rounded-[2px] whitespace-nowrap shadow-xl z-50 pointer-events-none";
   
   const segmentos = [
     { width: superioresPorc, color: "bg-azul", label: `Superiores: ${superioresCant} (${superioresPorc}%)` },
@@ -29,19 +29,17 @@ export default function BarraCategorias({ productosDB }) {
   ];
 
   return (
-    <div className="bg-blanco rounded-xl p-6 border border-morado/10 shadow-lg relative w-full xl:w-5/12 text-oscuro flex flex-col justify-center transition-colors duration-300 dark:bg-bg-card dark:text-white dark:border-lila/10">
-      <p className="m-0 text-sm text-morado dark:text-lila-soft uppercase tracking-wide">Productos por Categoría</p>
+    <div className="bg-[var(--snow)] rounded-[2px] p-5 border border-[var(--border-gold-40)] shadow-lg relative w-full text-[var(--noir)] flex flex-col justify-center transition-colors duration-300 dark:bg-[var(--noir-soft)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)]">
+      <p className="m-0 text-xs lg:text-sm font-tag text-[var(--gold-dark)] dark:text-[var(--gold-light)] uppercase tracking-wide">Productos por Categoría</p>
       
       {/* Barra de colores */}
-      <div className="flex h-7 mt-5 w-full overflow-visible font-medium text-white rounded-md">
+      <div className="flex h-6 mt-4 w-full overflow-visible font-medium text-white rounded-[2px]">
         {segmentos.map((segment, idx) => (
           segment.width > 0 && (
             <div 
               key={idx} 
               style={{ width: `${segment.width}%` }} 
-              className={`${segment.color} group relative cursor-help transition-all duration-300 hover:opacity-80 
-                ${idx === 0 ? 'rounded-l-md' : ''} 
-                ${idx === segmentos.length - 1 ? 'rounded-r-md' : ''}`}
+              className={`${segment.color} group relative cursor-help transition-all duration-300 hover:opacity-80`}
             >
               <span className={tooltipBaseClasses}>{segment.label}</span>
             </div>
@@ -50,7 +48,7 @@ export default function BarraCategorias({ productosDB }) {
       </div>
 
       {/* Porcentajes inferiores */}
-      <div className="flex justify-between text-xs text-gris mt-3 font-medium transition-colors duration-300 dark:text-text-muted">
+      <div className="flex justify-between text-[11px] lg:text-xs text-[var(--noir-soft)] mt-2.5 font-medium transition-colors duration-300 dark:text-[var(--ash)]">
         {segmentos.map((segment, idx) => (
           segment.width > 0 && (
             <span key={idx} style={{ width: `${segment.width}%` }} className="text-center truncate px-1">

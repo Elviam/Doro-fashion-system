@@ -62,7 +62,7 @@ export default function FormRoles({ rolData, onGuardar, onClose, isOpen = true }
 
   // Header
   const tituloPersonalizado = (
-    <span className="text-xl font-bold uppercase tracking-widest transition-colors text-morado dark:text-blanco m-0 block">
+    <span className="text-xl font-display font-bold uppercase tracking-widest transition-colors text-[var(--noir)] dark:text-[var(--snow)] m-0 block">
       {esNuevo ? "Crear Nuevo Rol" : "Editar Rol"}
     </span>
   );
@@ -88,10 +88,10 @@ export default function FormRoles({ rolData, onGuardar, onClose, isOpen = true }
         titulo={tituloPersonalizado}
         footer={footerAcciones}
       >
-        <div className="font-poppins pt-2 pb-4">
+        <div className="font-body pt-2 pb-4">
           <form className="flex flex-col gap-6">
-            <div className={`p-5 rounded-xl border transition-colors shadow-sm bg-blanco border-morado/20 dark:bg-oscuro/20 dark:border-lila/5 dark:shadow-none`}>
-              <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-morado dark:text-lila">
+            <div className={`p-5 rounded-[2px] border transition-colors shadow-sm bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none`}>
+              <h3 className="text-sm lg:text-base font-tag uppercase flex items-center gap-2 mb-4 text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
                 <i className="bi bi-card-heading"></i> Datos del Rol
               </h3>
               <div className="flex flex-col gap-4">

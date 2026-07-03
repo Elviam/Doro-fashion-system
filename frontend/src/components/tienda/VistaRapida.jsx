@@ -109,7 +109,7 @@ export default function VistaRapida({ producto, onCerrar, onAgregarAlCarrito }) 
         {/* Información */}
         <div className="p-6 md:p-8 flex flex-col">
           <p className="text-[11px] tracking-[3px] text-lila-mid uppercase font-bold">
-            AURA · {producto.categoria} · {producto.departamento}
+            D'ORO · {producto.categoria} · {producto.departamento}
           </p>
           <h2 className="mt-1 text-2xl md:text-3xl font-extrabold text-blanco leading-tight">
             {producto.nombre}

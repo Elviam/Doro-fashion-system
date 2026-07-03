@@ -55,7 +55,7 @@ export default function ModalResetPassword({ onClose, onUserSubmitted }) {
       />
       
       <dialog id="reset_password_usuario_modal" className="modal">
-        <div className="modal-box bg-oscuro/60 backdrop-blur-md border border-lila/30 text-lila p-8 sm:p-10 max-w-lg rounded-none shadow-2xl">
+        <div className="modal-box bg-[var(--noir)]/60 backdrop-blur-md border border-[var(--border-gold-40)] text-[var(--gold-light)] p-8 sm:p-10 max-w-lg rounded-[2px] shadow-2xl">
           <form method="dialog">
             <button 
               type="button"
@@ -66,18 +66,18 @@ export default function ModalResetPassword({ onClose, onUserSubmitted }) {
           </form>
 
           <div className="mb-8">
-            <div className="w-14 h-14 rounded-full border border-lila flex items-center justify-center">
+            <div className="w-14 h-14 rounded-full border border-[var(--gold)] flex items-center justify-center">
               <i className="bi bi-key text-2xl"></i>
             </div>
           </div>
 
-          <h3 className="font-poppins text-2xl tracking-widest border-b border-lila/30 pb-4 mb-8 leading-snug">
+          <h3 className="font-display text-2xl lg:text-3xl tracking-widest border-b border-[var(--border-gold-40)] pb-4 mb-8 leading-snug">
             RECUPERAR <br/> CONTRASEÑA
           </h3>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="flex flex-col gap-2">
-              <label htmlFor="usuario" className="text-sm font-poppins text-lila-mid">
+              <label htmlFor="usuario" className="text-sm lg:text-base font-tag uppercase text-[var(--ash)]">
                 Ingresa tu usuario
               </label>
               <input
@@ -87,14 +87,14 @@ export default function ModalResetPassword({ onClose, onUserSubmitted }) {
                 onChange={(e) => setUsuario(e.target.value)}
                 placeholder="tu_usuario"
                 disabled={loading}
-                className="w-full bg-oscuro text-lila border border-lila/30 rounded-lg px-4 py-2.5 text-sm font-poppins outline-none placeholder-lila/20 focus:border-lila/60 focus:ring-1 focus:ring-lila/15 transition-all"
+                className="w-full bg-[var(--noir)] text-[var(--gold-light)] border border-[var(--border-gold-40)] rounded-[2px] px-4 py-2.5 text-sm lg:text-base font-body outline-none placeholder-[var(--gold)]/30 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--border-gold-20)] transition-all"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-lila text-oscuro font-bold text-sm rounded-lg py-2.5 hover:bg-lila-soft transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              className="w-full bg-[var(--gold)] text-[var(--noir)] font-bold text-sm lg:text-base rounded-[2px] py-2.5 hover:bg-[var(--gold-light)] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
               {loading ? (
                 <><i className="bi bi-arrow-repeat animate-spin" />Verificando...</>
               ) : (
@@ -103,7 +103,7 @@ export default function ModalResetPassword({ onClose, onUserSubmitted }) {
             </button>
           </form>
 
-          <p className="text-xs text-text-muted text-center mt-6">
+          <p className="text-xs lg:text-sm text-[var(--ash)] text-center mt-6">
             Recibirás un código en tu correo electrónico
           </p>
         </div>

@@ -1,20 +1,20 @@
 export default function AccionesTabla({ onVer, onEditar, onEliminar, onPermisos }) {
   return (
-    <div className="flex items-center justify-center gap-3">
+    <div className="flex items-center justify-center gap-3 lg:gap-4">
 
       {/* Botón Ver */}
       {onVer && (
         <button
           onClick={onVer}
-          className="relative group bg-transparent border-none cursor-pointer text-md outline-none transition-all
+          className="relative group bg-transparent border-none cursor-pointer text-lg lg:text-xl outline-none transition-all
             opacity-70 hover:opacity-100
-            text-lila-mid hover:text-verde
-            dark:text-lila-soft dark:hover:text-verde"
+            text-[var(--noir-soft)] hover:text-verde
+            dark:text-[var(--snow)] dark:hover:text-verde"
         >
           <i className="bi bi-eye inline-block transition-transform group-hover:scale-125"></i>
-          <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-poppins px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl z-50 pointer-events-none
-            bg-oscuro text-blanco
-            dark:bg-oscuro dark:text-blanco">
+          <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs lg:text-sm font-body px-3 py-1.5 rounded-[2px] whitespace-nowrap shadow-xl z-50 pointer-events-none
+            bg-[var(--noir)] text-[var(--snow)]
+            dark:bg-[var(--noir-soft)] dark:text-[var(--snow)] dark:border dark:border-[var(--border-gold-20)]">
             Ver Detalles
           </span>
         </button>
@@ -24,15 +24,15 @@ export default function AccionesTabla({ onVer, onEditar, onEliminar, onPermisos 
       {onPermisos && (
         <button
           onClick={onPermisos}
-          className="relative group bg-transparent border-none cursor-pointer text-md outline-none transition-all
+          className="relative group bg-transparent border-none cursor-pointer text-lg lg:text-xl outline-none transition-all
             opacity-70 hover:opacity-100
-            text-lila-mid hover:text-azul
-            dark:text-lila-soft dark:hover:text-azul"
+            text-[var(--noir-soft)] hover:text-azul
+            dark:text-[var(--snow)] dark:hover:text-azul"
         >
           <i className="bi bi-shield-lock inline-block transition-transform group-hover:scale-125"></i>
-          <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-poppins px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl z-50 pointer-events-none
-            bg-oscuro text-blanco
-            dark:bg-oscuro dark:text-blanco">
+          <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs lg:text-sm font-body px-3 py-1.5 rounded-[2px] whitespace-nowrap shadow-xl z-50 pointer-events-none
+            bg-[var(--noir)] text-[var(--snow)]
+            dark:bg-[var(--noir-soft)] dark:text-[var(--snow)] dark:border dark:border-[var(--border-gold-20)]">
             Gestionar Permisos
           </span>
         </button>
@@ -42,15 +42,15 @@ export default function AccionesTabla({ onVer, onEditar, onEliminar, onPermisos 
       {onEditar && (
         <button
           onClick={onEditar}
-          className="relative group bg-transparent border-none cursor-pointer text-md outline-none transition-all
+          className="relative group bg-transparent border-none cursor-pointer text-lg lg:text-xl outline-none transition-all
             opacity-70 hover:opacity-100
-            text-lila-mid hover:text-amarillo
-            dark:text-lila-soft dark:hover:text-amarillo"
+            text-[var(--noir-soft)] hover:text-[var(--gold-dark)]
+            dark:text-[var(--snow)] dark:hover:text-[var(--gold-light)]"
         >
           <i className="bi bi-pencil inline-block transition-transform group-hover:scale-125"></i>
-          <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-poppins px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl z-50 pointer-events-none
-            bg-oscuro text-blanco
-            dark:bg-oscuro dark:text-blanco">
+          <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs lg:text-sm font-body px-3 py-1.5 rounded-[2px] whitespace-nowrap shadow-xl z-50 pointer-events-none
+            bg-[var(--noir)] text-[var(--snow)]
+            dark:bg-[var(--noir-soft)] dark:text-[var(--snow)] dark:border dark:border-[var(--border-gold-20)]">
             Editar
           </span>
         </button>
@@ -60,15 +60,15 @@ export default function AccionesTabla({ onVer, onEditar, onEliminar, onPermisos 
       {onEliminar && (
         <button
           onClick={onEliminar}
-          className="relative group bg-transparent border-none cursor-pointer text-md outline-none transition-all
+          className="relative group bg-transparent border-none cursor-pointer text-lg lg:text-xl outline-none transition-all
             opacity-70 hover:opacity-100
-            text-lila-mid hover:text-rojo
-            dark:text-lila-soft dark:hover:text-rojo"
+            text-[var(--noir-soft)] hover:text-rojo
+            dark:text-[var(--snow)] dark:hover:text-rojo"
         >
           <i className="bi bi-trash inline-block transition-transform group-hover:scale-125"></i>
-          <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-poppins px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl z-50 pointer-events-none
-            bg-oscuro text-blanco
-            dark:bg-oscuro dark:text-blanco">
+          <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs lg:text-sm font-body px-3 py-1.5 rounded-[2px] whitespace-nowrap shadow-xl z-50 pointer-events-none
+            bg-[var(--noir)] text-[var(--snow)]
+            dark:bg-[var(--noir-soft)] dark:text-[var(--snow)] dark:border dark:border-[var(--border-gold-20)]">
             Eliminar
           </span>
         </button>

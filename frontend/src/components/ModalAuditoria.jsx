@@ -27,8 +27,8 @@ export default function ModalAuditoria({ isOpen, onClose, data }) {
 
   const cfg = ACTION_CFG[data.action] || {
     label: data.action,
-    bg: "rgba(167,139,250,0.13)", border: "rgba(167,139,250,0.40)",
-    colorDark: "#a78bfa", colorLight: "#7750AD",
+    bg: "var(--gold-08)", border: "var(--border-gold-40)",
+    colorDark: "var(--gold-light)", colorLight: "var(--gold-dark)",
   };
 
   const detalles = data.details ? Object.entries(data.details) : [];
@@ -36,21 +36,21 @@ export default function ModalAuditoria({ isOpen, onClose, data }) {
   return (
     /* ── Backdrop ── */
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm bg-oscuro/40 dark:bg-black/60 font-poppins"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm bg-[var(--noir)]/40 dark:bg-black/60 font-body"
       onClick={onClose}
     >
       
       <div
-        className="w-full max-w-lg max-h-[90vh] flex flex-col rounded-3xl shadow-2xl overflow-hidden border bg-lila-pastel border-morado/20 dark:bg-bg-card dark:border-lila/20"
+        className="w-full max-w-lg max-h-[90vh] flex flex-col rounded-[2px] shadow-2xl overflow-hidden border bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)]"
         onClick={(e) => e.stopPropagation()}
       >
 
         
-        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-morado/10 dark:border-lila/10">
+        <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)]">
           <div className="flex items-center gap-2">
             
             <span
-              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold"
+              className="inline-flex items-center px-3 py-1 rounded-[2px] text-xs lg:text-sm font-bold"
               style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}
             >
               <span className="dark:hidden"  style={{ color: cfg.colorLight }}>{cfg.label}</span>
@@ -59,18 +59,18 @@ export default function ModalAuditoria({ isOpen, onClose, data }) {
 
             
             <span
-              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-              style={{ background: "rgba(99,102,241,0.10)", border: "0.5px solid rgba(99,102,241,0.30)" }}
+              className="inline-flex items-center px-3 py-1 rounded-[2px] text-xs lg:text-sm font-medium"
+              style={{ background: "var(--gold-08)", border: "0.5px solid var(--border-gold-40)" }}
             >
-              <span className="dark:hidden"  style={{ color: "#5b4ea8" }}>{data.resource}</span>
-              <span className="hidden dark:inline" style={{ color: "#a5b4fc" }}>{data.resource}</span>
+              <span className="dark:hidden"  style={{ color: "var(--gold-dark)" }}>{data.resource}</span>
+              <span className="hidden dark:inline" style={{ color: "var(--gold-light)" }}>{data.resource}</span>
             </span>
           </div>
 
           
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full transition-all cursor-pointer text-morado/50 hover:text-morado hover:bg-morado/10 dark:text-lila-soft/60 dark:hover:text-blanco dark:hover:bg-lila/10"
+            className="w-8 h-8 flex items-center justify-center rounded-[2px] transition-all cursor-pointer text-[var(--gold-dark)] hover:bg-[var(--gold-08)] dark:text-[var(--ash)] dark:hover:text-[var(--snow)] dark:hover:bg-[var(--gold-08)]"
           >
             <i className="bi bi-x-lg text-sm" />
           </button>
@@ -79,16 +79,16 @@ export default function ModalAuditoria({ isOpen, onClose, data }) {
         
         <div className="flex-1 overflow-y-auto overscroll-contain p-6 flex flex-col gap-5
           [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent
-          [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-morado/20
-          hover:[&::-webkit-scrollbar-thumb]:bg-morado/50
-          dark:[&::-webkit-scrollbar-thumb]:bg-lila/30 dark:hover:[&::-webkit-scrollbar-thumb]:bg-lila">
+          [&::-webkit-scrollbar-thumb]:rounded-[2px] [&::-webkit-scrollbar-thumb]:bg-[var(--gold)]/20
+          hover:[&::-webkit-scrollbar-thumb]:bg-[var(--gold)]/50
+          dark:[&::-webkit-scrollbar-thumb]:bg-[var(--gold-light)]/30 dark:hover:[&::-webkit-scrollbar-thumb]:bg-[var(--gold-light)]">
 
           
           <div className="flex flex-col gap-1">
-            <h2 className="text-xl font-bold text-oscuro dark:text-blanco m-0 leading-tight">
+            <h2 className="text-xl lg:text-2xl font-display font-bold text-[var(--noir)] dark:text-[var(--snow)] m-0 leading-tight">
               {data.usuario || "Usuario desconocido"}
             </h2>
-            <div className="flex items-center gap-3 text-xs text-morado/55 dark:text-lila-soft/70 flex-wrap">
+            <div className="flex items-center gap-3 text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)] flex-wrap">
               <span className="flex items-center gap-1">
                 <i className="bi bi-calendar3 text-[11px]" />
                 {fmtShort(data.createdAt)}
@@ -102,7 +102,7 @@ export default function ModalAuditoria({ isOpen, onClose, data }) {
             
             {data.resourceId && (
               <p
-                className="mt-1 pl-3 text-xs font-mono italic text-oscuro/55 dark:text-lila-soft/70 border-l-2 m-0"
+                className="mt-1 pl-3 text-xs lg:text-sm font-mono italic text-[var(--noir-soft)] dark:text-[var(--ash)] border-l-2 m-0"
                 style={{ borderColor: cfg.colorDark }}
               >
                 "{data.resourceId}"
@@ -119,18 +119,18 @@ export default function ModalAuditoria({ isOpen, onClose, data }) {
             ].map(({ label, value, accion, highlight }) => (
               <div
                 key={label}
-                className="flex flex-col gap-1 px-3 py-2.5 rounded-xl border bg-morado/4 border-morado/10 dark:bg-oscuro/30 dark:border-lila/10"
+                className="flex flex-col gap-1 px-3 py-2.5 rounded-[2px] border bg-[var(--gold-08)] border-[var(--border-gold-25)] dark:bg-[var(--gold-08)] dark:border-[var(--border-gold-20)]"
               >
-                <span className="text-[9px] font-bold uppercase tracking-widest text-morado/45 dark:text-lila-soft/55">
+                <span className="text-[9px] lg:text-[10px] font-tag font-bold uppercase tracking-widest text-[var(--gold-dark)] dark:text-[var(--ash)]">
                   {label}
                 </span>
                 {accion ? (
                   <>
-                    <span className="text-sm font-bold dark:hidden" style={{ color: cfg.colorLight }}>{value}</span>
-                    <span className="text-sm font-bold hidden dark:inline" style={{ color: cfg.colorDark }}>{value}</span>
+                    <span className="text-sm lg:text-base font-bold dark:hidden" style={{ color: cfg.colorLight }}>{value}</span>
+                    <span className="text-sm lg:text-base font-bold hidden dark:inline" style={{ color: cfg.colorDark }}>{value}</span>
                   </>
                 ) : (
-                  <span className={`text-sm font-bold ${highlight ? "text-verde" : "text-oscuro dark:text-blanco"}`}>
+                  <span className={`text-sm lg:text-base font-bold ${highlight ? "text-green-700 dark:text-verde" : "text-[var(--noir)] dark:text-[var(--snow)]"}`}>
                     {value}
                   </span>
                 )}
@@ -141,19 +141,19 @@ export default function ModalAuditoria({ isOpen, onClose, data }) {
           
           {detalles.length > 0 && (
             <div className="flex flex-col gap-2">
-              <p className="text-[10px] font-bold uppercase tracking-widest m-0 text-morado/45 dark:text-lila-soft/60">
+              <p className="text-[10px] lg:text-[11px] font-tag font-bold uppercase tracking-widest m-0 text-[var(--gold-dark)] dark:text-[var(--ash)]">
                 Detalles del evento
               </p>
               <div className="flex flex-col gap-1.5">
                 {detalles.map(([key, val]) => (
                   <div
                     key={key}
-                    className="flex items-center justify-between gap-4 px-4 py-2.5 rounded-xl border bg-morado/4 border-morado/8 dark:bg-oscuro/25 dark:border-lila/8"
+                    className="flex items-center justify-between gap-4 px-4 py-2.5 rounded-[2px] border bg-[var(--gold-08)] border-[var(--border-gold-25)] dark:bg-[var(--gold-08)] dark:border-[var(--border-gold-20)]"
                   >
-                    <span className="text-[10px] font-bold uppercase tracking-wider shrink-0 text-morado/55 dark:text-lila-soft">
+                    <span className="text-[10px] lg:text-[11px] font-tag font-bold uppercase tracking-wider shrink-0 text-[var(--gold-dark)] dark:text-[var(--ash)]">
                       {key}
                     </span>
-                    <span className="text-xs font-mono text-right break-all text-oscuro dark:text-blanco">
+                    <span className="text-xs lg:text-sm font-mono text-right break-all text-[var(--noir)] dark:text-[var(--snow)]">
                       {typeof val === "object" ? JSON.stringify(val) : String(val ?? "—")}
                     </span>
                   </div>
@@ -163,16 +163,16 @@ export default function ModalAuditoria({ isOpen, onClose, data }) {
           )}
 
           
-          <div className="flex items-center justify-between pt-1 border-t border-morado/10 dark:border-lila/10">
+          <div className="flex items-center justify-between pt-1 border-t border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)]">
             <div className="flex flex-col gap-0.5">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-morado/40 dark:text-lila-soft/50">
+              <span className="text-[9px] lg:text-[10px] font-tag font-bold uppercase tracking-widest text-[var(--gold-dark)] dark:text-[var(--ash)]">
                 Registrado
               </span>
-              <span className="text-xs font-medium text-oscuro/70 dark:text-lila-soft">
+              <span className="text-xs lg:text-sm font-medium text-[var(--noir-soft)] dark:text-[var(--ash)]">
                 {fmtLong(data.createdAt)}
               </span>
             </div>
-            <p className="font-cinzel tracking-widest text-sm text-morado/25 dark:text-lila/50 m-0">
+            <p className="font-cinzel tracking-widest text-sm text-[var(--gold)]/40 dark:text-[var(--gold-light)]/50 m-0">
               A U R A
             </p>
           </div>

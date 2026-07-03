@@ -72,7 +72,7 @@ export default function ModalValidateCode({ usuario, onClose, onSuccess }) {
       />
 
       <dialog id="validate_code_modal" className="modal">
-        <div className="modal-box bg-oscuro/60 backdrop-blur-md border border-lila/30 text-lila p-8 sm:p-10 max-w-lg rounded-none shadow-2xl">
+        <div className="modal-box bg-[var(--noir)]/60 backdrop-blur-md border border-[var(--border-gold-40)] text-[var(--snow)] p-8 sm:p-10 max-w-lg rounded-none shadow-2xl">
           <form method="dialog">
             <button
               type="button"
@@ -83,18 +83,18 @@ export default function ModalValidateCode({ usuario, onClose, onSuccess }) {
           </form>
 
           <div className="mb-8">
-            <div className="w-14 h-14 rounded-full border border-lila flex items-center justify-center">
+            <div className="w-14 h-14 rounded-full border border-[var(--border-gold-40)] flex items-center justify-center text-[var(--gold)]">
               <i className="bi bi-shield-check text-2xl"></i>
             </div>
           </div>
 
-          <h3 className="font-poppins text-2xl tracking-widest border-b border-lila/30 pb-4 mb-8 leading-snug">
+          <h3 className="font-display text-xl lg:text-2xl tracking-widest border-b border-[var(--border-gold-40)] pb-4 mb-8 leading-snug">
             VERIFICAR <br/> CÓDIGO
           </h3>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="flex flex-col gap-2">
-              <label htmlFor="code" className="text-sm font-poppins text-lila-mid">
+              <label htmlFor="code" className="font-tag text-sm lg:text-base text-[var(--ash)]">
                 Código de verificación
               </label>
               <input
@@ -105,13 +105,13 @@ export default function ModalValidateCode({ usuario, onClose, onSuccess }) {
                 placeholder="000000"
                 maxLength="6"
                 disabled={loading}
-                className="w-full bg-oscuro text-lila border border-lila/30 rounded-lg px-4 py-2.5 text-sm font-poppins outline-none placeholder-lila/20 focus:border-lila/60 focus:ring-1 focus:ring-lila/15 transition-all text-center text-2xl tracking-widest"
+                className="font-body w-full bg-[var(--noir)] text-[var(--snow)] border border-[var(--border-gold-40)] rounded-[2px] px-4 py-2.5 text-sm lg:text-base outline-none placeholder-[var(--ash)]/30 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]/15 transition-all text-center text-2xl tracking-widest"
               />
-              <p className="text-xs text-text-muted">Revisa tu correo electrónico</p>
+              <p className="font-body text-xs lg:text-sm text-[var(--ash)]">Revisa tu correo electrónico</p>
             </div>
 
             <div className="flex flex-col gap-2">
-              <label htmlFor="newPassword" className="text-sm font-poppins text-lila-mid">
+              <label htmlFor="newPassword" className="font-tag text-sm lg:text-base text-[var(--ash)]">
                 Nueva contraseña
               </label>
               <div className="relative">
@@ -122,19 +122,19 @@ export default function ModalValidateCode({ usuario, onClose, onSuccess }) {
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="••••••••"
                   disabled={loading}
-                  className="w-full bg-oscuro text-lila border border-lila/30 rounded-lg px-4 py-2.5 text-sm font-poppins outline-none placeholder-lila/20 focus:border-lila/60 focus:ring-1 focus:ring-lila/15 transition-all"
+                  className="font-body w-full bg-[var(--noir)] text-[var(--snow)] border border-[var(--border-gold-40)] rounded-[2px] px-4 py-2.5 text-sm lg:text-base outline-none placeholder-[var(--ash)]/30 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]/15 transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-lila-mid transition-colors">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ash)] hover:text-[var(--gold)] transition-colors">
                   <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
                 </button>
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <label htmlFor="confirmPassword" className="text-sm font-poppins text-lila-mid">
+              <label htmlFor="confirmPassword" className="font-tag text-sm lg:text-base text-[var(--ash)]">
                 Confirmar contraseña
               </label>
               <input
@@ -144,14 +144,14 @@ export default function ModalValidateCode({ usuario, onClose, onSuccess }) {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
                 disabled={loading}
-                className="w-full bg-oscuro text-lila border border-lila/30 rounded-lg px-4 py-2.5 text-sm font-poppins outline-none placeholder-lila/20 focus:border-lila/60 focus:ring-1 focus:ring-lila/15 transition-all"
+                className="font-body w-full bg-[var(--noir)] text-[var(--snow)] border border-[var(--border-gold-40)] rounded-[2px] px-4 py-2.5 text-sm lg:text-base outline-none placeholder-[var(--ash)]/30 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)]/15 transition-all"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-lila text-oscuro font-bold text-sm rounded-lg py-2.5 hover:bg-lila-soft transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              className="font-tag w-full bg-[var(--gold)] text-[var(--noir)] font-bold text-sm lg:text-base rounded-[2px] py-2.5 hover:bg-[var(--gold-light)] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
               {loading ? (
                 <><i className="bi bi-arrow-repeat animate-spin" />Procesando...</>
               ) : (
@@ -160,7 +160,7 @@ export default function ModalValidateCode({ usuario, onClose, onSuccess }) {
             </button>
           </form>
 
-          <p className="text-xs text-text-muted text-center mt-6">
+          <p className="font-body text-xs lg:text-sm text-[var(--ash)] text-center mt-6">
             El código expira en 15 minutos
           </p>
         </div>

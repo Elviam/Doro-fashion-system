@@ -240,15 +240,6 @@ export default function Roles() {
     );
   }
 
-  if (cargando) {
-    return (
-      <div className="p-4 sm:p-6 lg:p-8">
-        <h1 className="text-2xl font-bold mb-6 text-blanco uppercase tracking-wide">Gestión de Roles</h1>
-        <div className="flex justify-center items-center py-20"><i className="bi bi-hourglass-split text-4xl text-lila animate-spin"></i></div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 relative">
       <Toast message={toastMessage} type={toastType} onClose={() => setToastMessage("")} />

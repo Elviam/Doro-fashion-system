@@ -19,17 +19,17 @@ export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onC
   const tituloPersonalizado = (
     <div className="flex items-center gap-3 flex-wrap">
       <span className={`
-        px-3 py-1 rounded-full text-xs font-bold border font-mono transition-colors
-        bg-morado/10 text-morado border-morado/20
-        dark:bg-lila/10 dark:text-lila dark:border-lila/20
+        px-3 py-1 rounded-[2px] text-xs lg:text-sm font-bold border font-tag transition-colors
+        bg-[var(--gold-08)] text-[var(--gold-dark)] border-[var(--border-gold-40)]
+        dark:bg-[var(--gold-08)] dark:text-[var(--gold-light)] dark:border-[var(--border-gold-20)]
       `}>
         {venta.numeroPedido || `#${venta.id.slice(0, 8).toUpperCase()}`}
       </span>
       <Etiquetas contenido={venta.estado} />
       <span className={`
-        text-xs capitalize border px-3 py-1 rounded-full transition-colors
-        text-gris border-morado/20
-        dark:text-lila-soft dark:border-lila/20
+        font-tag text-xs lg:text-sm capitalize border px-3 py-1 rounded-[2px] transition-colors
+        text-[var(--noir-soft)] border-[var(--border-gold-40)]
+        dark:text-[var(--ash)] dark:border-[var(--border-gold-20)]
       `}>
         {venta.metodoPago}
       </span>
@@ -42,9 +42,9 @@ export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onC
       <button
         onClick={() => generarTicket(venta)}
         className={`
-          rounded-lg px-4 py-2 text-sm font-bold transition-colors cursor-pointer border
-          text-morado border-morado/30 bg-morado/10 hover:bg-morado hover:text-blanco
-          dark:text-lila dark:border-lila/30 dark:bg-lila/10 dark:hover:bg-lila dark:hover:text-oscuro
+          rounded-[2px] px-4 py-2 text-sm lg:text-base font-tag font-bold transition-colors cursor-pointer border
+          text-[var(--gold-dark)] border-[var(--border-gold-40)] bg-[var(--gold-08)] hover:bg-[var(--gold)] hover:text-[var(--snow)]
+          dark:text-[var(--gold-light)] dark:border-[var(--border-gold-20)] dark:bg-[var(--gold-08)] dark:hover:bg-[var(--gold)] dark:hover:text-[var(--noir)]
         `}
       >
         <i className="bi bi-download mr-1" />Descargar ticket
@@ -61,11 +61,11 @@ export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onC
       ancho="max-w-2xl"
       footer={footerContenido}
     >
-      <div className="font-poppins pt-2 flex flex-col gap-6">
+      <div className="font-body pt-2 flex flex-col gap-6">
 
         {/* Cliente */}
         <div>
-          <p className="text-[11px] tracking-[2px] uppercase font-bold mb-3 transition-colors text-morado dark:text-lila-soft">
+          <p className="font-tag text-[11px] lg:text-xs tracking-[2px] uppercase font-bold mb-3 transition-colors text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
             Cliente
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -78,14 +78,14 @@ export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onC
               { label: "Fecha",  value: formatFecha(venta.createdAt) },
             ].map(({ label, value }) => (
               <div key={label} className={`
-                rounded-xl border p-3 transition-colors shadow-sm
-                bg-blanco border-morado/20
-                dark:bg-bg-card dark:border-lila/15 dark:shadow-none
+                rounded-[2px] border p-3 transition-colors shadow-sm
+                bg-[var(--snow)] border-[var(--border-gold-40)]
+                dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
               `}>
-                <p className="text-[10px] uppercase tracking-widest mb-1 transition-colors text-gris dark:text-lila-soft">
+                <p className="font-tag text-[10px] lg:text-xs uppercase tracking-widest mb-1 transition-colors text-[var(--noir-soft)] dark:text-[var(--ash)]">
                   {label}
                 </p>
-                <p className="text-sm font-semibold truncate transition-colors text-oscuro dark:text-blanco">
+                <p className="font-body text-sm lg:text-base font-semibold truncate transition-colors text-[var(--noir)] dark:text-[var(--snow)]">
                   {value || "—"}
                 </p>
               </div>
@@ -95,54 +95,54 @@ export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onC
 
         {/* Items */}
         <div>
-          <p className="text-[11px] tracking-[2px] uppercase font-bold mb-3 transition-colors text-morado dark:text-lila-soft">
+          <p className="font-tag text-[11px] lg:text-xs tracking-[2px] uppercase font-bold mb-3 transition-colors text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
             Artículos ({venta.items?.length ?? 0})
           </p>
           <div className="flex flex-col gap-2">
             {(venta.items ?? []).map((item, i) => (
               <div key={i} className={`
-                flex flex-wrap sm:flex-nowrap items-center gap-4 rounded-xl border px-4 py-3 transition-colors shadow-sm
-                bg-blanco border-morado/20
-                dark:bg-bg-card dark:border-lila/10 dark:shadow-none
+                flex flex-wrap sm:flex-nowrap items-center gap-4 rounded-[2px] border px-4 py-3 transition-colors shadow-sm
+                bg-[var(--snow)] border-[var(--border-gold-40)]
+                dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
               `}>
                 
                 <div className={`
-                  w-9 h-9 rounded-lg shrink-0 overflow-hidden border transition-colors
-                  bg-lila-pastel border-morado/20
-                  dark:bg-lila/10 dark:border-lila/20
+                  w-9 h-9 rounded-[2px] shrink-0 overflow-hidden border transition-colors
+                  bg-[var(--gold-08)] border-[var(--border-gold-40)]
+                  dark:bg-[var(--gold-08)] dark:border-[var(--border-gold-20)]
                 `}>
                   {item.imagen ? (
                     <img src={item.imagen} alt={item.nombre} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-morado dark:text-lila">
+                    <div className="w-full h-full flex items-center justify-center text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
                       <i className="bi bi-box" />
                     </div>
                   )}
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate transition-colors text-oscuro dark:text-blanco">
+                  <p className="font-body text-sm lg:text-base font-semibold truncate transition-colors text-[var(--noir)] dark:text-[var(--snow)]">
                     {item.nombre}
                   </p>
-                  <p className="text-xs transition-colors text-gris dark:text-text-muted">
+                  <p className="font-body text-xs lg:text-sm transition-colors text-[var(--noir-soft)] dark:text-[var(--ash)]">
                     Talla {item.talla}
                   </p>
                 </div>
                 
                 <div className="flex gap-4 sm:gap-6 w-full sm:w-auto justify-between mt-2 sm:mt-0">
                   <div className="text-center min-w-12">
-                    <p className="text-[10px] transition-colors text-gris dark:text-lila-soft">Cant.</p>
-                    <p className="text-sm font-bold transition-colors text-oscuro dark:text-blanco">{item.cantidad}</p>
+                    <p className="font-tag text-[10px] lg:text-xs transition-colors text-[var(--noir-soft)] dark:text-[var(--ash)]">Cant.</p>
+                    <p className="font-body text-sm lg:text-base font-bold transition-colors text-[var(--noir)] dark:text-[var(--snow)]">{item.cantidad}</p>
                   </div>
                   <div className="text-center min-w-16">
-                    <p className="text-[10px] transition-colors text-gris dark:text-lila-soft">P. unit.</p>
-                    <p className="text-sm font-bold tabular-nums transition-colors text-oscuro dark:text-blanco">
+                    <p className="font-tag text-[10px] lg:text-xs transition-colors text-[var(--noir-soft)] dark:text-[var(--ash)]">P. unit.</p>
+                    <p className="font-body text-sm lg:text-base font-bold tabular-nums transition-colors text-[var(--noir)] dark:text-[var(--snow)]">
                       {formatMoney(item.precioUnitario)}
                     </p>
                   </div>
                   <div className="text-center min-w-18">
-                    <p className="text-[10px] transition-colors text-gris dark:text-lila-soft">Subtotal</p>
-                    <p className="text-sm font-bold tabular-nums transition-colors text-morado dark:text-lila">
+                    <p className="font-tag text-[10px] lg:text-xs transition-colors text-[var(--noir-soft)] dark:text-[var(--ash)]">Subtotal</p>
+                    <p className="font-body text-sm lg:text-base font-bold tabular-nums transition-colors text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
                       {formatMoney(item.cantidad * item.precioUnitario)}
                     </p>
                   </div>
@@ -154,26 +154,26 @@ export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onC
 
         {/* Totales */}
         <div className={`
-          border rounded-xl p-4 flex flex-col gap-1.5 transition-colors shadow-sm
-          bg-blanco border-morado/20
-          dark:bg-bg-card dark:border-lila/10 dark:shadow-none
+          border rounded-[2px] p-4 flex flex-col gap-1.5 transition-colors shadow-sm
+          bg-[var(--snow)] border-[var(--border-gold-40)]
+          dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
         `}>
-          <div className="flex justify-between text-sm transition-colors text-gris dark:text-lila-soft">
+          <div className="flex justify-between font-body text-sm lg:text-base transition-colors text-[var(--noir-soft)] dark:text-[var(--ash)]">
             <span>Subtotal</span>
-            <b className="tabular-nums transition-colors text-oscuro dark:text-blanco">{formatMoney(venta.subtotal)}</b>
+            <b className="tabular-nums transition-colors text-[var(--noir)] dark:text-[var(--snow)]">{formatMoney(venta.subtotal)}</b>
           </div>
-          <div className="flex justify-between text-sm transition-colors text-gris dark:text-lila-soft">
+          <div className="flex justify-between font-body text-sm lg:text-base transition-colors text-[var(--noir-soft)] dark:text-[var(--ash)]">
             <span>Envío</span>
             <b className={`
               tabular-nums transition-colors
-              ${venta.envio === 0 ? "text-verde font-extrabold" : "text-oscuro dark:text-blanco"}
+              ${venta.envio === 0 ? "text-green-700 dark:text-verde font-extrabold" : "text-[var(--noir)] dark:text-[var(--snow)]"}
             `}>
               {venta.envio === 0 ? "GRATIS" : formatMoney(venta.envio)}
             </b>
           </div>
-          <div className="flex justify-between items-baseline pt-2 border-t transition-colors border-morado/15 dark:border-lila/15">
-            <span className="text-base font-semibold transition-colors text-oscuro dark:text-blanco">Total</span>
-            <b className="text-2xl font-extrabold text-verde tabular-nums">{formatMoney(venta.total)}</b>
+          <div className="flex justify-between items-baseline pt-2 border-t transition-colors border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)]">
+            <span className="font-body text-base lg:text-lg font-semibold transition-colors text-[var(--noir)] dark:text-[var(--snow)]">Total</span>
+            <b className="text-2xl lg:text-3xl font-extrabold text-green-700 dark:text-verde tabular-nums">{formatMoney(venta.total)}</b>
           </div>
         </div>
 
@@ -191,7 +191,7 @@ export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onC
             )}
             <button
               onClick={() => onCancelar(venta)}
-              className="rounded-lg px-4 py-2 text-sm font-bold transition-colors cursor-pointer border text-rojo border-rojo/30 bg-rojo/10 hover:bg-rojo hover:text-blanco hover:border-rojo"
+              className="font-tag rounded-[2px] px-4 py-2 text-sm lg:text-base font-bold transition-colors cursor-pointer border text-red-700 dark:text-rojo border-red-700/30 dark:border-rojo/30 bg-red-700/10 dark:bg-rojo/10 hover:bg-red-700 dark:hover:bg-rojo hover:text-[var(--snow)] hover:border-red-700 dark:hover:border-rojo"
             >
               <i className="bi bi-slash-circle mr-1" /> Cancelar venta
             </button>
