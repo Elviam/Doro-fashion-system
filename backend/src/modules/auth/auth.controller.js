@@ -6,6 +6,10 @@ export class AuthController {
 
     return res.status(200).json(result)
   }
+  async staffLogin(req, res) {
+    const result = await authService.staffLogin(req.body)
+    return res.status(200).json(result)
+  }
 
   async register(req, res) {
     const result = await authService.register(req.body)

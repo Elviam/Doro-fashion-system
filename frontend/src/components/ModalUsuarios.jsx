@@ -10,7 +10,7 @@ export default function ModalUsuarios({ data, usuarioLogeado, onClose, onEditar,
   const esElMismoUsuario = data.id === usuarioLogeado?.id;
   
   // Lógica de permisos
-  const esAdminOGerente = usuarioLogeado?.roleId === "role_admin" || usuarioLogeado?.roleId === "GERENTE";
+  const esAdminOGerente = usuarioLogeado?.role === "ADMIN" || usuarioLogeado?.role === "GERENTE";
   const puedeEditar = esAdminOGerente;
   const puedeEliminar = esAdminOGerente && !esElMismoUsuario; 
 

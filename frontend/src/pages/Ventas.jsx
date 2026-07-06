@@ -25,7 +25,7 @@ export function generarDatos30Dias(ventas) {
   });
 
   ventas
-    .filter((v) => v.estado === "pagado")
+    .filter((v) => v.estado === "PAGADO")
     .forEach((v) => {
       const fecha = new Date(v.createdAt);
       fecha.setHours(0, 0, 0, 0);
@@ -38,15 +38,9 @@ export function generarDatos30Dias(ventas) {
 
 const OPCIONES_ESTADO = [
   { value: "",          label: "Todos" },
-  { value: "pendiente", label: "Pendientes" },
-  { value: "pagado",    label: "Pagados" },
-  { value: "cancelado", label: "Cancelados" },
-];
-
-const OPCIONES_METODO_PAGO = [
-  { value: "tarjeta", label: "Tarjeta" },
-  { value: "oxxo",    label: "OXXO" },
-  { value: "spei",    label: "SPEI" },
+  { value: "PENDIENTE", label: "Pendientes" },
+  { value: "PAGADO",    label: "Pagados" },
+  { value: "CANCELADO", label: "Cancelados" },
 ];
 
 const formatFecha = (iso) => {
@@ -65,143 +59,9 @@ const esHoy = (iso) => {
 
 const formatMoney = (n) => `$${Number(n ?? 0).toLocaleString("es-MX")}`;
 
-// ── Modal simple para registrar una venta manual ──
-// Nota: es un formulario mínimo embebido aquí mismo. Si más adelante
-// necesitas selección de productos/inventario, conviene extraerlo a un
-// componente FormVenta.jsx propio, igual que FormUsuarios.
-function ModalNuevaVenta({ onClose, onGuardar, guardando }) {
-  const [form, setForm] = useState({
-    clienteNombre: "",
-    clienteEmail: "",
-    total: "",
-    metodoPago: "tarjeta",
-    estado: "pagado",
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onGuardar({
-      cliente: { nombre: form.clienteNombre, email: form.clienteEmail },
-      total: Number(form.total) || 0,
-      metodoPago: form.metodoPago,
-      estado: form.estado,
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 bg-[var(--noir)]/50 backdrop-blur-sm z-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-gold-20)]">
-          <h3 className="font-display italic text-lg text-[var(--noir)] dark:text-[var(--snow)] m-0">
-            Nueva venta
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-[var(--noir-soft)] dark:text-[var(--ash)] hover:text-[var(--gold)] transition-colors"
-          >
-            <i className="bi bi-x-lg" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <label className="block text-xs uppercase tracking-wide font-tag mb-1 text-[var(--noir-soft)] dark:text-[var(--ash)]">
-              Cliente
-            </label>
-            <input
-              required
-              value={form.clienteNombre}
-              onChange={(e) => setForm({ ...form, clienteNombre: e.target.value })}
-              className="w-full px-3 py-2 text-sm rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] bg-transparent text-[var(--noir-soft)] dark:text-[var(--snow)] focus:outline-none focus:border-[var(--gold)]"
-              placeholder="Nombre del cliente"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs uppercase tracking-wide font-tag mb-1 text-[var(--noir-soft)] dark:text-[var(--ash)]">
-              Email (opcional)
-            </label>
-            <input
-              type="email"
-              value={form.clienteEmail}
-              onChange={(e) => setForm({ ...form, clienteEmail: e.target.value })}
-              className="w-full px-3 py-2 text-sm rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] bg-transparent text-[var(--noir-soft)] dark:text-[var(--snow)] focus:outline-none focus:border-[var(--gold)]"
-              placeholder="cliente@correo.com"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs uppercase tracking-wide font-tag mb-1 text-[var(--noir-soft)] dark:text-[var(--ash)]">
-                Total
-              </label>
-              <input
-                required
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.total}
-                onChange={(e) => setForm({ ...form, total: e.target.value })}
-                className="w-full px-3 py-2 text-sm rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] bg-transparent text-[var(--noir-soft)] dark:text-[var(--snow)] focus:outline-none focus:border-[var(--gold)]"
-                placeholder="0.00"
-              />
-            </div>
-            <div>
-              <label className="block text-xs uppercase tracking-wide font-tag mb-1 text-[var(--noir-soft)] dark:text-[var(--ash)]">
-                Método de pago
-              </label>
-              <select
-                value={form.metodoPago}
-                onChange={(e) => setForm({ ...form, metodoPago: e.target.value })}
-                className="w-full px-3 py-2 text-sm rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] bg-transparent text-[var(--noir-soft)] dark:text-[var(--snow)] focus:outline-none focus:border-[var(--gold)]"
-              >
-                {OPCIONES_METODO_PAGO.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs uppercase tracking-wide font-tag mb-1 text-[var(--noir-soft)] dark:text-[var(--ash)]">
-              Estado
-            </label>
-            <select
-              value={form.estado}
-              onChange={(e) => setForm({ ...form, estado: e.target.value })}
-              className="w-full px-3 py-2 text-sm rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] bg-transparent text-[var(--noir-soft)] dark:text-[var(--snow)] focus:outline-none focus:border-[var(--gold)]"
-            >
-              <option value="pagado">Pagado</option>
-              <option value="pendiente">Pendiente</option>
-            </select>
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 text-sm font-bold rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] text-[var(--noir-soft)] dark:text-[var(--snow)] hover:bg-[var(--gold-08)] transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={guardando}
-              className="flex-1 py-2.5 text-sm font-bold rounded-[2px] bg-[var(--gold)] text-[var(--noir)] hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
-            >
-              {guardando ? "Guardando..." : "Registrar venta"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 export default function Ventas() {
   const { usuario } = useContext(AuthContext);
   const puedeActualizar = usuario?.permissions?.includes("ventas:update");
-  const puedeCrear = usuario?.permissions?.includes("ventas:create") || usuario?.roleId === "role_admin" || usuario?.roleId === "GERENTE";
 
   const [ventas, setVentas]               = useState([]);
   const [cargando, setCargando]           = useState(true);
@@ -212,8 +72,6 @@ export default function Ventas() {
   const [ventaCancelando, setVentaCancelando] = useState(null);
   const [modalExito, setModalExito]       = useState("");
   const [refresh, setRefresh]             = useState(0);
-  const [isModalNuevaVentaAbierto, setIsModalNuevaVentaAbierto] = useState(false);
-  const [guardandoVenta, setGuardandoVenta] = useState(false);
 
   useEffect(() => {
     setCargando(true);
@@ -241,12 +99,12 @@ export default function Ventas() {
   const inicio = (paginaActiva - 1) * LIMIT;
   const rows = ventasFiltradas.slice(inicio, inicio + LIMIT);
 
-  const ventasPagadas = ventas.filter((v) => v.estado === "pagado");
+  const ventasPagadas = ventas.filter((v) => v.estado === "PAGADO");
   const totalIngresos = ventasPagadas.reduce((acc, v) => acc + v.total, 0);
 
   // ── Indicadores operativos (reemplazan la gráfica; el análisis vive en el Dashboard) ──
   const ventasHoy      = ventas.filter((v) => esHoy(v.createdAt)).length;
-  const ingresosHoy     = ventas.filter((v) => esHoy(v.createdAt) && v.estado === "pagado").reduce((a, v) => a + v.total, 0);
+  const ingresosHoy     = ventas.filter((v) => esHoy(v.createdAt) && v.estado === "PAGADO").reduce((a, v) => a + v.total, 0);
   const ticketPromedio  = ventasPagadas.length > 0 ? totalIngresos / ventasPagadas.length : 0;
   const productosVendidos = ventas.reduce((a, v) => a + (v.items?.reduce((s, i) => s + i.cantidad, 0) ?? 0), 0);
 
@@ -260,7 +118,7 @@ export default function Ventas() {
   const cancelarVenta = async () => {
     if (!ventaCancelando) return;
     try {
-      await api.patch(`/ventas/${ventaCancelando.id}/estado`, { estado: "cancelado" });
+      await api.patch(`/ventas/${ventaCancelando.id}/estado`, { estado: "CANCELADO" });
       setRefresh((r) => r + 1);
       setModalExito("Venta cancelada correctamente");
     } catch {
@@ -278,20 +136,6 @@ export default function Ventas() {
       setVentaDetalle(null);
     } catch {
       window.alert("No se pudo actualizar el estado.");
-    }
-  };
-
-  const registrarVentaManual = async (formData) => {
-    try {
-      setGuardandoVenta(true);
-      await api.post("/ventas", formData);
-      setIsModalNuevaVentaAbierto(false);
-      setRefresh((r) => r + 1);
-      setModalExito("Venta registrada correctamente");
-    } catch (err) {
-      window.alert(err.message || "No se pudo registrar la venta.");
-    } finally {
-      setGuardandoVenta(false);
     }
   };
 
@@ -315,36 +159,36 @@ export default function Ventas() {
           />
           <Tarjetas
             label="Pagados"
-            value={ventas.filter((v) => v.estado === "pagado").length}
+            value={ventas.filter((v) => v.estado === "PAGADO").length}
             sub="Confirmados"
-            accent="#A3E378"
+            accent="#64a838"
             icon="bi bi-check-circle"
-            onClick={() => setFiltroEstado("pagado")}
-            isActive={filtroEstado === "pagado"}
+            onClick={() => setFiltroEstado("PAGADO")}
+            isActive={filtroEstado === "PAGADO"}
           />
           <Tarjetas
             label="Pendientes"
-            value={ventas.filter((v) => v.estado === "pendiente").length}
+            value={ventas.filter((v) => v.estado === "PENDIENTE").length}
             sub="Por procesar"
             accent="#F7CB57"
             icon="bi bi-hourglass-split"
-            onClick={() => setFiltroEstado("pendiente")}
-            isActive={filtroEstado === "pendiente"}
+            onClick={() => setFiltroEstado("PENDIENTE")}
+            isActive={filtroEstado === "PENDIENTE"}
           />
           <Tarjetas
             label="Cancelados"
-            value={ventas.filter((v) => v.estado === "cancelado").length}
+            value={ventas.filter((v) => v.estado === "CANCELADO").length}
             sub="Ventas anuladas"
             accent="#E05C5C"
             icon="bi bi-x-circle"
-            onClick={() => setFiltroEstado("cancelado")}
-            isActive={filtroEstado === "cancelado"}
+            onClick={() => setFiltroEstado("CANCELADO")}
+            isActive={filtroEstado === "CANCELADO"}
           />
           <Tarjetas
             label="Ingresos"
             value={formatMoney(totalIngresos)}
             sub="Solo pagados"
-            accent="#D4AF37"
+            accent="#3a86bc"
             icon="bi bi-cash-coin"
           />
         </div>
@@ -395,8 +239,6 @@ export default function Ventas() {
           busqueda={busqueda}
           setBusqueda={setBusqueda}
           placeholderBuscar="Buscar por ID, cliente o email..."
-          textoBoton={puedeCrear ? "+ Nueva venta" : null}
-          accionBoton={puedeCrear ? () => setIsModalNuevaVentaAbierto(true) : null}
         />
 
         <Tabla encabezados={["N° Pedido", "Fecha", "Cliente", "Método pago", "Artículos", "Total", "Estado", "Acciones"]}>
@@ -450,7 +292,7 @@ export default function Ventas() {
                 <AccionesTabla
                   onVer={() => setVentaDetalle(v)}
                   onCancelar={
-                    puedeActualizar && v.estado !== "cancelado"
+                    puedeActualizar && v.estado !== "CANCELADO"
                       ? () => setVentaCancelando(v)
                       : null
                   }
@@ -490,14 +332,6 @@ export default function Ventas() {
             onClose={() => setVentaDetalle(null)}
             onCambiarEstado={cambiarEstado}
             onCancelar={(v) => { setVentaDetalle(null); setVentaCancelando(v); }}
-          />
-        )}
-
-        {isModalNuevaVentaAbierto && (
-          <ModalNuevaVenta
-            onClose={() => setIsModalNuevaVentaAbierto(false)}
-            onGuardar={registrarVentaManual}
-            guardando={guardandoVenta}
           />
         )}
 

@@ -124,10 +124,9 @@ export default function Usuarios() {
     setToastType(tipo);
   };
 
-  const puedeAgregar = canPerformAction(usuarioLogeado?.permissions, 'users', 'create') || usuarioLogeado?.roleId === "role_admin" || usuarioLogeado?.roleId === "GERENTE";
-  const puedeEditar = canPerformAction(usuarioLogeado?.permissions, 'users', 'update') || usuarioLogeado?.roleId === "role_admin" || usuarioLogeado?.roleId === "GERENTE";
-  const puedeBorrar = canPerformAction(usuarioLogeado?.permissions, 'users', 'delete') || usuarioLogeado?.roleId === "role_admin";
-
+  const puedeAgregar = canPerformAction(usuarioLogeado?.permissions, 'users', 'create') || usuarioLogeado?.role === "ADMIN" || usuarioLogeado?.role === "GERENTE";
+const puedeEditar = canPerformAction(usuarioLogeado?.permissions, 'users', 'update') || usuarioLogeado?.role === "ADMIN" || usuarioLogeado?.role === "GERENTE";
+const puedeBorrar = canPerformAction(usuarioLogeado?.permissions, 'users', 'delete') || usuarioLogeado?.role === "ADMIN";
   const handleVerDetalles = (usuario) => {
     setUsuarioSeleccionado(usuario);
     setIsModalVerAbierto(true);

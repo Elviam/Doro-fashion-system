@@ -60,11 +60,7 @@ export default function FormProveedores({ proveedor, esNuevo, onClose, onGuardar
     onGuardar(form);
   };
 
-  const tituloPersonalizado = (
-    <h2 className="text-xl lg:text-2xl font-tag font-bold uppercase tracking-widest transition-colors text-[var(--noir)] dark:text-[var(--snow)] m-0">
-      {esNuevo ? "Nuevo Proveedor" : "Editar Proveedor"}
-    </h2>
-  );
+  const tituloPersonalizado = esNuevo ? "Nuevo Proveedor" : "Editar Proveedor";
 
   const footerAcciones = (
     <div className="flex justify-end gap-3 w-full">

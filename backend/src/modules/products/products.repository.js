@@ -1,62 +1,64 @@
-import { db } from '../../config/firebase.js'
-
-const COLLECTION = 'products'
+import { prisma } from '../../lib/prisma.js'
 
 export class ProductsRepository {
   async findAll() {
-    const snapshot = await db.collection(COLLECTION).get()
-
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data()
-    }))
+    return prisma.product.findMany({
+      include: { variants: true, supplier: true },
+      orderBy: { nombre: 'asc' }
+    })
   }
 
   async findById(id) {
-    const doc = await db.collection(COLLECTION).doc(id).get()
-
-    if (!doc.exists) return null
-
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+    return prisma.product.findUnique({
+      where: { id },
+      include: { variants: true, supplier: true }
+    })
   }
 
   async findBySku(sku) {
-    const snapshot = await db
-      .collection(COLLECTION)
-      .where('sku', '==', sku)
-      .limit(1)
-      .get()
-
-    if (snapshot.empty) return null
-
-    const doc = snapshot.docs[0]
-
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+    return prisma.product.findUnique({
+      where: { sku },
+      include: { variants: true, supplier: true }
+    })
   }
 
-  async create(data) {
-    const ref = await db.collection(COLLECTION).add(data)
-    const doc = await ref.get()
+  async findSupplierById(supplierId) {
+    return prisma.supplier.findUnique({ where: { id: supplierId } })
+  }
 
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+  // Creates a product together with its initial variants in one write.
+  async create({ variantes, ...data }) {
+    return prisma.product.create({
+      data: {
+        ...data,
+        variants: { create: variantes }
+      },
+      include: { variants: true, supplier: true }
+    })
   }
 
   async update(id, data) {
-    await db.collection(COLLECTION).doc(id).update(data)
-    return this.findById(id)
+    return prisma.product.update({
+      where: { id },
+      data,
+      include: { variants: true, supplier: true }
+    })
+  }
+
+  // Replaces the full variant set (delete-all + recreate) inside a
+  // transaction, so a partial failure never leaves mismatched rows.
+  async replaceVariants(productId, variantes) {
+    await prisma.$transaction([
+      prisma.productVariant.deleteMany({ where: { productId } }),
+      prisma.productVariant.createMany({
+        data: variantes.map((v) => ({ ...v, productId }))
+      })
+    ])
+    return this.findById(productId)
   }
 
   async remove(id) {
-    await db.collection(COLLECTION).doc(id).delete()
+    await prisma.product.delete({ where: { id } })
     return true
   }
 }

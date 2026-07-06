@@ -19,14 +19,14 @@ export default function FormRecepciones({ row, esNuevo, onClose, onGuardar }) {
   const [folioSiguiente, setFolioSiguiente]         = useState("");
 
   const estadoInicial = {
-    supplierId:     row?.supplierId     || "",
-    supplierNombre: row?.supplierNombre || "",
-    folio:          row?.folio          || "",
-    fecha:          row?.fecha ? row.fecha.split("T")[0] : new Date().toISOString().split("T")[0],
-    comentarios:    row?.comentarios    || "",
-    status:         row?.status         || "DRAFT",
-    items:          row?.items ? row.items.map((i) => ({ ...i })) : [],
-  };
+  supplierId:       row?.supplierId       || "",
+  supplierNombre:   row?.supplierNombre   || "",
+  facturaProveedor: row?.facturaProveedor || "",
+  folio:            row?.folio            || "",
+  fecha:            row?.fecha ? row.fecha.split("T")[0] : new Date().toISOString().split("T")[0],
+  comentarios:      row?.comentarios      || "",
+  items:            row?.items ? row.items.map((i) => ({ ...i })) : [],
+};
 
   const [form, setForm]  = useState(estadoInicial);
   const [estadoOriginal] = useState(JSON.stringify(estadoInicial));
@@ -76,28 +76,50 @@ export default function FormRecepciones({ row, esNuevo, onClose, onGuardar }) {
     }));
   };
 
-  const handleProductChange = (idx, e) => {
-    const nombreSeleccionado = e.target.value;
-    const prod = productosDelProveedor.find((p) => p.nombre === nombreSeleccionado);
-    setForm((prev) => {
-      const items = prev.items.map((item, i) => {
-        if (i !== idx) return item;
-        const costoUnitario = prod ? prod.precioCompra : 0;
-        const cantidad = item.cantidad || 1;
-        return {
-          ...item,
-          productId:     prod ? prod.id : "",
-          sku:           prod?.sku    || "",
-          productNombre: nombreSeleccionado,
-          imagen:        prod?.imagen || "",
-          talla:         "",
-          costoUnitario,
-          subtotal: cantidad * costoUnitario,
-        };
-      });
+ const handleProductChange = (idx, e) => {
+  const nombreSeleccionado = e.target.value;
+  const prod = productosDelProveedor.find((p) => p.nombre === nombreSeleccionado);
+
+  setForm((prev) => {
+    const tallaActual = prev.items[idx].talla || "";
+
+    // Si ya existe otro item con el mismo producto+talla, fusiona ahí
+    // en vez de dejar dos filas separadas para el mismo producto.
+    const idxExistente = prev.items.findIndex(
+      (item, i) => i !== idx && item.productId === prod?.id && item.talla === tallaActual
+    );
+
+    if (prod && idxExistente !== -1) {
+      const items = prev.items
+        .map((item, i) => {
+          if (i === idxExistente) {
+            const cantidad = item.cantidad + (prev.items[idx].cantidad || 1);
+            return { ...item, cantidad, subtotal: cantidad * item.costoUnitario };
+          }
+          return item;
+        })
+        .filter((_, i) => i !== idx);
       return { ...prev, items };
+    }
+
+    const items = prev.items.map((item, i) => {
+      if (i !== idx) return item;
+      const costoUnitario = prod ? prod.precioCompra : 0;
+      const cantidad = item.cantidad || 1;
+      return {
+        ...item,
+        productId: prod ? prod.id : "",
+        sku: prod?.sku || "",
+        productNombre: nombreSeleccionado,
+        imagen: prod?.imagen || "",
+        talla: "",
+        costoUnitario,
+        subtotal: cantidad * costoUnitario,
+      };
     });
-  };
+    return { ...prev, items };
+  });
+};
 
   const handleTallaChange = (idx, talla) => {
     setForm((prev) => {
@@ -154,23 +176,19 @@ export default function FormRecepciones({ row, esNuevo, onClose, onGuardar }) {
     });
     if (itemSinTalla) return setError(`Selecciona una talla para "${itemSinTalla.productNombre}".`);
 
-    const body = {
-      supplierId:     form.supplierId,
-      supplierNombre: form.supplierNombre,
-      fecha:          form.fecha,
-      folio:          form.folio || undefined,
-      comentarios:    form.comentarios || "",
-      items: form.items.map((item) => ({
-        productId:     item.productId,
-        sku:           item.sku,
-        productNombre: item.productNombre,
-        talla:         item.talla || undefined,
-        cantidad:      item.cantidad,
-        costoUnitario: item.costoUnitario,
-        subtotal:      item.subtotal,
-      })),
-      status: form.status,
-    };
+  const body = {
+    supplierId:       form.supplierId,
+    facturaProveedor: form.facturaProveedor || undefined,
+    fecha:            form.fecha,
+    folio:            form.folio || undefined,
+    comentarios:      form.comentarios || "",
+    items: form.items.map((item) => ({
+      productId:     item.productId,
+      talla:         item.talla || undefined,
+      cantidad:      item.cantidad,
+      costoUnitario: item.costoUnitario,
+    })),
+  };
 
     setGuardando(true);
     try {
@@ -246,9 +264,9 @@ export default function FormRecepciones({ row, esNuevo, onClose, onGuardar }) {
             />
 
             <Input
-              label="Estado" name="status" tipo="select"
-              opciones={["DRAFT", "CONFIRMED"]}
-              value={form.status} onChange={handleChange}
+              label="Factura / Referencia del proveedor" name="facturaProveedor"
+              value={form.facturaProveedor} onChange={handleChange}
+              placeholder="Ej. FAC-2026-00158"
             />
 
             <div className="md:col-span-2">

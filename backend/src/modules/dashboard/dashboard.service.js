@@ -11,13 +11,13 @@ export class DashboardService {
       inventoryMovements,
       auditLogs
     ] = await Promise.all([
-      dashboardRepository.getCollectionItems('users'),
-      dashboardRepository.getCollectionItems('clients'),
-      dashboardRepository.getCollectionItems('suppliers'),
-      dashboardRepository.getCollectionItems('products'),
-      dashboardRepository.getCollectionItems('recepciones'),
-      dashboardRepository.getCollectionItems('inventory_movements'),
-      dashboardRepository.getCollectionItems('audit')
+      dashboardRepository.getUsers(),
+      dashboardRepository.getClients(),
+      dashboardRepository.getSuppliers(),
+      dashboardRepository.getProducts(),
+      dashboardRepository.getRecepciones(),
+      dashboardRepository.getInventoryMovements(),
+      dashboardRepository.getAuditLogs()
     ])
 
     const activeUsers = users.filter((item) => item.activo ?? true)
@@ -44,57 +44,45 @@ export class DashboardService {
       }))
 
     const recepcionesRecientes = recepciones
-      .sort((a, b) => {
-        const aDate = new Date(a.createdAt || 0).getTime()
-        const bDate = new Date(b.createdAt || 0).getTime()
-        return bDate - aDate
-      })
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
       .slice(0, 10)
       .map((item) => ({
         id: item.id,
-        folio: item.folio || '',
-        supplierNombre: item.supplierNombre || '',
-        fecha: item.fecha || '',
-        status: item.status || 'DRAFT',
-        total: Number(item.total || 0),
+        folio: item.id.slice(0, 8).toUpperCase(),
+        supplierNombre: item.supplier?.nombre || '',
+        fecha: item.createdAt || '',
+        status: item.estado || 'PENDIENTE',
+        total: 0,
         createdAt: item.createdAt || null
       }))
 
     const recentInventoryMovements = inventoryMovements
-      .sort((a, b) => {
-        const aDate = new Date(a.createdAt || 0).getTime()
-        const bDate = new Date(b.createdAt || 0).getTime()
-        return bDate - aDate
-      })
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
       .slice(0, 10)
       .map((item) => ({
         id: item.id,
         productId: item.productId || '',
-        sku: item.sku || '',
-        productNombre: item.productNombre || '',
+        sku: item.product?.sku || '',
+        productNombre: item.product?.nombre || '',
         tipo: item.tipo || '',
         cantidad: Number(item.cantidad || 0),
-        stockAnterior: Number(item.stockAnterior || 0),
-        stockNuevo: Number(item.stockNuevo || 0),
+        stockAnterior: null,
+        stockNuevo: null,
         motivo: item.motivo || '',
-        referencia: item.referencia || '',
-        usuario: item.usuario || '',
+        referencia: '',
+        usuario: '',
         createdAt: item.createdAt || null
       }))
 
     const recentAudit = auditLogs
-      .sort((a, b) => {
-        const aDate = new Date(a.createdAt || 0).getTime()
-        const bDate = new Date(b.createdAt || 0).getTime()
-        return bDate - aDate
-      })
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
       .slice(0, 10)
       .map((item) => ({
         id: item.id,
-        action: item.action || '',
-        resource: item.resource || '',
-        resourceId: item.resourceId || '',
-        usuario: item.usuario || '',
+        action: item.accion || '',
+        resource: item.entidad || '',
+        resourceId: item.entidadId || '',
+        usuario: item.user ? `${item.user.nombre} ${item.user.apellido}` : '',
         createdAt: item.createdAt || null
       }))
 
@@ -119,31 +107,23 @@ export class DashboardService {
   }
 
   async recentActivity(limit = 10) {
-    const auditLogs = await dashboardRepository.getCollectionItems('audit')
+    const auditLogs = await dashboardRepository.getAuditLogs()
 
     const items = auditLogs
-      .sort((a, b) => {
-        const aDate = new Date(a.createdAt || 0).getTime()
-        const bDate = new Date(b.createdAt || 0).getTime()
-        return bDate - aDate
-      })
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
       .slice(0, limit)
       .map((item) => ({
         id: item.id,
-        action: item.action || '',
-        resource: item.resource || '',
-        resourceId: item.resourceId || '',
-        details: item.details || {},
+        action: item.accion || '',
+        resource: item.entidad || '',
+        resourceId: item.entidadId || '',
+        details: item.detalles || {},
         userId: item.userId || '',
-        usuario: item.usuario || '',
+        usuario: item.user ? `${item.user.nombre} ${item.user.apellido}` : '',
         createdAt: item.createdAt || null
       }))
 
-    return {
-      items,
-      total: items.length,
-      limit
-    }
+    return { items, total: items.length, limit }
   }
 }
 

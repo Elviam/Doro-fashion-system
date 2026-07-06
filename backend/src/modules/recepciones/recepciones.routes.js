@@ -61,6 +61,14 @@ router.patch(
   asyncHandler(recepcionesController.confirm.bind(recepcionesController))
 )
 
+router.patch(
+  '/:id/cancel',
+  authenticate,
+  requirePermissions(['recepciones:update']),
+  validate(recepcionIdParamSchema, 'params'),
+  asyncHandler(recepcionesController.cancel.bind(recepcionesController))
+)
+
 router.delete(
   '/:id',
   authenticate,

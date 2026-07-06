@@ -1,67 +1,50 @@
-import { db } from '../../config/firebase.js'
-
-const COLLECTION = 'permissions'
+import { prisma } from '../../lib/prisma.js'
 
 export class PermissionsRepository {
   async findAll() {
-    const snapshot = await db.collection(COLLECTION).get()
-
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data()
-    }))
+    return prisma.permission.findMany({
+      orderBy: { code: 'asc' }
+    })
   }
 
   async findById(id) {
-    const doc = await db.collection(COLLECTION).doc(id).get()
-
-    if (!doc.exists) return null
-
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+    return prisma.permission.findUnique({ where: { id } })
   }
 
   async findByCode(code) {
-    const snapshot = await db
-      .collection(COLLECTION)
-      .where('code', '==', code)
-      .limit(1)
-      .get()
-
-    if (snapshot.empty) return null
-
-    const doc = snapshot.docs[0]
-
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+    return prisma.permission.findUnique({ where: { code } })
   }
 
   async create(data) {
-    const ref = await db.collection(COLLECTION).add(data)
-    const doc = await ref.get()
-
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+    return prisma.permission.create({ data })
   }
 
+  // Reemplaza al patrón Firestore doc(id).set(data, { merge: true }).
+  // Como en Postgres el id es un cuid autogenerado, "upsert por id" solo
+  // tiene sentido si ya conoces el id. Para seeds por `code` (que es lo que
+  // usaban tus scripts), usa upsertByCode en su lugar.
   async createWithId(id, data) {
-    await db.collection(COLLECTION).doc(id).set(data, { merge: true })
-    return this.findById(id)
+    return prisma.permission.upsert({
+      where: { id },
+      update: data,
+      create: { id, ...data }
+    })
+  }
+
+  async upsertByCode(code, data) {
+    return prisma.permission.upsert({
+      where: { code },
+      update: data,
+      create: { code, ...data }
+    })
   }
 
   async update(id, data) {
-    await db.collection(COLLECTION).doc(id).update(data)
-    return this.findById(id)
+    return prisma.permission.update({ where: { id }, data })
   }
 
   async remove(id) {
-    await db.collection(COLLECTION).doc(id).delete()
+    await prisma.permission.delete({ where: { id } })
     return true
   }
 }

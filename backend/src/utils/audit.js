@@ -13,9 +13,7 @@ export async function logAuditEvent({
       resource,
       resourceId,
       details,
-      userId: currentUser?.sub || '',
-      usuario: currentUser?.usuario || '',
-      createdAt: new Date().toISOString()
+      userId: currentUser?.sub || null
     })
   } catch (error) {
     console.error('AUDIT LOG ERROR =>', error)

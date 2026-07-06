@@ -36,17 +36,19 @@ export function useProtectedRoute(requiredPage) {
 
   // Páginas globales disponibles para todos los roles
   if (GLOBAL_PAGES.includes(requiredPage)) {
-    return { isAuthorized: true, userRole: usuario?.roleId || usuario?.role };
+    return { isAuthorized: true, userRole: usuario?.role || usuario?.roleId };
   }
 
-  const userRole = usuario?.roleId || usuario?.role;
+  const userRole = usuario?.role || usuario?.roleId;
 
   if (!userRole) {
+    console.log("userRole:", JSON.stringify(userRole), "allowedPages:", allowedPages);
     return { isAuthorized: false, reason: "no-role" };
   }
 
   // ✅ Estático PRIMERO — cubre páginas nuevas como inventario
   const allowedPages = ROLE_PERMISSIONS[userRole] || [];
+  console.log("userRole:", JSON.stringify(userRole), "allowedPages:", allowedPages);
   if (allowedPages.includes(requiredPage)) {
     return { isAuthorized: true, userRole };
   }

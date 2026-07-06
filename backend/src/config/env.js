@@ -22,7 +22,9 @@ export const env = {
   JWT_REFRESH_SECRET: required('JWT_REFRESH_SECRET'),
   JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
 
-  FIREBASE_PROJECT_ID: required('FIREBASE_PROJECT_ID'),
-  FIREBASE_CLIENT_EMAIL: required('FIREBASE_CLIENT_EMAIL'),
-  FIREBASE_PRIVATE_KEY: required('FIREBASE_PRIVATE_KEY').replace(/\\n/g, '\n')
+  FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || null,
+  FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL || null,
+  FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY
+    ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+    : null
 }

@@ -9,7 +9,7 @@ export const PERMISSION_TO_PAGE_MAP = {
   'users:read': 'usuarios',
   'audit:read': 'auditoria',
   'roles:read': 'roles',
-  'inventory:read': 'productos', // inventory usa la misma página que productos
+  'inventory:read': 'inventario', 
   'tienda:read': 'tienda',
   'ventas:read': 'ventas'
 };

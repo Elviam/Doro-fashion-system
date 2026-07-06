@@ -273,14 +273,14 @@ export default function Auditoria() {
                   <td className="p-3 md:p-4 text-center">
                     <ResourceBadge resource={l.resource} />
                   </td>
-                  <td className="p-3 md:p-4 text-center font-mono text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)] hidden md:table-cell">
+                  <td className="p-3 md:p-4 text-center font-mono text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">
                     {l.resourceId || "—"}
                   </td>
                   <td className="p-3 md:p-4 text-center text-sm lg:text-base font-medium text-[var(--noir)] dark:text-[var(--snow)]">
                     {l.usuario || "—"}
                   </td>
-                  <td className="p-3 md:p-4 text-center text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)] hidden lg:table-cell max-w-[140px] truncate overflow-hidden whitespace-nowrap">
-                    {detailKeys || "—"}
+                  <td className="p-3 md:p-4 text-center text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)] max-w-[140px] truncate overflow-hidden whitespace-nowrap">
+                  {detailKeys || "—"}
                   </td>
                   <td className="p-3 md:p-4 text-center text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">
                     {fmtDateShort(l.createdAt)}

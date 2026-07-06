@@ -1,41 +1,33 @@
-import { db } from '../../config/firebase.js'
-
-const COLLECTION = 'ventas'
+import { prisma } from '../../lib/prisma.js'
 
 export class VentasRepository {
   async findAll() {
-    const snapshot = await db.collection(COLLECTION).orderBy('createdAt', 'desc').get()
-
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data()
-    }))
+    return prisma.sale.findMany({
+      include: { items: true, cliente: true },
+      orderBy: { createdAt: 'desc' }
+    })
   }
 
   async findById(id) {
-    const doc = await db.collection(COLLECTION).doc(id).get()
-
-    if (!doc.exists) return null
-
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+    return prisma.sale.findUnique({
+      where: { id },
+      include: { items: true, cliente: true }
+    })
   }
 
-  async create(data) {
-    const ref = await db.collection(COLLECTION).add(data)
-    const doc = await ref.get()
-
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+  async create({ items, ...data }) {
+    return prisma.sale.create({
+      data: { ...data, items: { create: items } },
+      include: { items: true, cliente: true }
+    })
   }
 
   async update(id, data) {
-    await db.collection(COLLECTION).doc(id).update(data)
-    return this.findById(id)
+    return prisma.sale.update({
+      where: { id },
+      data,
+      include: { items: true, cliente: true }
+    })
   }
 }
 

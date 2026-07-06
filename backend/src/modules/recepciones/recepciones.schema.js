@@ -1,12 +1,6 @@
 import { z } from 'zod'
 
-const booleanLike = z.union([
-  z.boolean(),
-  z.enum(['true', 'false'])
-]).transform((value) => {
-  if (typeof value === 'boolean') return value
-  return value === 'true'
-})
+const ESTADOS = ['BORRADOR', 'CONFIRMADA', 'CANCELADA']
 
 const recepcionItemSchema = z.object({
   productId: z.string({ required_error: 'El productId es obligatorio' }).min(1, 'El productId es obligatorio'),
@@ -17,10 +11,10 @@ const recepcionItemSchema = z.object({
 
 export const listRecepcionesQuerySchema = z.object({
   q: z.string().optional().default(''),
-  status: z.enum(['DRAFT', 'CONFIRMED']).optional(),
+  status: z.enum(ESTADOS).optional(),
   fechaDesde: z.string().optional(),
   page: z.coerce.number().int().min(1).optional().default(1),
-  limit: z.coerce.number().int().min(1).max(100).optional().default(10)
+  limit: z.coerce.number().int().min(1).max(500).optional().default(10)
 })
 
 export const recepcionIdParamSchema = z.object({
@@ -29,6 +23,7 @@ export const recepcionIdParamSchema = z.object({
 
 export const createRecepcionSchema = z.object({
   supplierId: z.string({ required_error: 'El supplierId es obligatorio' }).min(1, 'El supplierId es obligatorio'),
+  facturaProveedor: z.string().optional().nullable(),
   fecha: z.string({ required_error: 'La fecha es obligatoria' }).min(1, 'La fecha es obligatoria'),
   folio: z.union([z.string().min(2, 'El folio debe tener al menos 2 caracteres'), z.literal(''), z.undefined()]).optional(),
   comentarios: z.string().optional().nullable(),
@@ -37,6 +32,7 @@ export const createRecepcionSchema = z.object({
 
 export const updateRecepcionSchema = z.object({
   supplierId: z.string().min(1, 'El supplierId es obligatorio').optional(),
+  facturaProveedor: z.string().nullable().optional(),
   fecha: z.string().min(1, 'La fecha es obligatoria').optional(),
   folio: z.string().min(2, 'El folio debe tener al menos 2 caracteres').optional(),
   comentarios: z.string().nullable().optional(),

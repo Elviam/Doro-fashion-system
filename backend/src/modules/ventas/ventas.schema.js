@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const ESTADOS_PERMITIDOS = ['pendiente', 'pagado', 'cancelado']
+const ESTADOS_PERMITIDOS = ['PENDIENTE', 'PAGADO', 'CANCELADO']
 const METODOS_PAGO = ['tarjeta', 'oxxo', 'spei']
 
 const itemVentaSchema = z.object({

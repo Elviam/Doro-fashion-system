@@ -814,7 +814,7 @@ export default function Inventario() {
                       <span className="block text-xs font-mono text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{sku}</span>
                       <span className="block text-xs lg:text-sm text-[var(--noir)] dark:text-[var(--snow)] truncate max-w-[120px] mx-auto">{nombre}</span>
                     </td>
-                    <td className="p-3 md:p-4 text-center font-mono text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)] hidden lg:table-cell">
+                    <td className="p-3 md:p-4 text-center font-mono text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">
                       {refId}
                     </td>
                     <td className="p-3 md:p-4 text-center text-sm lg:text-base font-bold">

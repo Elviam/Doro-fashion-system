@@ -63,9 +63,10 @@ export const productIdParamSchema = z.object({
 
 export const createProductSchema = z.object({
   sku: z
-    .string({ required_error: 'El SKU es obligatorio' })
-    .min(2, 'El SKU debe tener al menos 2 caracteres'),
-
+  .string()
+  .min(2, 'El SKU debe tener al menos 2 caracteres')
+  .optional(),
+  
   nombre: z
     .string({ required_error: 'El nombre es obligatorio' })
     .min(2, 'El nombre debe tener al menos 2 caracteres'),

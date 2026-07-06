@@ -23,7 +23,7 @@ export default function Layout({ children }) {
           lg:translate-x-0
         `}
       >
-        <Sidebar />
+        <Sidebar onCerrar={() => setSidebarOpen(false)} />
       </div>
 
       <div className="flex-1 flex flex-col relative w-full overflow-hidden">

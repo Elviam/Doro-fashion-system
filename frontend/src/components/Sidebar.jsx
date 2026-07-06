@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, ClipboardList, Users, Truck, UserCog, ShieldCheck, Shield, ShoppingCart, LogOut, ChevronLeft, ChevronRight, Book } from "lucide-react";
+import { LayoutDashboard, Package, ClipboardList, Users, Truck, UserCog, ShieldCheck, Shield, ShoppingCart, ChevronLeft, ChevronRight, Book } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
-import Boton from "./Boton";
 
 const navItems = [
   {
@@ -45,7 +44,7 @@ const FontLoader = () => (
   `}</style>
 );
 
-export default function Sidebar() {
+export default function Sidebar({ onCerrar }) {
   const { logout, usuario } = useAuth();
   const navigate   = useNavigate();
   const location   = useLocation();
@@ -53,7 +52,6 @@ export default function Sidebar() {
     () => localStorage.getItem("sidebar-collapsed") === "true"
   );
 
- 
   const [esDesktop, setEsDesktop] = useState(
     () => typeof window !== "undefined" && window.innerWidth >= 1024
   );
@@ -66,52 +64,57 @@ export default function Sidebar() {
   }, []);
 
   const isCollapsed = collapsed && esDesktop;
-
-  const handleIrAlaTienda = () => {
-    navigate("/tienda");   
-  };
-
-  const tienePermiso = (permisoRequerido) => true;
-    /*{
-    if (!permisoRequerido) return true; 
-    
-    // Permitir a admins directamente
-    if (usuario?.roleId === "role_admin" || usuario?.roleId === "ADMIN" || usuario?.roleId === "GERENTE") {
-      return true;
+   const manejarToggle = () => {
+    if (esDesktop) {
+      // En desktop: colapsa/expande el sidebar
+      setCollapsed((c) => {
+        localStorage.setItem("sidebar-collapsed", String(!c));
+        return !c;
+      });
+    } else {
+      // En móvil: el sidebar es un drawer, así que "<" lo cierra
+      onCerrar?.();
     }
-    
-    // Para otros, verificar permisos dinámicos
-    if (!usuario?.permissions) return false; 
-    return usuario.permissions.includes(permisoRequerido);
-  };*/
+  };
+  const tienePermiso = (permisoRequerido) => {
+      if (!permisoRequerido) return true;
 
-  return (
-    <aside
-      className="relative z-10 flex flex-col h-screen shrink-0 overflow-hidden transition-all duration-300 bg-[var(--ivory-deep)] dark:bg-[var(--noir)] border-r border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)]"
-      style={{
-        width: isCollapsed ? "64px" : "225px",
-      }}
-    >
+      // Permitir a admins y gerentes directamente
+      if (usuario?.role === "ADMIN" || usuario?.role === "GERENTE") {
+        return true;
+      }
+
+      // Para otros roles, verificar permisos dinámicos del JWT
+      if (!usuario?.permissions) return false;
+      return usuario.permissions.includes(permisoRequerido);
+    };
+
+    return (
+      <aside
+        className="relative z-10 flex flex-col h-screen shrink-0 overflow-hidden transition-all duration-300 bg-[var(--ivory-deep)] dark:bg-[var(--noir)] border-r border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)]"
+        style={{
+          width: isCollapsed ? "64px" : "225px",
+        }}
+      >
       <FontLoader />
 
       {/* Glow decorativo dorado */}
-      <div
+        <div
         className="absolute -top-30 -left-25 w-62.5 h-62.5 blur-3xl rounded-full pointer-events-none"
         style={{ background: "var(--gold-15)" }}
       />
 
       {/* Botón toggle — visible en todos los tamaños de pantalla */}
-      <button
-        onClick={() => setCollapsed((c) => {
-          localStorage.setItem("sidebar-collapsed", String(!c));
-          return !c;
-        })}
-        className="flex absolute top-3.5 right-2.5 z-10 w-6 h-6 rounded-full items-center justify-center transition-colors duration-300
-          bg-[var(--gold-08)] text-[var(--gold-dark)] border border-[var(--border-gold-40)]
-          hover:bg-[var(--gold-15)] hover:border-[var(--border-gold-55)]
-          dark:text-[var(--gold-light)] dark:border-[var(--border-gold-20)] dark:hover:border-[var(--border-gold-40)]"
-      >
-        {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+       <button
+            onClick={manejarToggle}
+            className="flex absolute top-3.5 right-2.5 z-10 w-6 h-6 rounded-full items-center justify-center transition-colors duration-300
+              bg-[var(--gold-08)] text-[var(--gold-dark)] border border-[var(--border-gold-40)]
+              hover:bg-[var(--gold-15)] hover:border-[var(--border-gold-55)]
+              dark:text-[var(--gold-light)] dark:border-[var(--border-gold-20)] dark:hover:border-[var(--border-gold-40)]"
+          >
+            {esDesktop
+              ? (collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />)
+              : <ChevronLeft size={12} />}
       </button>
 
       {/* Header */}
@@ -184,7 +187,12 @@ export default function Sidebar() {
                   return (
                     <button
                       key={label}
-                      onClick={() => navigate(ruta)}
+                      onClick={() => {
+                        navigate(ruta);
+                        if (!esDesktop) {
+                          onCerrar?.();
+                        }
+                      }}
                       title={isCollapsed ? label : undefined}
                       
                       className={`group relative flex items-center w-full h-11 rounded-[2px] transition-all duration-300 overflow-hidden ${
@@ -232,23 +240,6 @@ export default function Sidebar() {
           );
         })}
       </nav>
-
-      {/* Footer */}
-      <div
-        className="shrink-0 p-2.5 backdrop-blur-sm border-t border-[var(--border-gold-20)] bg-[var(--gold-08)] dark:bg-black/40"
-      >
-        <Boton
-          variante="claro"
-          onClick={handleIrAlaTienda}
-          title={isCollapsed ? "Tienda" : undefined}
-          className={`group flex items-center justify-center w-full py-2.5! transition-all duration-300 hover:scale-[1.02] ${
-            isCollapsed ? "px-0!" : "gap-2.5 text-base" 
-          }`}
-        >
-          <ShoppingCart size={18} strokeWidth={2.5} className="transition-transform duration-300 group-hover:-translate-x-1" />
-          {!isCollapsed && "Tienda"}
-        </Boton>
-      </div>
     </aside>
   );
 }

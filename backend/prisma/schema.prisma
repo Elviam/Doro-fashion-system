@@ -1,0 +1,248 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ── Auth / RBAC ──────────────────────────────────────────
+model Role {
+  id          String           @id @default(cuid())
+  codigo      String           @unique
+  nombre      String
+  permissions RolePermission[]
+  users       User[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  code        String           @unique
+  description String?
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  usuario      String   @unique
+  passwordHash String   @map("password_hash")
+  nombre       String
+  apellido     String?
+  email        String   @unique
+  roleId       String   @map("role_id")
+  role         Role     @relation(fields: [roleId], references: [id])
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  sales         Sale[]
+  auditLogs     AuditLog[]
+  passwordReset PasswordReset?
+
+  @@map("users")
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String   @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code      String
+  used      Boolean  @default(false)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("password_resets")
+}
+
+// ── Catálogo ─────────────────────────────────────────────
+model Product {
+  id           String   @id @default(cuid())
+  nombre       String
+  sku          String   @unique
+  descripcion  String?
+  categoria    String?
+  departamento String?
+  unidad       String?
+  marca        String?
+  modelo       String?
+  precioCompra Decimal  @default(0) @db.Decimal(10, 2) @map("precio_compra")
+  precioVenta  Decimal  @default(0) @db.Decimal(10, 2) @map("precio_venta")
+  stockMinimo  Int      @default(5) @map("stock_minimo")
+  imagen       String?
+  activo       Boolean  @default(true)
+  supplierId   String?   @map("supplier_id")
+  supplier     Supplier? @relation(fields: [supplierId], references: [id])
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  variants           ProductVariant[]
+  saleItems          SaleItem[]
+  inventoryMovements InventoryMovement[]
+  receptionItems     ReceptionItem[]
+
+  @@map("products")
+}
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  talla     String
+  stock     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([productId, talla])
+  @@map("product_variants")
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  nombre    String
+  rfc       String?
+  email     String   @unique
+  telefono  String?
+  direccion String?
+  contacto  String?
+  notas     String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sales Sale[]
+
+  @@map("clients")
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  nombre    String
+  rfc       String?
+  email     String?
+  telefono  String?
+  direccion String?
+  contacto  String?
+  giro      String?
+  notas     String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  receptions Reception[]
+  products   Product[]
+
+  @@map("suppliers")
+}
+// ── Ventas ───────────────────────────────────────────────
+model Sale {
+  id           String   @id @default(cuid())
+  numeroPedido String   @unique @map("numero_pedido")
+  clientId     String   @map("client_id")
+  cliente      Client   @relation(fields: [clientId], references: [id])
+  vendedorId   String?  @map("vendedor_id")
+  vendedor     User?    @relation(fields: [vendedorId], references: [id])
+  metodoPago   String   @map("metodo_pago")
+  subtotal     Decimal  @default(0) @db.Decimal(10, 2)
+  envio        Decimal  @default(0) @db.Decimal(10, 2)
+  total        Decimal  @db.Decimal(10, 2)
+  estado       String   @default("PENDIENTE")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  items SaleItem[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id              String  @id @default(cuid())
+  saleId          String  @map("sale_id")
+  sale            Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId       String  @map("product_id")
+  product         Product @relation(fields: [productId], references: [id])
+  nombreProducto  String  @map("nombre_producto")
+  imagenProducto  String? @map("imagen_producto")
+  talla           String
+  cantidad        Int
+  precioUnitario  Decimal @db.Decimal(10, 2) @map("precio_unitario")
+
+  @@map("sale_items")
+}
+
+// ── Recepciones / Inventario ─────────────────────────────
+model Reception {
+  id               String    @id @default(cuid())
+  folio            String    @unique
+  facturaProveedor String?   @map("factura_proveedor")
+  supplierId       String    @map("supplier_id")
+  supplier         Supplier  @relation(fields: [supplierId], references: [id])
+  fecha            DateTime
+  comentarios      String?
+  estado           String    @default("BORRADOR")
+  total            Decimal   @default(0) @db.Decimal(10, 2)
+  confirmedAt      DateTime? @map("confirmed_at")
+  confirmedBy      String?   @map("confirmed_by")
+  canceledAt       DateTime? @map("canceled_at")
+  canceledBy       String?   @map("canceled_by")
+  createdBy        String?   @map("created_by")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  items ReceptionItem[]
+
+  @@map("receptions")
+}
+model ReceptionItem {
+  id            String    @id @default(cuid())
+  receptionId   String    @map("reception_id")
+  reception     Reception @relation(fields: [receptionId], references: [id], onDelete: Cascade)
+  productId     String    @map("product_id")
+  product       Product   @relation(fields: [productId], references: [id])
+  talla         String?
+  cantidad      Int
+  costoUnitario Decimal   @db.Decimal(10, 2) @map("costo_unitario")
+
+  @@map("reception_items")
+}
+
+model InventoryMovement {
+  id        String   @id @default(cuid())
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id])
+  tipo      String
+  cantidad  Int
+  motivo    String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("inventory_movements")
+}
+
+// ── Auditoría ────────────────────────────────────────────
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id])
+  accion    String
+  entidad   String?
+  entidadId String?  @map("entidad_id")
+  detalles  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}

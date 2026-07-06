@@ -66,11 +66,7 @@ export default function FormClientes({ cliente, esNuevo, onClose, onGuardar, isO
   };
 
   // Header
-  const tituloPersonalizado = (
-    <h2 className="text-xl lg:text-2xl font-tag font-bold uppercase tracking-widest transition-colors text-[var(--noir)] dark:text-[var(--snow)] m-0">
-      {esNuevo ? "Nuevo Cliente" : "Editar Cliente"}
-    </h2>
-  );
+  const tituloPersonalizado = esNuevo ? "Nuevo Cliente" : "Editar Cliente";
 
   // Footer
   const footerAcciones = (

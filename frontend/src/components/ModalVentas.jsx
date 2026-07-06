@@ -178,12 +178,12 @@ export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onC
         </div>
 
         {/* Acciones de estado */}
-        {puedeActualizar && venta.estado !== "cancelado" && (
+        {puedeActualizar && venta.estado !== "CANCELADO" && (
           <div className="flex flex-wrap gap-2 mb-2">
-            {venta.estado === "pendiente" && (
+            {venta.estado === "PENDIENTE" && (
               <Boton
                 variante="claro"
-                onClick={() => onCambiarEstado(venta.id, "pagado")}
+                onClick={() => onCambiarEstado(venta.id, "PAGADO")}
                 tipo="button"
               >
                 <i className="bi bi-check-circle mr-1" /> Marcar como pagado

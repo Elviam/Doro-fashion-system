@@ -382,6 +382,19 @@ export default function Header({ onMenuClick }) {
             <i className="bi bi-moon-stars-fill text-lg"></i>
           )}
         </button>
+      </div>
+        {/* Sección derecha: tienda, tema y usuario, anclados a la esquina derecha */}
+<div className={`flex items-center gap-2 sm:gap-2.5 lg:gap-3.5 shrink-0 ml-auto ${busquedaMovilAbierta ? "hidden sm:flex" : "flex"}`}>
+
+  <button
+    onClick={() => navigate("/tienda")}
+    className="flex items-center justify-center w-10 h-10 rounded-[2px] transition-all duration-300 cursor-pointer shadow-sm active:scale-95 bg-[var(--ivory-deep)] text-[var(--gold-dark)] border border-[var(--border-gold-40)] hover:bg-[var(--gold)] hover:text-[var(--noir)] dark:bg-[var(--noir-soft)] dark:text-[var(--gold-light)] dark:border-[var(--border-gold-20)] dark:hover:bg-[var(--gold)] dark:hover:text-[var(--noir)]"
+    title="Ir a la tienda"
+  >
+    <i className="bi bi-shop text-lg"></i>
+  </button>
+
+  {/* Perfil del Usuario ... (sin cambios) */}
 
         {/* Perfil del Usuario */}
         <div className="relative">

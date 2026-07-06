@@ -24,10 +24,9 @@ export default function Roles() {
   useTitulo("Roles");
   const { usuario: usuarioLogeado } = useContext(AuthContext);
 
-  const esAdmin = usuarioLogeado?.roleId === "role_admin" || 
-                  usuarioLogeado?.roleId === "ADMIN" ||
-                  canPerformAction(usuarioLogeado?.permissions, 'roles', 'read');
-
+const esAdmin = usuarioLogeado?.role === "ADMIN" ||
+                canPerformAction(usuarioLogeado?.permissions, 'roles', 'read');
+                
   const [busqueda, setBusqueda] = useState("");
   const [rolesDB, setRolesDB] = useState([]);
   const [permisosDB, setPermisosDB] = useState([]);

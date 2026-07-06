@@ -13,6 +13,11 @@ router.post(
   validate(loginSchema),
   asyncHandler(authController.login.bind(authController))
 )
+router.post(
+  '/staff-login',
+  validate(loginSchema),
+  asyncHandler(authController.staffLogin.bind(authController))
+)
 
 router.get(
   '/me',

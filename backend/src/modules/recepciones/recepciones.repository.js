@@ -1,103 +1,89 @@
-import { db } from '../../config/firebase.js'
-
-const RECEPCIONES_COLLECTION = 'recepciones'
-const SUPPLIERS_COLLECTION = 'suppliers'
-const PRODUCTS_COLLECTION = 'products'
-const MOVEMENTS_COLLECTION = 'inventory_movements'
+import { prisma } from '../../lib/prisma.js'
 
 export class RecepcionesRepository {
   async findAll() {
-    const snapshot = await db.collection(RECEPCIONES_COLLECTION).get()
-
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data()
-    }))
+    return prisma.reception.findMany({
+      include: { items: { include: { product: true } }, supplier: true },
+      orderBy: { createdAt: 'desc' }
+    })
   }
 
   async findById(id) {
-    const doc = await db.collection(RECEPCIONES_COLLECTION).doc(id).get()
-
-    if (!doc.exists) return null
-
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+    return prisma.reception.findUnique({
+      where: { id },
+      include: { items: { include: { product: true } }, supplier: true }
+    })
   }
 
   async findByFolio(folio) {
-    const snapshot = await db
-      .collection(RECEPCIONES_COLLECTION)
-      .where('folio', '==', folio)
-      .limit(1)
-      .get()
-
-    if (snapshot.empty) return null
-
-    const doc = snapshot.docs[0]
-
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+    return prisma.reception.findUnique({ where: { folio } })
   }
 
-  async create(data) {
-    const ref = await db.collection(RECEPCIONES_COLLECTION).add(data)
-    const doc = await ref.get()
-
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+  async create({ items, ...data }) {
+    return prisma.reception.create({
+      data: { ...data, items: { create: items } },
+      include: { items: { include: { product: true } }, supplier: true }
+    })
   }
 
-  async update(id, data) {
-    await db.collection(RECEPCIONES_COLLECTION).doc(id).update(data)
+  // If `items` is provided, replaces the full item set inside a
+  // transaction (delete-all + recreate), same pattern used for
+  // ProductVariant — avoids partial mismatches on failure.
+  async update(id, { items, ...data }) {
+    if (items) {
+      await prisma.$transaction([
+        prisma.receptionItem.deleteMany({ where: { receptionId: id } }),
+        prisma.reception.update({ where: { id }, data }),
+        prisma.receptionItem.createMany({
+          data: items.map((item) => ({ ...item, receptionId: id }))
+        })
+      ])
+    } else {
+      await prisma.reception.update({ where: { id }, data })
+    }
     return this.findById(id)
   }
 
   async remove(id) {
-    await db.collection(RECEPCIONES_COLLECTION).doc(id).delete()
+    await prisma.reception.delete({ where: { id } })
     return true
   }
 
   async findSupplierById(id) {
-    const doc = await db.collection(SUPPLIERS_COLLECTION).doc(id).get()
-
-    if (!doc.exists) return null
-
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+    return prisma.supplier.findUnique({ where: { id } })
   }
 
   async findProductById(id) {
-    const doc = await db.collection(PRODUCTS_COLLECTION).doc(id).get()
-
-    if (!doc.exists) return null
-
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+    return prisma.product.findUnique({ where: { id }, include: { variants: true } })
   }
 
-  async updateProduct(id, data) {
-    await db.collection(PRODUCTS_COLLECTION).doc(id).update(data)
-    return this.findProductById(id)
+  // Receiving goods can introduce a talla that doesn't have a variant
+  // row yet (e.g. a new size for an existing product) — create it on
+  // the fly instead of failing.
+  async findOrCreateVariant(productId, talla) {
+    const existing = await prisma.productVariant.findUnique({
+      where: { productId_talla: { productId, talla: talla || 'Única' } }
+    })
+    if (existing) return existing
+
+    return prisma.productVariant.create({
+      data: { productId, talla: talla || 'Única', stock: 0 }
+    })
+  }
+
+  async incrementVariantStock(variantId, delta) {
+    return prisma.productVariant.update({
+      where: { id: variantId },
+      data: { stock: { increment: delta } }
+    })
+  }
+
+  async updateProductCosto(productId, precioCompra) {
+    return prisma.product.update({ where: { id: productId }, data: { precioCompra } })
   }
 
   async createInventoryMovement(data) {
-    const ref = await db.collection(MOVEMENTS_COLLECTION).add(data)
-    const doc = await ref.get()
-
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+    return prisma.inventoryMovement.create({ data })
   }
 }
 

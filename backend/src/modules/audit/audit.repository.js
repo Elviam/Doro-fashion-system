@@ -1,36 +1,31 @@
-import { db } from '../../config/firebase.js'
-
-const COLLECTION = 'audit'
+import { prisma } from '../../lib/prisma.js'
 
 export class AuditRepository {
   async findAll() {
-    const snapshot = await db.collection(COLLECTION).get()
-
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data()
-    }))
+    return prisma.auditLog.findMany({
+      include: { user: true },
+      orderBy: { createdAt: 'desc' }
+    })
   }
 
   async findById(id) {
-    const doc = await db.collection(COLLECTION).doc(id).get()
-
-    if (!doc.exists) return null
-
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+    return prisma.auditLog.findUnique({
+      where: { id },
+      include: { user: true }
+    })
   }
 
-  async create(data) {
-    const ref = await db.collection(COLLECTION).add(data)
-    const doc = await ref.get()
-
-    return {
-      id: doc.id,
-      ...doc.data()
-    }
+  async create({ action, resource, resourceId, details, userId }) {
+    return prisma.auditLog.create({
+      data: {
+        accion: action,
+        entidad: resource || null,
+        entidadId: resourceId || null,
+        detalles: details || {},
+        userId: userId || null
+      },
+      include: { user: true }
+    })
   }
 }
 

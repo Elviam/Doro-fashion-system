@@ -24,7 +24,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
     if (rolesDispProp && rolesDispProp.length > 0) {
       return rolesDispProp
         .filter(rol => {
-          const esAdmin = usuarioLogeado?.roleId === "role_admin" || usuarioLogeado?.roleId === "ADMIN";
+          const esAdmin = usuarioLogeado?.role === "ADMIN";
           const rolId = rol.id || rol.nombre;
           if (rolId === "CLIENTE") return false;
           if (!esAdmin && rolId === "GERENTE") return false;
@@ -34,9 +34,9 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
     }
 
     const rolesBase = ["BODEGUERO", "VENDEDOR"];
-    const esAdmin = canPerformAction(usuarioLogeado?.permissions, 'roles', 'create') || usuarioLogeado?.roleId === "role_admin";
-    const esGerente = canPerformAction(usuarioLogeado?.permissions, 'users', 'create') || usuarioLogeado?.roleId === "GERENTE";
-    
+    const esAdmin = canPerformAction(usuarioLogeado?.permissions, 'roles', 'create') || usuarioLogeado?.role === "ADMIN";
+    const esGerente = canPerformAction(usuarioLogeado?.permissions, 'users', 'create') || usuarioLogeado?.role === "GERENTE";
+
     if (esAdmin) return [{ id: "GERENTE", nombre: "GERENTE" }, { id: "BODEGUERO", nombre: "BODEGUERO" }, { id: "VENDEDOR", nombre: "VENDEDOR" }];
     if (esGerente) return rolesBase.map(r => ({ id: r, nombre: r }));
     return [];
@@ -117,8 +117,8 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
     }
   };
 
-  const puedeEditar = usuarioLogeado?.roleId === "role_admin" || usuarioLogeado?.roleId === "GERENTE";
-
+  const puedeEditar = usuarioLogeado?.role === "ADMIN" || usuarioLogeado?.role === "GERENTE";
+  
   if (!puedeEditar && !esNuevo) {
     return (
       <Modal isOpen={isOpen} onClose={onClose} ancho="max-w-md" titulo={<span className="text-xl font-display font-bold text-[var(--noir)] dark:text-[var(--snow)] block m-0">Acceso Denegado</span>}>
