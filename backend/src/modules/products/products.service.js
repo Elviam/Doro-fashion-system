@@ -7,6 +7,13 @@ function normalizeOptionalText(value) {
   const trimmed = String(value).trim()
   return trimmed === '' ? '' : trimmed
 }
+
+// La unidad de medida ya no la captura el usuario: todo el catálogo
+// de D'oro son piezas (no hay calzado ni productos por par/caja).
+function inferUnidad() {
+  return 'Pieza'
+}
+
 // Genera un SKU corto, legible y sin colisiones cuando el cliente
 // no proporciona uno, cumpliendo con la promesa de la interfaz de
 // generar el SKU automáticamente.
@@ -67,10 +74,7 @@ export class ProductsService {
         String(product.sku || '').toLowerCase().includes(term) ||
         String(product.nombre || '').toLowerCase().includes(term) ||
         String(product.descripcion || '').toLowerCase().includes(term) ||
-        String(product.categoria || '').toLowerCase().includes(term) ||
-        String(product.unidad || '').toLowerCase().includes(term) ||
-        String(product.marca || '').toLowerCase().includes(term) ||
-        String(product.modelo || '').toLowerCase().includes(term)
+        String(product.categoria || '').toLowerCase().includes(term)
       ))
     }
 
@@ -101,8 +105,8 @@ export class ProductsService {
 
   async create(payload, currentUser = null) {
     const normalizedSku = payload.sku
-  ? normalizeSku(payload.sku)
-  : await generateUniqueSku(payload.categoria)
+      ? normalizeSku(payload.sku)
+      : await generateUniqueSku(payload.categoria)
 
     const existingBySku = await productsRepository.findBySku(normalizedSku)
     if (existingBySku) {
@@ -126,16 +130,14 @@ export class ProductsService {
       sku: normalizedSku,
       nombre: payload.nombre.trim(),
       descripcion: normalizeOptionalText(payload.descripcion) || '',
-      categoria: normalizeOptionalText(payload.categoria) || '',
-      departamento: normalizeOptionalText(payload.departamento) || '',
-      unidad: normalizeOptionalText(payload.unidad) || '',
-      marca: normalizeOptionalText(payload.marca) || '',
-      modelo: normalizeOptionalText(payload.modelo) || '',
+      categoria: payload.categoria,
+      departamento: payload.departamento,
+      unidad: inferUnidad(),
       supplierId: payload.supplierId || null,
       precioCompra: Number(payload.precioCompra ?? 0),
       precioVenta: Number(payload.precioVenta ?? 0),
       stockMinimo: Number(payload.stockMinimo ?? 0),
-      imagen: payload.imagen || null,
+      imagenes: Array.isArray(payload.imagenes) ? payload.imagenes : [],
       activo: payload.activo ?? true,
       variantes
     }
@@ -194,15 +196,15 @@ export class ProductsService {
     if (payload.sku !== undefined) data.sku = normalizeSku(payload.sku)
     if (payload.nombre !== undefined) data.nombre = payload.nombre.trim()
     if (payload.descripcion !== undefined) data.descripcion = normalizeOptionalText(payload.descripcion) || ''
-    if (payload.categoria !== undefined) data.categoria = normalizeOptionalText(payload.categoria) || ''
-    if (payload.departamento !== undefined) data.departamento = normalizeOptionalText(payload.departamento) || ''
-    if (payload.unidad !== undefined) data.unidad = normalizeOptionalText(payload.unidad) || ''
-    if (payload.marca !== undefined) data.marca = normalizeOptionalText(payload.marca) || ''
-    if (payload.modelo !== undefined) data.modelo = normalizeOptionalText(payload.modelo) || ''
+    if (payload.categoria !== undefined) {
+      data.categoria = payload.categoria
+      data.unidad = inferUnidad()
+    }
+    if (payload.departamento !== undefined) data.departamento = payload.departamento
     if (payload.supplierId !== undefined) data.supplierId = payload.supplierId || null
     if (payload.precioCompra !== undefined) data.precioCompra = Number(payload.precioCompra)
     if (payload.precioVenta !== undefined) data.precioVenta = Number(payload.precioVenta)
-    if (payload.imagen !== undefined) data.imagen = payload.imagen || null
+    if (payload.imagenes !== undefined) data.imagenes = Array.isArray(payload.imagenes) ? payload.imagenes : []
     if (payload.stockMinimo !== undefined) data.stockMinimo = Number(payload.stockMinimo)
     if (payload.activo !== undefined) data.activo = payload.activo
 
@@ -277,7 +279,6 @@ export class ProductsService {
     return { success: true }
   }
 
-  
   sanitizeProduct(product) {
     const inventario = (product.variants || []).map((v) => ({
       id: v.id,
@@ -293,15 +294,13 @@ export class ProductsService {
       categoria: product.categoria || '',
       departamento: product.departamento || '',
       unidad: product.unidad || '',
-      marca: product.marca || '',
-      modelo: product.modelo || '',
       supplierId: product.supplierId || '',
       supplierNombre: product.supplier?.nombre || '',
       precioCompra: Number(product.precioCompra || 0),
       precioVenta: Number(product.precioVenta || 0),
       stock: computeTotalStock(product.variants || []),
       stockMinimo: Number(product.stockMinimo || 0),
-      imagen: product.imagen || null,
+      imagenes: product.imagenes || [],
       inventario,
       activo: product.activo ?? true,
       createdAt: product.createdAt || null,

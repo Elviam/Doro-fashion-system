@@ -23,18 +23,15 @@ export default function Productos() {
   const [filtroCategoria, setFiltroCategoria] = useState("");
   const [busqueda, setBusqueda] = useState("");
   
-  // Estados para la Base de Datos
   const [productosDB, setProductosDB] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
 
-  // Estados para Modales
   const [isModalVerAbierto, setIsModalVerAbierto] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
   const [isModalFormAbierto, setIsModalFormAbierto] = useState(false);
   const [productoAEditar, setProductoAEditar] = useState(null);
 
-  // Estados para la paginación
   const [paginaActiva, setPaginaActiva] = useState(1);
   const LIMIT = 10;
 
@@ -66,12 +63,11 @@ export default function Productos() {
   { value: "Faldas", label: "Faldas" },
   { value: "Shorts", label: "Shorts" },
   { value: "Pantalones", label: "Pantalones" },
-  { value: "Calzado", label: "Calzado" },
   { value: "Accesorios", label: "Accesorios" },
 ];
 
   const encabezadosProductos = [
-    "Sku", "Nombre", "Departamento", "Categoría", "Precio", "Stock", "Estado", "Acciones"
+    "Imagen","Sku", "Nombre", "Departamento", "Categoría", "Precio", "Stock", "Estado", "Acciones"
   ];
 
   const fetchProductos = async (silencioso = false) => {
@@ -114,11 +110,9 @@ export default function Productos() {
   const activosProd = productosDB.filter(p => p.activo !== false).length;
   const inactivosProd = productosDB.filter(p => p.activo === false).length;
 
-  // Cálculo de los porcentajes para las tarjetas superiores
   const activosPorc = totalProd > 0 ? Math.round((activosProd / totalProd) * 100) : 0;
   const inactivosPorc = totalProd > 0 ? Math.round((inactivosProd / totalProd) * 100) : 0;
 
-   // Cálculos matemáticos para la paginación
   const start = (paginaActiva - 1) * LIMIT;
   const datosPaginados = datosFiltrados.slice(start, start + LIMIT);
 
@@ -163,11 +157,15 @@ export default function Productos() {
     if (guardando) return;
     try {
       setGuardando(true);
-      let imageUrl = datosFormulario.imagen;
 
-      if (datosFormulario.imagen instanceof File) {
-        imageUrl = await uploadImageToCloudinary(datosFormulario.imagen);
-      }
+      const archivosNuevos = datosFormulario.imagenes.filter((img) => img instanceof File);
+      const urlsExistentes = datosFormulario.imagenes.filter((img) => typeof img === "string");
+
+      const urlsSubidas = await Promise.all(
+        archivosNuevos.map((file) => uploadImageToCloudinary(file))
+      );
+
+      const imagenesFinal = [...urlsExistentes, ...urlsSubidas];
 
       const stockCalculado = calcularStockTotal(datosFormulario.inventario);
 
@@ -184,7 +182,7 @@ export default function Productos() {
         stock: stockCalculado, 
         activo: datosFormulario.estado === "Activo",
         inventario: datosFormulario.inventario,
-        imagen: imageUrl,
+        imagenes: imagenesFinal,
         stockMinimo: Number(datosFormulario.stockMinimo),
         unidad: datosFormulario.unidad,
         supplierId: datosFormulario.supplierId,
@@ -322,7 +320,7 @@ export default function Productos() {
       />
 
       {cargando ? (
-        <div className="p-20 text-center  italic">Cargando catálogo...</div>
+        <div className="p-20 text-center italic text-ash">Cargando catálogo...</div>
       ) : (
         <Tabla encabezados={encabezadosProductos}>
           {datosPaginados.map((row, i) => {
@@ -330,10 +328,26 @@ export default function Productos() {
             const estadoTexto = row.activo !== false ? "Activo" : "Inactivo";
             
             return (
-              <tr key={i} className="border-b hover:bg-lila/30 dark:hover:bg-oscuro/40 transition-colors ">
-                <td className="p-4 text-center text-sm font-mono">{row.sku}</td>
-                <td className="p-4 text-center text-sm font-medium ">{row.nombre}</td>
-                <td className="p-4 text-center text-xs font-bold  uppercase tracking-wider">
+              <tr key={i} className="border-b border-gold/10 hover:bg-gold/8 transition-colors">
+                <td className="p-2 text-center">
+                  <div className="w-12 h-12 mx-auto rounded-[2px] overflow-hidden bg-noir-soft border border-gold/20">
+                    {row.imagenes?.[0] ? (
+                      <img
+                        src={row.imagenes[0]}
+                        alt={row.nombre}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <i className="bi bi-image text-ash text-sm" />
+                      </div>
+                    )}
+                  </div>
+                </td>
+                <td className="p-4 text-center text-sm font-mono text-gold-dark dark:text-gold-light">{row.sku}</td>
+                <td className="p-4 text-center text-sm font-medium">{row.nombre}</td>
+                <td className="p-4 text-center text-xs font-bold uppercase tracking-wider">
                   {row.departamento}
                 </td>
                 <td className="p-4 text-center">
@@ -398,14 +412,14 @@ export default function Productos() {
       {isModalFormAbierto && (
         <>
           {guardando && (
-            <div className="fixed inset-0 bg-oscuro/50 backdrop-blur-sm z-110 flex flex-col items-center justify-center">
-              <i className="bi bi-arrow-repeat animate-spin text-4xl text-lila mb-2"></i>
-              <p className="text-blanco font-bold">Guardando producto...</p>
+            <div className="fixed inset-0 bg-noir/50 backdrop-blur-sm z-110 flex flex-col items-center justify-center">
+              <i className="bi bi-arrow-repeat animate-spin text-4xl text-gold mb-2"></i>
+              <p className="text-gold font-bold">Guardando producto...</p>
             </div>
           )}
           
           <FormProducto 
-            isOpen={true} // Siempre en true porque lo controla el condicional de arriba
+            isOpen={true}
             data={productoAEditar} 
             onGuardar={handleGuardarProducto}
             onCancelar={() => setIsModalFormAbierto(false)}

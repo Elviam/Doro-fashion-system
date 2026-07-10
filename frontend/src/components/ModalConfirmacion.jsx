@@ -35,15 +35,25 @@ export default function ModalConfirmacion({
     return () => document.removeEventListener("keydown", h);
   }, [isOpen, onCancelar]);
 
+  useEffect(() => {
+    if (!isOpen || tipo !== "exito") return;
+
+    const timer = setTimeout(() => {
+      onCancelar?.();
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [isOpen, tipo, onCancelar]);
+
   if (!isOpen) return null;
 
   const config = {
     exito: {
       iconClass: "bi bi-check-lg",
-      borderColor: "border-verde/40",
-      iconBorder: "border-verde",
-      iconColor: "text-verde",
-      titleColor: "text-verde",
+      borderColor: "border-verde-dark/40 dark:border-verde/40",
+      iconBorder: "border-verde-dark dark:border-verde",
+      iconColor: "text-verde-dark dark:text-verde",
+      titleColor: "text-verde-dark dark:text-verde",
     },
     confirmar: {
       iconClass:   "bi bi-exclamation",
@@ -54,10 +64,10 @@ export default function ModalConfirmacion({
     },
     eliminar: {
       iconClass:   "bi bi-trash",
-      borderColor: "border-rojo/40",
-      iconBorder:  "border-rojo",
-      iconColor:   "text-rojo",
-      titleColor:  "text-rojo",
+      borderColor: "border-rojo-dark/40 dark:border-rojo/40",
+      iconBorder:  "border-rojo-dark dark:border-rojo",
+      iconColor:   "text-rojo-dark dark:text-rojo",
+      titleColor:  "text-rojo-dark dark:text-rojo",
     },
   }[tipo] || {
     iconClass: "bi bi-exclamation",
@@ -117,7 +127,7 @@ export default function ModalConfirmacion({
             {tipo === "eliminar" ? (
               <button
                 onClick={onConfirmar}
-                className="flex-1 h-11 bg-transparent font-tag text-xs lg:text-sm tracking-widest uppercase transition-colors rounded-[2px] cursor-pointer border border-rojo/60 text-rojo hover:bg-rojo hover:text-[var(--snow)]"
+                className="flex-1 h-11 bg-transparent font-tag text-xs lg:text-sm tracking-widest uppercase transition-colors rounded-[2px] cursor-pointer border border-rojo-dark/60 text-rojo-dark hover:bg-rojo-dark hover:text-[var(--snow)] dark:border-rojo/60 dark:text-rojo dark:hover:bg-rojo"
               >
                 {textoConfirmar}
               </button>

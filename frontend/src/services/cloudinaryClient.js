@@ -1,5 +1,5 @@
-const CLOUD_NAME = "m"; 
-const UPLOAD_PRESET = "DORO_PRODUCTOS"; 
+const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 export const uploadImageToCloudinary = async (file) => {
   if (!file) return null;
@@ -18,9 +18,13 @@ export const uploadImageToCloudinary = async (file) => {
     );
 
     const data = await response.json();
-    
-    return data.secure_url; 
-    
+
+    if (!response.ok) {
+      console.error("Cloudinary respondió con error:", data);
+      return null;
+    }
+
+    return data.secure_url;
   } catch (error) {
     console.error("Error al subir imagen a Cloudinary:", error);
     return null;

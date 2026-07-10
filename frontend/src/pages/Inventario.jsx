@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { api } from "../services/api";
-import { useAuth } from "../hooks/useAuth";
 import useTitulo from "../hooks/useTitulo";
 import Encabezado from "../components/Encabezado";
 import Tarjetas from "../components/Tarjetas";
@@ -13,37 +12,6 @@ import Boton from "../components/Boton";
 import Modal from "../components/Modal";
 import Input from "../components/Input";
 import Toast from "../components/Toast";
-
-const LIMIT = 10;
-const API_URL = import.meta.env.VITE_API_URL;
-
-const ACTION_TO_LABEL = {
-  CREATE:        "Confirmado",
-  UPDATE:        "Pendiente",
-  DELETE:        "Cancelado",
-  TOGGLE_ACTIVE: "Draft",
-};
-
-const ACTION_TO_TEXT = {
-  CREATE:        "Entrada",
-  UPDATE:        "Ajuste",
-  DELETE:        "Salida",
-  TOGGLE_ACTIVE: "Toggle",
-};
-
-const OPCIONES_TIPO = [
-  { label: "Todos los movimientos", value: "" },
-  { label: "Entradas (CREATE)",     value: "CREATE" },
-  { label: "Ajustes (UPDATE)",      value: "UPDATE" },
-  { label: "Salidas (DELETE)",      value: "DELETE" },
-];
-
-const OPCIONES_FECHA = [
-  { label: "Todo el tiempo", value: "" },
-  { label: "Hoy",            value: "hoy" },
-  { label: "Esta semana",    value: "semana" },
-  { label: "Este mes",       value: "mes" },
-];
 
 const OPCIONES_ESTADO_STOCK = [
   { label: "Todos",   value: "" },
@@ -63,50 +31,6 @@ const MOTIVOS_AJUSTE = [
 ];
 
 const TIPOS_AJUSTE = ["Sumar (+)", "Restar (−)", "Fijar valor exacto"];
-
-function fmtDateShort(iso) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return (
-    d.toLocaleDateString("es-MX", { day: "2-digit", month: "short" }) +
-    " " +
-    d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })
-  );
-}
-
-function fmtDateFull(iso) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return (
-    d.toLocaleDateString("es-MX", {
-      weekday: "long", year: "numeric", month: "long", day: "2-digit",
-    }) +
-    " " +
-    d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" })
-  );
-}
-
-function filtrarPorFecha(items, rango) {
-  if (!rango) return items;
-  const ahora = new Date();
-  return items.filter((l) => {
-    const fecha = new Date(l.createdAt || l.timestamp);
-    if (rango === "hoy")    return fecha.toDateString() === ahora.toDateString();
-    if (rango === "semana") {
-      const inicio = new Date(ahora);
-      inicio.setDate(ahora.getDate() - ahora.getDay());
-      inicio.setHours(0, 0, 0, 0);
-      return fecha >= inicio;
-    }
-    if (rango === "mes") {
-      return (
-        fecha.getMonth()    === ahora.getMonth() &&
-        fecha.getFullYear() === ahora.getFullYear()
-      );
-    }
-    return true;
-  });
-}
 
 function calcularStockTotal(inventario) {
   if (!Array.isArray(inventario)) return 0;
@@ -131,116 +55,19 @@ function getColorStock(stock) {
   return "text-verde";
 }
 
-function extraerStockActual(det) {
-  const s = det?.stock ?? det?.stockNuevo ?? det?.newStock ?? det?.after?.stock;
-  return s !== undefined && s !== null ? Number(s) : null;
-}
-
-// ── Botón de ajuste inline — reutilizable en ambas tablas ──
+// ── Botón de ajuste inline ──
 function BtnAjuste({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="relative group bg-transparent border-none cursor-pointer text-lg lg:text-xl outline-none transition-all opacity-70 hover:opacity-100 text-[var(--noir-soft)] hover:text-[var(--gold-dark)] dark:text-[var(--ash)] dark:hover:text-[var(--gold-light)]"
+      className="relative group bg-transparent border-none cursor-pointer text-lg lg:text-xl outline-none transition-all opacity-70 hover:opacity-100 text-noir-soft hover:text-gold-dark dark:text-ash dark:hover:text-gold-light"
       title="Ajustar stock"
     >
       <i className="bi bi-pencil inline-block transition-transform group-hover:scale-125" />
-      <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-body px-3 py-1.5 rounded-[2px] whitespace-nowrap shadow-xl z-50 pointer-events-none bg-[var(--noir)] text-[var(--snow)] dark:bg-[var(--noir-soft)] dark:border dark:border-[var(--border-gold-20)]">
+      <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-body px-3 py-1.5 rounded-[2px] whitespace-nowrap shadow-xl z-50 pointer-events-none bg-noir text-snow dark:bg-noir-soft dark:border dark:border-gold/20">
         Ajustar stock
       </span>
     </button>
-  );
-}
-
-function ModalDetalleMovimiento({ isOpen, onClose, log, onAjustar }) {
-  if (!isOpen || !log) return null;
-
-  const det         = log.details || {};
-  const sku         = det.sku    || det.before?.sku    || "—";
-  const nombre      = det.nombre || det.before?.nombre || det.after?.nombre || "—";
-  const stockActual = extraerStockActual(det);
-  const cambios     = Array.isArray(det.changes) ? det.changes : [];
-
-  const footerModal = (
-    <>
-      <Boton variante="fantasma" onClick={onClose}>Cerrar</Boton>
-      <Boton variante="claro" onClick={() => { onClose(); onAjustar({ sku: sku !== "—" ? sku : "" }); }}>
-        <i className="bi bi-pencil-square" /> Ajustar Stock
-      </Boton>
-    </>
-  );
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} titulo="Detalle del Movimiento" footer={footerModal} ancho="max-w-lg">
-      <div className="flex flex-col gap-5 font-body">
-
-        <div className="flex items-center gap-3">
-          <Etiquetas contenido={ACTION_TO_LABEL[log.action] || "Default"} />
-          <span className="text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">
-            {ACTION_TO_TEXT[log.action] || log.action}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 p-4 rounded-[2px] bg-[var(--gold-08)] border border-[var(--border-gold-40)] dark:bg-[var(--noir)]/40 dark:border-[var(--border-gold-20)]">
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">SKU</p>
-            <p className="text-sm font-mono font-bold text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{sku}</p>
-          </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Producto</p>
-            <p className="text-sm lg:text-base font-medium text-[var(--noir)] dark:text-[var(--snow)]">{nombre}</p>
-          </div>
-          {stockActual !== null && (
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Stock resultante</p>
-              <p className={`text-lg font-bold ${getColorStock(stockActual)}`}>{stockActual}</p>
-            </div>
-          )}
-          {det.stockMinimo !== undefined && (
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Stock mínimo</p>
-              <p className="text-sm lg:text-base font-medium text-[var(--noir)] dark:text-[var(--snow)]">{det.stockMinimo}</p>
-            </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Usuario</p>
-            <p className="text-sm lg:text-base text-[var(--noir)] dark:text-[var(--snow)]">{log.usuario || "—"}</p>
-          </div>
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Referencia</p>
-            <p className="text-xs font-mono text-[var(--noir-soft)] dark:text-[var(--ash)]">
-              {log.resourceId ? `#${log.resourceId.slice(-8).toUpperCase()}` : "—"}
-            </p>
-          </div>
-          <div className="col-span-2">
-            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Fecha y hora</p>
-            <p className="text-sm lg:text-base text-[var(--noir)] dark:text-[var(--snow)] capitalize">
-              {fmtDateFull(log.createdAt || log.timestamp)}
-            </p>
-          </div>
-        </div>
-
-        {cambios.length > 0 && (
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-2">
-              Campos modificados ({cambios.length})
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {cambios.map((c) => (
-                <span key={c}
-                  className="text-[10px] px-2 py-0.5 rounded-[2px] font-mono font-tag"
-                  style={{ background: "rgba(201,168,76,0.10)", border: "0.5px solid rgba(201,168,76,0.30)", color: "#C9A84C" }}>
-                  {c}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </Modal>
   );
 }
 
@@ -312,11 +139,9 @@ function ModalAjusteManual({ isOpen, onClose, onGuardar, guardando, skuInicial =
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} titulo="Ajuste Manual de Stock" footer={footerModal} ancho="max-w-md">
-      {/* Banner informativo — acento dorado */}
-      <div className="mb-5 px-3 py-2 rounded-[2px] text-xs font-body"
-        style={{ background: "rgba(201,168,76,0.08)", border: "0.5px solid rgba(201,168,76,0.30)", color: "#C9A84C" }}>
+      <div className="mb-5 px-3 py-2 rounded-[2px] text-xs font-body bg-gold/10 border border-gold/30 text-gold-dark dark:text-gold-light">
         <i className="bi bi-info-circle mr-1.5" />
-        Este ajuste quedará registrado en el Kardex con tu usuario y el motivo indicado.
+        Este ajuste quedará registrado en la Auditoría con tu usuario y el motivo indicado.
       </div>
 
       <div className="flex flex-col gap-4">
@@ -415,7 +240,7 @@ function TablaStock({ productosDB, busqueda, filtroEstado, onFilaClick, onAjusta
       <Tabla encabezados={encabezados}>
         {filasPaginadas.length === 0 ? (
           <tr>
-            <td colSpan={8} className="text-center py-14 text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">
+            <td colSpan={8} className="text-center py-14 text-sm lg:text-base text-noir-soft dark:text-ash">
               <i className="bi bi-inbox mr-2" />Sin resultados
             </td>
           </tr>
@@ -426,14 +251,14 @@ function TablaStock({ productosDB, busqueda, filtroEstado, onFilaClick, onAjusta
             return (
               <tr key={`${f.id}-${f.talla}-${i}`}
                 onClick={() => onFilaClick(f)}
-                className="border-b border-[var(--border-gold-20)] hover:bg-[var(--gold-08)] transition-colors cursor-pointer"
+                className="border-b border-gold/20 hover:bg-gold/8 transition-colors cursor-pointer"
                 title="Clic para ver detalle">
-                <td className="p-4 text-center text-xs lg:text-sm font-mono text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{f.sku}</td>
-                <td className="p-4 text-center text-sm lg:text-base font-medium text-[var(--noir)] dark:text-[var(--snow)]">{f.nombre}</td>
+                <td className="p-4 text-center text-xs lg:text-sm font-mono text-gold-dark dark:text-gold-light">{f.sku}</td>
+                <td className="p-4 text-center text-sm lg:text-base font-medium text-noir dark:text-snow">{f.nombre}</td>
                 <td className="p-4 text-center"><Etiquetas contenido={f.categoria} /></td>
-                <td className="p-4 text-center text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">{f.talla}</td>
+                <td className="p-4 text-center text-sm lg:text-base text-noir-soft dark:text-ash">{f.talla}</td>
                 <td className={`p-4 text-center text-sm lg:text-base font-bold ${getColorStock(f.stock)}`}>{f.stock}</td>
-                <td className="p-4 text-center text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">{f.stockMinimo}</td>
+                <td className="p-4 text-center text-xs lg:text-sm text-noir-soft dark:text-ash">{f.stockMinimo}</td>
                 <td className="p-4 text-center"><Etiquetas contenido={etiqueta} /></td>
                 <td className="p-4 text-center">
                   <BtnAjuste onClick={(e) => { e.stopPropagation(); onAjustarClick({ sku: f.sku, talla: f.talla }); }} />
@@ -489,47 +314,44 @@ function ModalDetalleStock({ isOpen, onClose, fila, onAjustar }) {
 
         <div className="flex items-center gap-3">
           <Etiquetas contenido={etiqueta} />
-          <span className="text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)] capitalize">{estado}</span>
+          <span className="text-sm lg:text-base text-noir-soft dark:text-ash capitalize">{estado}</span>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 p-4 rounded-[2px] bg-[var(--gold-08)] border border-[var(--border-gold-40)] dark:bg-[var(--noir)]/40 dark:border-[var(--border-gold-20)]">
+        <div className="grid grid-cols-2 gap-4 p-4 rounded-[2px] bg-gold/8 border border-gold/40 dark:bg-noir/40 dark:border-gold/20">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">SKU</p>
-            <p className="text-sm font-mono font-bold text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{fila.sku}</p>
+            <p className="text-[10px] uppercase tracking-wider text-noir-soft dark:text-ash mb-1">SKU</p>
+            <p className="text-sm font-mono font-bold text-gold-dark dark:text-gold-light">{fila.sku}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Producto</p>
-            <p className="text-sm lg:text-base font-medium text-[var(--noir)] dark:text-[var(--snow)]">{fila.nombre}</p>
+            <p className="text-[10px] uppercase tracking-wider text-noir-soft dark:text-ash mb-1">Producto</p>
+            <p className="text-sm lg:text-base font-medium text-noir dark:text-snow">{fila.nombre}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Talla / Variante</p>
-            <p className="text-sm lg:text-base text-[var(--noir)] dark:text-[var(--snow)]">{fila.talla}</p>
+            <p className="text-[10px] uppercase tracking-wider text-noir-soft dark:text-ash mb-1">Talla / Variante</p>
+            <p className="text-sm lg:text-base text-noir dark:text-snow">{fila.talla}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Categoría</p>
-            <p className="text-sm lg:text-base text-[var(--noir)] dark:text-[var(--snow)]">{fila.categoria}</p>
+            <p className="text-[10px] uppercase tracking-wider text-noir-soft dark:text-ash mb-1">Categoría</p>
+            <p className="text-sm lg:text-base text-noir dark:text-snow">{fila.categoria}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Stock actual</p>
+            <p className="text-[10px] uppercase tracking-wider text-noir-soft dark:text-ash mb-1">Stock actual</p>
             <p className={`text-2xl font-bold ${getColorStock(fila.stock)}`}>{fila.stock}</p>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)] mb-1">Stock mínimo</p>
-            <p className="text-2xl font-bold text-[var(--noir)] dark:text-[var(--snow)]">{fila.stockMinimo}</p>
+            <p className="text-[10px] uppercase tracking-wider text-noir-soft dark:text-ash mb-1">Stock mínimo</p>
+            <p className="text-2xl font-bold text-noir dark:text-snow">{fila.stockMinimo}</p>
           </div>
         </div>
 
-        {/* Banners de alerta — colores semánticos conservados */}
         {estado === "critico" && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-[2px] text-xs font-body"
-            style={{ background: "rgba(208,78,55,0.08)", border: "0.5px solid rgba(208,78,55,0.3)", color: "#D04E37" }}>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-[2px] text-xs font-body bg-rojo/10 border border-rojo/30 text-rojo-dark dark:text-rojo">
             <i className="bi bi-exclamation-triangle" />
             Stock por debajo del mínimo requerido. Se recomienda reponer inventario.
           </div>
         )}
         {estado === "bajo" && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-[2px] text-xs font-body"
-            style={{ background: "rgba(224,218,102,0.08)", border: "0.5px solid rgba(224,218,102,0.3)", color: "#E0DA66" }}>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-[2px] text-xs font-body bg-amarillo/10 border border-amarillo/30 text-amarillo-dark dark:text-amarillo">
             <i className="bi bi-exclamation-circle" />
             Stock bajo. Considera reabastecer pronto.
           </div>
@@ -541,24 +363,12 @@ function ModalDetalleStock({ isOpen, onClose, fila, onAjustar }) {
 
 export default function Inventario() {
   useTitulo("Inventario");
-  const { token, loading: authLoading } = useAuth();
 
-  const [vistaActiva,  setVistaActiva]  = useState("kardex");
   const [productosDB,  setProductosDB]  = useState([]);
-  const [logs,         setLogs]         = useState([]);
-  const [totalLogs,    setTotalLogs]    = useState(0);
-  const [cargando,     setCargando]     = useState(true);
-  const [error,        setError]        = useState(null);
   const [refreshKey,   setRefreshKey]   = useState(0);
 
   const [busqueda,     setBusqueda]     = useState("");
-  const [filtroTipo,   setFiltroTipo]   = useState("");
-  const [filtroFecha,  setFiltroFecha]  = useState("");
   const [filtroEstado, setFiltroEstado] = useState("");
-  const [paginaActual, setPaginaActual] = useState(1);
-
-  const [logSeleccionado,     setLogSeleccionado]     = useState(null);
-  const [isDetalleKardexOpen, setIsDetalleKardexOpen] = useState(false);
 
   const [filaSeleccionada,   setFilaSeleccionada]   = useState(null);
   const [isDetalleStockOpen, setIsDetalleStockOpen] = useState(false);
@@ -573,21 +383,12 @@ export default function Inventario() {
 
   const showToast = (message, type = "success") => setToast({ message, type });
 
-  const abrirDetalleKardex = (log) => { setLogSeleccionado(log); setIsDetalleKardexOpen(true); };
-  const abrirDetalleStock  = (fila) => { setFilaSeleccionada(fila); setIsDetalleStockOpen(true); };
+  const abrirDetalleStock = (fila) => { setFilaSeleccionada(fila); setIsDetalleStockOpen(true); };
 
   const abrirAjuste = ({ sku = "", talla = "" } = {}) => {
     setAjusteSku(sku);
     setAjusteTalla(talla);
     setIsAjusteOpen(true);
-  };
-
-  const handleCambiarVista = (vista) => {
-    setVistaActiva(vista);
-    setBusqueda("");
-    setFiltroTipo("");
-    setFiltroFecha("");
-    setFiltroEstado("");
   };
 
   useEffect(() => {
@@ -598,43 +399,6 @@ export default function Inventario() {
       })
       .catch((err) => console.error("Error productos:", err));
   }, [refreshKey]);
-
-  const fetchAuth = useCallback(
-    (url) => fetch(url, {
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    }),
-    [token]
-  );
-
-  useEffect(() => {
-    if (authLoading || !token) return;
-    const fetchLogs = async () => {
-      try {
-        setCargando(true);
-        setError(null);
-        const params = new URLSearchParams({
-          page: String(paginaActual), limit: String(LIMIT), resource: "products",
-          ...(busqueda   && { q:      busqueda   }),
-          ...(filtroTipo && { action: filtroTipo }),
-        });
-        const res = await fetchAuth(`${API_URL}/audit?${params}`);
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.message || `Error ${res.status}`);
-        }
-        const data = await res.json();
-        setLogs(filtrarPorFecha((data.items || []).slice(0, LIMIT), filtroFecha));
-        setTotalLogs(data.total || 0);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setCargando(false);
-      }
-    };
-    fetchLogs();
-  }, [authLoading, token, busqueda, filtroTipo, filtroFecha, paginaActual, refreshKey, fetchAuth]);
-
-  useEffect(() => { setPaginaActual(1); }, [busqueda, filtroTipo, filtroFecha]);
 
   const valorCosto = productosDB.reduce((acc, p) =>
     acc + calcularStockTotal(p.inventario) * (Number(p.precioCompra) || 0), 0);
@@ -647,17 +411,6 @@ export default function Inventario() {
     const minimo = Number(p.stockMinimo) || 5;
     return stock <= minimo && p.activo !== false;
   }).length;
-
-  const textoRango = totalLogs === 0
-    ? "0"
-    : `${(paginaActual - 1) * LIMIT + 1} – ${Math.min(paginaActual * LIMIT, totalLogs)}`;
-
-  const handleCambiarPagina = (page) => {
-    const totalPaginas = Math.max(1, Math.ceil(totalLogs / LIMIT));
-    if (page === "‹")      setPaginaActual((c) => Math.max(1, c - 1));
-    else if (page === "›") setPaginaActual((c) => Math.min(totalPaginas, c + 1));
-    else                   setPaginaActual(Number(page));
-  };
 
   const handleGuardarAjuste = async (datos) => {
     setGuardando(true);
@@ -696,8 +449,6 @@ export default function Inventario() {
     }
   };
 
-  const encabezadosKardex = ["Movimiento", "SKU / Producto", "Referencia", "Stock", "Usuario", "Fecha", "Acciones"];
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 flex flex-col gap-6 font-body">
 
@@ -722,166 +473,23 @@ export default function Inventario() {
           icon={alertasCriticas > 0 ? "bi bi-exclamation-triangle" : "bi bi-shield-check"} />
       </div>
 
-      {/* Selector de vista — Kardex / Stock */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-1 p-1 rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)]">
-          <button
-            onClick={() => handleCambiarVista("kardex")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-[2px] text-sm lg:text-base font-tag font-semibold transition-all duration-200 ${
-              vistaActiva === "kardex"
-                ? "bg-[var(--gold)] text-[var(--noir)] shadow-sm"
-                : "text-[var(--noir-soft)] dark:text-[var(--ash)] hover:text-[var(--noir)] dark:hover:text-[var(--snow)]"
-            }`}
-          >
-            <i className="bi bi-journal-text" /> Kardex
-          </button>
-          <button
-            onClick={() => handleCambiarVista("stock")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-[2px] text-sm lg:text-base font-tag font-semibold transition-all duration-200 ${
-              vistaActiva === "stock"
-                ? "bg-[var(--gold)] text-[var(--noir)] shadow-sm"
-                : "text-[var(--noir-soft)] dark:text-[var(--ash)] hover:text-[var(--noir)] dark:hover:text-[var(--snow)]"
-            }`}
-          >
-            <i className="bi bi-boxes" /> Stock
-          </button>
-        </div>
+      <p className="text-xs lg:text-sm text-noir-soft dark:text-ash">
+        Clic en una fila para ver el detalle · usa el ícono para ajustar stock · el historial de movimientos vive en <strong>Auditoría</strong>.
+      </p>
 
-        <p className="text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)] hidden sm:block">
-          Clic en una fila para ver el detalle · usa el ícono para ajustar stock.
-        </p>
-      </div>
+      <ToolBar
+        busqueda={busqueda} setBusqueda={setBusqueda}
+        placeholderBuscar="Buscar por SKU o nombre de producto…"
+        filtro={filtroEstado} setFiltro={setFiltroEstado}
+        opcionesFiltro={OPCIONES_ESTADO_STOCK} placeholderFiltro="Estado de stock"
+      />
 
-      {vistaActiva === "kardex" ? (
-        <ToolBar
-          busqueda={busqueda} setBusqueda={setBusqueda}
-          placeholderBuscar="Buscar por SKU, producto, usuario…"
-          filtro={filtroFecha} setFiltro={setFiltroFecha}
-          opcionesFiltro={OPCIONES_FECHA} placeholderFiltro="Rango de fechas"
-          filtro2={filtroTipo} setFiltro2={setFiltroTipo}
-          opcionesFiltro2={OPCIONES_TIPO} placeholderFiltro2="Tipo de movimiento"
-        />
-      ) : (
-        <ToolBar
-          busqueda={busqueda} setBusqueda={setBusqueda}
-          placeholderBuscar="Buscar por SKU o nombre de producto…"
-          filtro={filtroEstado} setFiltro={setFiltroEstado}
-          opcionesFiltro={OPCIONES_ESTADO_STOCK} placeholderFiltro="Estado de stock"
-        />
-      )}
-
-      {vistaActiva === "kardex" ? (
-        <>
-          <Tabla encabezados={encabezadosKardex}>
-            {cargando ? (
-              <tr>
-                <td colSpan={7} className="text-center py-14 text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">
-                  <i className="bi bi-arrow-repeat animate-spin mr-2" />Cargando historial…
-                </td>
-              </tr>
-            ) : error ? (
-              <tr>
-                <td colSpan={7} className="p-8 text-center text-sm lg:text-base text-rojo">
-                  <i className="bi bi-exclamation-circle mr-2" />{error}
-                </td>
-              </tr>
-            ) : logs.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="text-center py-14 text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">
-                  <i className="bi bi-inbox mr-2" />Sin movimientos que coincidan con los filtros
-                </td>
-              </tr>
-            ) : (
-              logs.map((l) => {
-                const det         = l.details || {};
-                const sku         = det.sku    || det.before?.sku    || "—";
-                const nombre      = det.nombre || det.before?.nombre || det.after?.nombre || "—";
-                const stockActual = extraerStockActual(det);
-                const refId       = l.resourceId ? `#${l.resourceId.slice(-6).toUpperCase()}` : "—";
-
-                return (
-                  <tr key={l.id}
-                    onClick={() => abrirDetalleKardex(l)}
-                    className="border-b border-[var(--border-gold-20)] hover:bg-[var(--gold-08)] transition-colors cursor-pointer"
-                    title="Clic para ver detalle">
-                    <td className="p-3 md:p-4 text-center">
-                      <Etiquetas contenido={ACTION_TO_LABEL[l.action] || "Default"} />
-                      <span className="block text-[10px] text-[var(--noir-soft)] dark:text-[var(--ash)] mt-0.5">
-                        {ACTION_TO_TEXT[l.action] || l.action}
-                      </span>
-                    </td>
-                    <td className="p-3 md:p-4 text-center">
-                      <span className="block text-xs font-mono text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{sku}</span>
-                      <span className="block text-xs lg:text-sm text-[var(--noir)] dark:text-[var(--snow)] truncate max-w-[120px] mx-auto">{nombre}</span>
-                    </td>
-                    <td className="p-3 md:p-4 text-center font-mono text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">
-                      {refId}
-                    </td>
-                    <td className="p-3 md:p-4 text-center text-sm lg:text-base font-bold">
-                      {stockActual !== null
-                        ? <span className={getColorStock(stockActual)}>{stockActual}</span>
-                        : <span className="text-[var(--noir-soft)] dark:text-[var(--ash)] text-xs">—</span>
-                      }
-                    </td>
-                    <td className="p-3 md:p-4 text-center text-sm lg:text-base text-[var(--noir)] dark:text-[var(--snow)]">
-                      {l.usuario || "—"}
-                    </td>
-                    <td className="p-3 md:p-4 text-center text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">
-                      {fmtDateShort(l.createdAt || l.timestamp)}
-                    </td>
-                    <td className="p-3 md:p-4 text-center">
-                      <BtnAjuste onClick={(e) => { e.stopPropagation(); abrirAjuste({ sku: sku !== "—" ? sku : "" }); }} />
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </Tabla>
-
-          <Paginacion
-            paginaActual={paginaActual} totalRegistros={totalLogs}
-            rangoSiguiente={textoRango} limit={LIMIT}
-            onCambiarPagina={handleCambiarPagina}
-            exportTitulo="Kardex de Inventario"
-            exportColumnas={[
-              { header: "Movimiento", key: "movimiento", width: 16 },
-              { header: "SKU",        key: "sku",        width: 14 },
-              { header: "Producto",   key: "producto",   width: 28 },
-              { header: "Stock",      key: "stock",      width: 8  },
-              { header: "Referencia", key: "referencia", width: 14 },
-              { header: "Usuario",    key: "usuario",    width: 20 },
-              { header: "Fecha",      key: "fecha",      width: 22 },
-            ]}
-            exportFilas={logs.map((l) => {
-              const det         = l.details || {};
-              const stockActual = extraerStockActual(det);
-              return {
-                movimiento:  ACTION_TO_TEXT[l.action] || l.action,
-                sku:         det.sku    || det.before?.sku    || "—",
-                producto:    det.nombre || det.before?.nombre || "—",
-                stock:       stockActual !== null ? String(stockActual) : "—",
-                referencia:  l.resourceId ? `#${l.resourceId.slice(-6).toUpperCase()}` : "—",
-                usuario:     l.usuario || "—",
-                fecha:       fmtDateShort(l.createdAt || l.timestamp),
-              };
-            })}
-          />
-        </>
-      ) : (
-        <TablaStock
-          productosDB={productosDB}
-          busqueda={busqueda}
-          filtroEstado={filtroEstado}
-          onFilaClick={abrirDetalleStock}
-          onAjustarClick={abrirAjuste}
-        />
-      )}
-
-      <ModalDetalleMovimiento
-        isOpen={isDetalleKardexOpen}
-        onClose={() => setIsDetalleKardexOpen(false)}
-        log={logSeleccionado}
-        onAjustar={abrirAjuste}
+      <TablaStock
+        productosDB={productosDB}
+        busqueda={busqueda}
+        filtroEstado={filtroEstado}
+        onFilaClick={abrirDetalleStock}
+        onAjustarClick={abrirAjuste}
       />
 
       <ModalDetalleStock

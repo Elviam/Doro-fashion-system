@@ -4,6 +4,7 @@ import {
   ResponsiveContainer, CartesianGrid,
 } from "recharts";
 
+import { api } from "../services/api";
 import Tarjetas from "../components/Tarjetas";
 import Tabla from "../components/Tabla";
 import Etiquetas from "../components/Etiquetas";
@@ -51,14 +52,6 @@ const MOCK_SUMMARY = {
     clients: 96, activeClients: 88,
     suppliers: 21, activeSuppliers: 19,
   },
-  lowStockCount: 6,
-  lowStockProducts: [
-    { id: "p1", sku: "DRO-SED-014", nombre: "Vestido Seda Como",       stock: 3, stockMinimo: 10, activo: true  },
-    { id: "p2", sku: "DRO-LIN-027", nombre: "Camisa Lino Belga",       stock: 5, stockMinimo: 12, activo: true  },
-    { id: "p3", sku: "DRO-LAN-009", nombre: "Abrigo Lana Merino",      stock: 1, stockMinimo: 8,  activo: true  },
-    { id: "p4", sku: "DRO-CAS-033", nombre: "Pantalón Cashmere",       stock: 4, stockMinimo: 10, activo: false },
-    { id: "p5", sku: "DRO-ALG-041", nombre: "Pañuelo Algodón Egipcio", stock: 6, stockMinimo: 15, activo: true  },
-  ],
   topProductos: [
     { id: "t1", nombre: "Vestido Seda Como",      sku: "DRO-SED-014", unidades: 142, ingreso: 218900 },
     { id: "t2", nombre: "Camisa Lino Belga",       sku: "DRO-LIN-027", unidades: 118, ingreso: 165400 },
@@ -67,6 +60,14 @@ const MOCK_SUMMARY = {
     { id: "t5", nombre: "Pantalón Cashmere",       sku: "DRO-CAS-033", unidades: 51,  ingreso: 142600 },
   ],
 };
+
+const MOCK_PRODUCTOS = [
+  { id: "p1", sku: "DRO-SED-014", nombre: "Vestido Seda Como",       inventario: [{ talla: "M", stock: 3 }],  stockMinimo: 10, activo: true  },
+  { id: "p2", sku: "DRO-LIN-027", nombre: "Camisa Lino Belga",       inventario: [{ talla: "L", stock: 5 }],  stockMinimo: 12, activo: true  },
+  { id: "p3", sku: "DRO-LAN-009", nombre: "Abrigo Lana Merino",      inventario: [{ talla: "M", stock: 1 }],  stockMinimo: 8,  activo: true  },
+  { id: "p4", sku: "DRO-CAS-033", nombre: "Pantalón Cashmere",       inventario: [{ talla: "32", stock: 4 }], stockMinimo: 10, activo: false },
+  { id: "p5", sku: "DRO-ALG-041", nombre: "Pañuelo Algodón Egipcio", inventario: [{ talla: "Unitalla", stock: 6 }], stockMinimo: 15, activo: true },
+];
 
 const MOCK_VENTAS = [
   { id: "v1a2b3c4", numeroPedido: "#A2C91F", cliente: { nombre: "Carla Núñez"  }, total: 3200, estado: "pagado",    createdAt: "2026-06-30T10:00:00Z" },
@@ -133,7 +134,7 @@ function SectionHeader({ title, icon, subtitle, isGrafica, onToggle, extra }) {
 
 function Panel({ children, className = "" }) {
   return (
-    <div className={`p-5 w-full rounded-[2px] border border-[var(--border-gold-20)] bg-[var(--snow)] dark:bg-[var(--noir-soft)] shadow-[0_4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.25)] ${className}`}>
+    <div className={`p-5 w-full rounded-[2px] border border-[var(--border-gold-20)] bg-[var(--ivory)] dark:bg-[var(--noir-soft)] shadow-[0_4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.25)] ${className}`}>
       {children}
     </div>
   );
@@ -169,6 +170,13 @@ const fmtCur  = (n) => `$${Number(n ?? 0).toLocaleString("es-MX")}`;
 const fmtDate = (d) => { try { return new Date(d).toLocaleDateString("es-MX", { day: "2-digit", month: "short" }); } catch { return d; } };
 const pct     = (a, b) => b > 0 ? Math.round((a / b) * 100) : 0;
 
+// Misma lógica que Productos.jsx: el stock real de un producto es la suma
+// de su inventario por talla, no un campo suelto que puede quedar desfasado.
+const calcularStockTotal = (inventario) => {
+  if (!Array.isArray(inventario)) return 0;
+  return inventario.reduce((acc, item) => acc + Number(item.stock || 0), 0);
+};
+
 export default function Dashboard() {
   useTitulo("Dashboard");
 
@@ -178,6 +186,7 @@ export default function Dashboard() {
   const tickColor = isDark ? "var(--ash)" : "var(--noir-soft)";
 
   const [summary, setSummary] = useState(null);
+  const [productosDB, setProductosDB] = useState([]);
   const [ventas,  setVentas]  = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast,   setToast]   = useState({ message: "", type: "error" });
@@ -198,6 +207,19 @@ export default function Dashboard() {
     } finally { setLoading(false); }
   }, []);
 
+  // Trae el catálogo real de productos para calcular el stock igual que
+  // en la página de Productos, en vez de confiar en un snapshot del summary
+  // que puede quedar desactualizado apenas alguien edita el inventario.
+  const fetchProductosDB = useCallback(async () => {
+    try {
+      const result = await api.get("/products?limit=1000");
+      const datosReales = result.items || result.data?.items || (Array.isArray(result) ? result : []);
+      setProductosDB(datosReales);
+    } catch (err) {
+      setProductosDB(MOCK_PRODUCTOS);
+    }
+  }, []);
+
   const fetchVentas = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
@@ -212,11 +234,23 @@ export default function Dashboard() {
     }
   }, []);
 
-  useEffect(() => { fetchSummary(); fetchVentas(); }, [fetchSummary, fetchVentas]);
+  useEffect(() => {
+    fetchSummary();
+    fetchProductosDB();
+    fetchVentas();
+  }, [fetchSummary, fetchProductosDB, fetchVentas]);
 
   const t     = summary?.totals       ?? {};
-  const lsp   = summary?.lowStockProducts ?? [];
   const top5  = summary?.topProductos ?? [];
+
+  // Bajo stock calculado en vivo a partir del catálogo real (sincronizado
+  // con Productos.jsx), no del summary cacheado del backend.
+  const lsp = productosDB
+    .map((p) => ({ ...p, stockTotal: calcularStockTotal(p.inventario) }))
+    .filter((p) => p.stockTotal <= Number(p.stockMinimo ?? 0))
+    .sort((a, b) => a.stockTotal - b.stockTotal);
+
+  const lowStockCount = lsp.length;
 
   const ingresos30d = ventas.filter((v) => v.estado === "pagado").reduce((a, v) => a + v.total, 0);
   const maxIngresoTop = Math.max(1, ...top5.map((p) => p.ingreso));
@@ -225,10 +259,10 @@ export default function Dashboard() {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 6);
 
-  const refrescarTodo = () => { fetchSummary(); fetchVentas(); };
+  const refrescarTodo = () => { fetchSummary(); fetchProductosDB(); fetchVentas(); };
 
   return (
-    <div className="p-6 md:p-8 space-y-5 font-body bg-[var(--ivory-deep)] dark:bg-[var(--noir)] min-h-screen">
+    <div className="p-6 md:p-8 space-y-5 font-body bg-[var(--snow)] dark:bg-[var(--noir)] min-h-screen">
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Josefin+Sans:wght@300;400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
@@ -242,7 +276,7 @@ export default function Dashboard() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-28 animate-pulse rounded-[2px] border border-[var(--border-gold-20)] bg-[var(--snow)] dark:bg-[var(--noir-soft)]" />
+            <div key={i} className="h-28 animate-pulse rounded-[2px] border border-[var(--border-gold-20)] bg-[var(--ivory)] dark:bg-[var(--noir-soft)]" />
           ))}
         </div>
       ) : (
@@ -251,7 +285,7 @@ export default function Dashboard() {
           <Tarjetas label="Productos"   value={fmt(t.products)}    sub={`${fmt(t.activeProducts)} activos · ${pct(t.activeProducts, t.products)}%`}   icon="bi bi-box-seam"            accent="#C9A84C" />
           <Tarjetas label="Clientes"    value={fmt(t.clients)}     sub={`${fmt(t.activeClients)} activos · ${pct(t.activeClients, t.clients)}%`}       icon="bi bi-people"              accent="#7EC9ED" />
           <Tarjetas label="Proveedores" value={fmt(t.suppliers)}   sub={`${fmt(t.activeSuppliers)} activos · ${pct(t.activeSuppliers, t.suppliers)}%`} icon="bi bi-truck"               accent="#B5824B" />
-          <Tarjetas label="Bajo stock"  value={fmt(summary?.lowStockCount)} sub="requieren reorden"                                    icon="bi bi-exclamation-triangle" accent="#B5644B" />
+          <Tarjetas label="Bajo stock"  value={fmt(lowStockCount)} sub="requieren reorden"                                             icon="bi bi-exclamation-triangle" accent="#B5644B" />
         </div>
       )}
 
@@ -287,9 +321,9 @@ export default function Dashboard() {
                 <ComposedChart
                   data={lsp.slice(0, 7).map((p) => ({
                     nombre:  p.nombre?.slice(0, 10) ?? p.sku,
-                    stock:   Number(p.stock || 0),
+                    stock:   p.stockTotal,
                     min:     Number(p.stockMinimo || 0),
-                    deficit: Math.max(0, Number(p.stockMinimo || 0) - Number(p.stock || 0)),
+                    deficit: Math.max(0, Number(p.stockMinimo || 0) - p.stockTotal),
                   }))}
                   barSize={18}
                 >
@@ -311,9 +345,9 @@ export default function Dashboard() {
                 <Tr key={p.id} idx={i}>
                   <Td mono color={pal.azul}>{p.sku}</Td>
                   <Td align="left">{p.nombre}</Td>
-                  <Td color={Number(p.stock) <= Number(p.stockMinimo) ? pal.rojo : pal.verde}><b>{fmt(p.stock)}</b></Td>
+                  <Td color={p.stockTotal <= Number(p.stockMinimo) ? pal.rojo : pal.verde}><b>{fmt(p.stockTotal)}</b></Td>
                   <Td>{fmt(p.stockMinimo)}</Td>
-                  <Td color={pal.rojo}><b>−{Math.max(0, Number(p.stockMinimo) - Number(p.stock))}</b></Td>
+                  <Td color={pal.rojo}><b>−{Math.max(0, Number(p.stockMinimo) - p.stockTotal)}</b></Td>
                   <Td><Etiquetas contenido={p.activo ? "Activo" : "Inactivo"} /></Td>
                 </Tr>
               ))}
@@ -386,14 +420,14 @@ export default function Dashboard() {
       </Panel>
 
       {/* ══════════ 4. ALERTAS ══════════ */}
-      {!loading && summary?.lowStockCount > 0 && (
+      {!loading && lowStockCount > 0 && (
         <div
           className="flex items-center gap-3 px-5 py-3 text-sm font-medium"
           style={{ borderRadius: "2px", background: `${C.rojo}12`, border: `1px solid ${C.rojo}35`, color: pal.rojo, fontFamily: "var(--font-body)" }}
         >
           <i className="bi bi-exclamation-triangle-fill" />
           <span>
-            <b>{summary.lowStockCount} producto{summary.lowStockCount > 1 ? "s" : ""}</b> por debajo del stock mínimo. Revisa el panel de inventario para reordenar.
+            <b>{lowStockCount} producto{lowStockCount > 1 ? "s" : ""}</b> por debajo del stock mínimo. Revisa el panel de inventario para reordenar.
           </span>
         </div>
       )}

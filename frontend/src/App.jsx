@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { LoginRequeridoProvider } from "./context/LoginRequeridoContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Layout from "./components/Layout";
@@ -25,19 +26,11 @@ import Terminos        from "./pages/tienda/Terminos";
 import Inventario from "./pages/Inventario";
 import Perfil from "./pages/Perfil";
 import StaffLogin from "./pages/StaffLogin";
-
+import Checkout from "./pages/tienda/Checkout";
+import DetalleProductoTienda from "./pages/tienda/DetalleProductoTienda";
+import TiendaProviders from "./components/tienda/TiendaProviders";
 
 import "./App.css";
-
-const Placeholder = ({ titulo }) => (
-  <div
-    className="p-10 text-lila"
-    style={{ fontFamily: "'Poppins', sans-serif" }}
-  >
-    <h1 className="text-3xl font-bold text-white">{titulo}</h1>
-    <p className="opacity-60">Esta sección está en construcción...</p>
-  </div>
-);
 
 function App() {
   return (
@@ -54,7 +47,14 @@ function App() {
         <Route path="/staff/login" element={<StaffLogin />} />
 
         <Route path="/register" element={<Register />} />
-
+       
+          {/* Tienda (para clientes) — carrito y login-requerido compartidos */}
+          <Route element={<TiendaProviders />}>
+            <Route path="/tienda" element={<Tienda />} />
+            <Route path="/tienda/producto/:id" element={<DetalleProductoTienda />} />
+            <Route path="/tienda/checkout" element={<Checkout />} />
+          </Route>
+      
         {/*Footer de Tienda*/}
         <Route path="/tienda/envios"          element={<Envios />} />
         <Route path="/tienda/devoluciones"    element={<Devoluciones />} />
@@ -64,8 +64,7 @@ function App() {
         <Route path="/tienda/sobre-doro"      element={<SobreDoro />} />
         <Route path="/tienda/sustentabilidad" element={<Sustentabilidad />} />
         <Route path="/tienda/terminos"        element={<Terminos />} />
-
-
+    
         {/* Dashboard */}
         <Route
           path="/dashboard"
@@ -189,23 +188,15 @@ function App() {
           path="/perfil"
           element={
             <ProtectedRoute requiredPage="perfil">
-              <Perfil />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Tienda (para clientes) */}
-        <Route
-          path="/tienda"
-          element={
-            <ProtectedRoute requiredPage="tienda">
-              <Tienda />
+              <LoginRequeridoProvider>
+                <Perfil />
+              </LoginRequeridoProvider>
             </ProtectedRoute>
           }
         />
 
         {/* Ruta no encontrada */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </BrowserRouter>
   );

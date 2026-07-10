@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { api } from "../services/api";
 
 const formatMoney = (n) => `$${Number(n).toLocaleString("es-MX")}`;
@@ -7,6 +7,15 @@ const formatFecha = (iso) => {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("es-MX", {
     day: "2-digit", month: "2-digit", year: "numeric",
+  });
+};
+
+// Solo mes y año, para "Miembro desde" — se ve más limpio que la fecha completa
+const formatMesAnio = (iso) => {
+  console.log("usuario recibido en PerfilCliente:", usuario);
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("es-MX", {
+    month: "long", year: "numeric",
   });
 };
 
@@ -59,7 +68,30 @@ export default function PerfilCliente({ usuario }) {
     }
   }, [usuario?.id, usuario?.email]);
 
-  const totalCompras = compras.reduce((sum, c) => sum + (c.total || 0), 0);
+  // Deduplicar productos comprados a través de todos los pedidos.
+  // Se queda con la compra más reciente de cada producto (por si compró el mismo artículo dos veces).
+  const productosComprados = useMemo(() => {
+    const mapa = new Map();
+    for (const compra of compras) {
+      for (const item of compra.items ?? []) {
+        const clave = item.productoId || item.producto?.id || item.nombre;
+        if (!clave) continue;
+        const existente = mapa.get(clave);
+        if (!existente || new Date(compra.createdAt) > new Date(existente.fechaCompra)) {
+          mapa.set(clave, {
+            nombre: item.nombre || item.producto?.nombre || "Producto",
+            imagen: item.imagen || item.producto?.imagen || null,
+            talla: item.talla,
+            fechaCompra: compra.createdAt,
+            precio: item.precioUnitario || item.precio || 0,
+          });
+        }
+      }
+    }
+    return Array.from(mapa.values()).sort(
+      (a, b) => new Date(b.fechaCompra) - new Date(a.fechaCompra)
+    );
+  }, [compras]);
 
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto px-2 sm:px-4">
@@ -102,25 +134,63 @@ export default function PerfilCliente({ usuario }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4">
-        <div className="rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] shadow-lg p-4 sm:p-6 bg-[var(--snow)] dark:bg-[var(--noir-soft)] backdrop-blur-sm flex items-center justify-between gap-2">
+        <div className="rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] shadow-lg p-4 sm:p-6 bg-[var(--snow)] backdrop-blur-sm flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <p className="font-tag text-[var(--noir-soft)] dark:text-[var(--ash)] text-xs lg:text-sm mb-1 truncate">Total Compras</p>
-            <p className="font-display text-xl lg:text-2xl font-bold text-[var(--noir)] dark:text-[var(--snow)]">{compras.length}</p>
+            <p className="font-tag text-[var(--noir-soft)] text-xs lg:text-sm mb-1 truncate">Total Compras</p>
+            <p className="font-display text-xl lg:text-2xl font-bold text-[var(--noir)]">{compras.length}</p>
           </div>
-          <i className="bi bi-bag-check text-2xl sm:text-4xl text-[var(--gold)]/40 shrink-0" />
+          <i className="bi bi-bag-check text-2xl sm:text-4xl text-[var(--gold)]/100 shrink-0" />
         </div>
 
-        <div className="rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] shadow-lg p-4 sm:p-6 bg-[var(--snow)] dark:bg-[var(--noir-soft)] backdrop-blur-sm flex items-center justify-between gap-2">
+        {/* Antes: "Monto Total" gastado — se reemplazó por "Miembro desde".
+            NOTA: ajusta `usuario?.createdAt` al campo real de tu modelo de usuario si es distinto. */}
+        <div className="rounded-[2px] border border-[var(--border-gold-40)] shadow-lg p-4 sm:p-6 bg-[var(--snow)] backdrop-blur-sm flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <p className="font-tag text-[var(--noir-soft)] dark:text-[var(--ash)] text-xs lg:text-sm mb-1 truncate">Monto Total</p>
-            <p className="font-display text-xl lg:text-2xl font-bold text-[var(--noir)] dark:text-[var(--snow)] truncate">{formatMoney(totalCompras)}</p>
+            <p className="font-tag text-[var(--noir-soft)] text-xs lg:text-sm mb-1 truncate">Miembro desde</p>
+            <p className="font-display text-lg lg:text-xl font-bold text-[var(--noir-soft)] capitalize truncate">
+              {formatMesAnio(usuario?.createdAt)}
+            </p>
           </div>
-          <i className="bi bi-cash-coin text-2xl sm:text-4xl text-[var(--gold)]/40 shrink-0" />
+          <i className="bi bi-award text-2xl sm:text-4xl text-[var(--gold)]/100 shrink-0" />
         </div>
       </div>
 
-      <div className="rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] shadow-lg p-4 sm:p-6 w-full bg-[var(--snow)] dark:bg-[var(--noir-soft)] backdrop-blur-sm">
-        <h3 className="font-display text-base lg:text-lg font-bold text-[var(--noir)] dark:text-[var(--snow)] mb-4 flex items-center gap-2">
+      {/* Productos comprados — deduplicados, para recompra rápida y referencia de talla */}
+      {productosComprados.length > 0 && (
+        <div className="rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] shadow-lg p-4 sm:p-6 w-full bg-[var(--snow)] backdrop-blur-sm">
+          <h3 className="font-display text-base lg:text-lg font-bold text-[var(--noir)] mb-4 flex items-center gap-2">
+            <i className="bi bi-bag-heart-fill text-[var(--gold)]" />
+            Productos que ya compraste
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {productosComprados.slice(0, 8).map((p, idx) => (
+              <div
+                key={idx}
+                className="rounded-[2px] border border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)] bg-[var(--gold-08)] overflow-hidden group"
+              >
+                <div className="aspect-square w-full bg-[var(--noir-soft)]/5 flex items-center justify-center overflow-hidden">
+                  {p.imagen ? (
+                    <img src={p.imagen} alt={p.nombre} loading="lazy" className="w-full h-full object-cover" />
+                  ) : (
+                    <i className="bi bi-image text-2xl text-[var(--gold)]/40" />
+                  )}
+                </div>
+                <div className="p-2">
+                  <p className="text-xs lg:text-sm font-semibold text-[var(--noir)] dark:text-[var(--snow)] truncate">
+                    {p.nombre}
+                  </p>
+                  <p className="text-[10px] lg:text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">
+                    {p.talla ? `Talla ${p.talla} · ` : ""}{formatFecha(p.fechaCompra)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] shadow-lg p-4 sm:p-6 w-full bg-[var(--snow)] backdrop-blur-sm">
+        <h3 className="font-display text-base lg:text-lg font-bold text-[var(--noir)] mb-4 flex items-center gap-2">
           <i className="bi bi-bag-check-fill text-[var(--gold)]" />
           Mis Compras
         </h3>

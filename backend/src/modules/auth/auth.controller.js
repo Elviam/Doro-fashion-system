@@ -1,13 +1,16 @@
 import { authService } from './auth.service.js'
 
 export class AuthController {
-  async login(req, res) {
-    const result = await authService.login(req.body)
-
+  async googleLogin(req, res) {
+    const result = await authService.googleLogin(req.body)
     return res.status(200).json(result)
   }
   async staffLogin(req, res) {
     const result = await authService.staffLogin(req.body)
+    return res.status(200).json(result)
+  }
+  async clientLogin(req, res) {
+    const result = await authService.clientLogin(req.body)
     return res.status(200).json(result)
   }
 

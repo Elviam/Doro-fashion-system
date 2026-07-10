@@ -4,21 +4,19 @@ import { validate } from '../../middlewares/validate.js'
 import { authenticate } from '../../middlewares/auth.js'
 import { requirePermissions } from '../../middlewares/requirePermissions.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
-import { loginSchema,registerSchema, passwordResetSchema, validateResetPasswordSchema } from './auth.schema.js'
-
+import { clientLoginSchema, staffLoginSchema, registerSchema, passwordResetSchema, validateResetPasswordSchema, googleLoginSchema } from './auth.schema.js'
 const router = Router()
 
 router.post(
   '/login',
-  validate(loginSchema),
-  asyncHandler(authController.login.bind(authController))
+  validate(clientLoginSchema),
+  asyncHandler(authController.clientLogin.bind(authController))
 )
 router.post(
   '/staff-login',
-  validate(loginSchema),
+  validate(staffLoginSchema),
   asyncHandler(authController.staffLogin.bind(authController))
 )
-
 router.get(
   '/me',
   authenticate,
@@ -28,6 +26,11 @@ router.post(
   '/register',
   validate(registerSchema),
   asyncHandler(authController.register.bind(authController))
+)
+router.post(
+  '/google',
+  validate(googleLoginSchema),
+  asyncHandler(authController.googleLogin.bind(authController))
 )
 
 router.post(

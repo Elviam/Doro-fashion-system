@@ -2,6 +2,10 @@ import bcrypt from 'bcryptjs'
 import nodemailer from 'nodemailer'
 import { signAccessToken } from '../../config/jwt.js'
 import { authRepository } from './auth.repository.js'
+import { OAuth2Client } from 'google-auth-library'
+import crypto from 'crypto'
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
 export class AuthService {
   async login(payload) {
@@ -61,6 +65,57 @@ export class AuthService {
 
     return result
   }
+  async clientLogin(payload) {
+    const { email, password } = payload
+
+    const user = await authRepository.findByEmail(email)
+
+    if (!user) {
+      const error = new Error('Credenciales inválidas')
+      error.statusCode = 401
+      throw error
+    }
+
+    if (user.role !== 'CLIENTE') {
+      const error = new Error('Credenciales inválidas')
+      error.statusCode = 401
+      throw error
+    }
+
+    if (user.activo === false) {
+      const error = new Error('Usuario inactivo')
+      error.statusCode = 403
+      throw error
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash)
+
+    if (!isValidPassword) {
+      const error = new Error('Credenciales inválidas')
+      error.statusCode = 401
+      throw error
+    }
+
+    let userPermissions = []
+    if (user.roleId) {
+      try {
+        userPermissions = await authRepository.findPermissionsByRoleId(user.roleId)
+      } catch (err) {
+        console.error('Error obteniendo permisos del rol:', err)
+      }
+    }
+
+    const token = signAccessToken({
+      sub: user.id,
+      email: user.email,
+      usuario: user.usuario,
+      role: user.role || null,
+      roleId: user.roleId || null,
+      permissions: userPermissions,
+    })
+
+    return { token, user: this.sanitizeUser(user, userPermissions) }
+  }
 
   async me(userId) {
     const user = await authRepository.findById(userId)
@@ -100,6 +155,7 @@ export class AuthService {
       roleId: user.roleId || null,
       permissions,
       activo: user.activo ?? true,
+      createdAt: user.createdAt
     }
   }
 
@@ -107,56 +163,138 @@ export class AuthService {
   // CLIENTE). The matching Client record is created later, on first
   // purchase, via find-or-create by email — see ventas.service.js.
   async register(payload) {
-    const { nombre, email, usuario, password } = payload
+  const { nombre, email, password } = payload
 
-    const existingUsuario = await authRepository.findByUsuario(usuario)
-    if (existingUsuario) {
-      const error = new Error('El nombre de usuario ya está en uso')
-      error.statusCode = 409
-      error.field = 'usuario'
+  const existingEmail = await authRepository.findByEmail(email)
+  if (existingEmail) {
+    const error = new Error('El email ya está registrado')
+    error.statusCode = 409
+    error.field = 'email'
+    throw error
+  }
+
+  const clienteRole = await authRepository.findRoleByCodigo('CLIENTE')
+  if (!clienteRole) {
+    const error = new Error('Rol CLIENTE no configurado en el sistema')
+    error.statusCode = 500
+    throw error
+  }
+
+  // Genera un "usuario" único derivado del email — el cliente nunca lo
+  // captura, pero la columna sigue siendo NOT NULL/UNIQUE en la BD.
+  const baseUsuario = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')
+  let usuario = baseUsuario
+  let intento = 0
+  while (await authRepository.findByUsuario(usuario)) {
+    intento++
+    usuario = `${baseUsuario}${Date.now().toString().slice(-4)}${intento}`
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10)
+
+  const newUser = await authRepository.createUser({
+    nombre,
+    email,
+    usuario,
+    passwordHash,
+    roleId: clienteRole.id,
+    activo: true,
+  })
+
+  const userPermissions = await authRepository.findPermissionsByRoleId(newUser.roleId)
+
+  const token = signAccessToken({
+    sub: newUser.id,
+    email: newUser.email,
+    usuario: newUser.usuario,
+    role: newUser.role,
+    roleId: newUser.roleId,
+    permissions: userPermissions,
+  })
+
+  return { token, user: this.sanitizeUser(newUser, userPermissions) }
+}
+  async googleLogin(payload) {
+    const { credential } = payload
+
+    let googlePayload
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      })
+      googlePayload = ticket.getPayload()
+    } catch (err) {
+      const error = new Error('Token de Google inválido')
+      error.statusCode = 401
       throw error
     }
 
-    const existingEmail = await authRepository.findByEmail(email)
-    if (existingEmail) {
-      const error = new Error('El email ya está registrado')
-      error.statusCode = 409
-      error.field = 'email'
+    const { email, name } = googlePayload
+
+    if (!email) {
+      const error = new Error('No se pudo obtener el email de Google')
+      error.statusCode = 400
       throw error
     }
 
-    const clienteRole = await authRepository.findRoleByCodigo('CLIENTE')
-    if (!clienteRole) {
-      const error = new Error('Rol CLIENTE no configurado en el sistema')
-      error.statusCode = 500
+    let user = await authRepository.findByEmail(email)
+
+    if (user && user.activo === false) {
+      const error = new Error('Usuario inactivo')
+      error.statusCode = 403
       throw error
     }
 
-    const passwordHash = await bcrypt.hash(password, 10)
+    if (!user) {
+      const clienteRole = await authRepository.findRoleByCodigo('CLIENTE')
+      if (!clienteRole) {
+        const error = new Error('Rol CLIENTE no configurado en el sistema')
+        error.statusCode = 500
+        throw error
+      }
 
-    const newUser = await authRepository.createUser({
-      nombre,
-      email,
-      usuario,
-      passwordHash,
-      roleId: clienteRole.id,
-      activo: true,
-    })
+      // Genera un "usuario" único derivado del email, ya que el login
+      // con Google no define uno manualmente.
+      const baseUsuario = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')
+      const usuario = `${baseUsuario}${Date.now().toString().slice(-4)}`
 
-    const userPermissions = await authRepository.findPermissionsByRoleId(newUser.roleId)
+      // Password aleatoria: este usuario solo entra vía Google, nunca
+      // usará login usuario/password, pero passwordHash es requerido.
+      const randomPassword = crypto.randomBytes(32).toString('hex')
+      const passwordHash = await bcrypt.hash(randomPassword, 10)
+
+      user = await authRepository.createUser({
+        nombre: name || baseUsuario,
+        apellido: '',
+        email,
+        usuario,
+        passwordHash,
+        roleId: clienteRole.id,
+        activo: true,
+      })
+    }
+
+    let userPermissions = []
+    if (user.roleId) {
+      try {
+        userPermissions = await authRepository.findPermissionsByRoleId(user.roleId)
+      } catch (err) {
+        console.error('Error obteniendo permisos del rol:', err)
+      }
+    }
 
     const token = signAccessToken({
-      sub: newUser.id,
-      email: newUser.email,
-      usuario: newUser.usuario,
-      role: newUser.role,
-      roleId: newUser.roleId,
+      sub: user.id,
+      email: user.email,
+      usuario: user.usuario,
+      role: user.role || null,
+      roleId: user.roleId || null,
       permissions: userPermissions,
     })
 
-    return { token, user: this.sanitizeUser(newUser, userPermissions) }
+    return { token, user: this.sanitizeUser(user, userPermissions) }
   }
-
   async requestPasswordReset(payload) {
     const { usuario } = payload
 

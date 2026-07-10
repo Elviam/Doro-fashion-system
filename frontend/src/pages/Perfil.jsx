@@ -47,7 +47,7 @@ export default function Perfil() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--noir)] w-full overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-[var(--ivory)] w-full overflow-x-hidden">
       <HeaderTienda
         busqueda={busqueda}
         setBusqueda={setBusqueda}
@@ -65,7 +65,7 @@ export default function Perfil() {
       <main className="flex-1 max-w-[1480px] mx-auto px-4 md:px-6 lg:px-10 py-6 md:py-8 w-full box-border">
         <button
           onClick={handleVolver}
-          className="flex items-center gap-2 text-[var(--gold-dark)] hover:text-[var(--gold)] dark:text-[var(--gold-light)] dark:hover:text-[var(--gold)] transition-colors mb-5 md:mb-6 active:scale-95 text-left font-body"
+          className="flex items-center gap-2 text-[var(--noir)] hover:text-[var(--gold-dark)] transition-colors mb-5 md:mb-6 active:scale-95 text-left font-body"
         >
           <i className="bi bi-arrow-left text-base md:text-lg" />
           <span className="text-xs md:text-sm font-semibold whitespace-nowrap">Volver a la tienda</span>

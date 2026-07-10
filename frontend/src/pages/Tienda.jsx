@@ -15,6 +15,8 @@ import Wishlist from "../components/tienda/Wishlist";
 import ToastTienda from "../components/tienda/ToastTienda";
 import { api } from "../services/api";
 import useTitulo from "../hooks/useTitulo";
+import { useRequireAuth, esClienteTienda } from "../context/LoginRequeridoContext";
+import { useCarrito } from "../context/CarritoContext";
 
 const filtrosIniciales = {
   precioMin: RANGO_PRECIO.min,
@@ -28,29 +30,31 @@ export default function Tienda() {
   useTitulo("Tienda");
 
   const navigate = useNavigate();
+  const requireAuth = useRequireAuth();
   const { logout, usuario } = useContext(AuthContext);
-  const claveCarrito = `carrito_${usuario?.id ?? "guest"}`;
 
+  // Identidad efectiva para carrito/wishlist: solo cuentas de CLIENTE cuentan.
+  // Si un admin/staff entra desde "Ir a la Tienda", se le trata como invitado
+  // aquí — no hereda un carrito/wishlist ligado a su cuenta de staff, y no
+  // se le cierra su sesión real al volver al dashboard.
+  const clienteReal = esClienteTienda(usuario) ? usuario : null;
+
+  const { carrito, agregarAlCarrito, cambiarCantidad, eliminarDelCarrito, cantidadCarrito, carritoAbierto, setCarritoAbierto, setToast } = useCarrito();
   const [busqueda, setBusqueda]               = useState("");
   const [categoriaActiva, setCategoriaActiva] = useState("todas");
   const [ordenamiento, setOrdenamiento]       = useState("relevancia");
   const [vista, setVista]                     = useState("grid");
   const [filtros, setFiltros]                 = useState(filtrosIniciales);
-  const [productoEnVistaRapida, setProductoEnVistaRapida] = useState(null);
   const [productos, setProductos]             = useState([]);
   const [cargando, setCargando]               = useState(true);
-  const [carrito, setCarrito]                 = useState(
-    () => JSON.parse(localStorage.getItem(claveCarrito) ?? "[]")
-  );
-  const [carritoAbierto, setCarritoAbierto]     = useState(false);
   const [checkoutAbierto, setCheckoutAbierto]   = useState(false);
   const [filtrosAbiertos, setFiltrosAbiertos]   = useState(false);
-  const [toast, setToast]                       = useState(null);
+  const [toast]                       = useState(null);
 
-  // ── Favoritos ──────────────────────────────────────────────────────────────
-  const claveWishlist = `favoritos_${usuario?.id ?? "guest"}`;
+  // ── Favoritos ─────────────────────────────────────────────────────────────
+  const claveWishlist = `favoritos_${clienteReal?.id ?? "guest"}`;
   const [favoritos, setFavoritos] = useState(
-    () => JSON.parse(localStorage.getItem(`favoritos_${usuario?.id ?? "guest"}`) ?? "[]")
+    () => JSON.parse(localStorage.getItem(claveWishlist) ?? "[]")
   );
   const [wishlistAbierto, setWishlistAbierto] = useState(false);
 
@@ -60,157 +64,37 @@ export default function Tienda() {
   }, [favoritos, claveWishlist]);
 
   useEffect(() => {
-    localStorage.setItem(claveCarrito, JSON.stringify(carrito));
-  }, [carrito, claveCarrito]);
-
-  useEffect(() => {
-  const productosMock = [
-    {
-      id: "1",
-      nombre: "Camisa de Lino Ivory",
-      categoria: "Camisas",
-      departamento: "Hombre",
-      precioVenta: 2450,
-      stock: 12,
-      inventario: [
-        { talla: "S", stock: 3 },
-        { talla: "M", stock: 5 },
-        { talla: "L", stock: 4 },
-        { talla: "XL", stock: 0 },
-      ],
-    },
-    {
-      id: "2",
-      nombre: "Vestido Noir Satinado",
-      categoria: "Vestidos",
-      departamento: "Mujer",
-      precioVenta: 4890,
-      stock: 6,
-      inventario: [
-        { talla: "XS", stock: 2 },
-        { talla: "S", stock: 2 },
-        { talla: "M", stock: 2 },
-      ],
-    },
-    {
-      id: "3",
-      nombre: "Abrigo de Lana Dorado",
-      categoria: "Abrigos",
-      departamento: "Mujer",
-      precioVenta: 8990,
-      stock: 0,
-      inventario: [
-        { talla: "S", stock: 0 },
-        { talla: "M", stock: 0 },
-      ],
-    },
-    {
-      id: "4",
-      nombre: "Pantalón Sastre Noir",
-      categoria: "Pantalones",
-      departamento: "Hombre",
-      precioVenta: 3200,
-      stock: 9,
-      inventario: [
-        { talla: "30", stock: 3 },
-        { talla: "32", stock: 4 },
-        { talla: "34", stock: 2 },
-      ],
-    },
-  ];
-
-  setProductos(productosMock);
-  setCargando(false);
-
-  /*api.get("/products?activo=true&limit=100")
-    .then((data) => setProductos(data.items ?? []))
-    .catch(() => setProductos([]))
-    .finally(() => setCargando(false));   */
-}, []);
+    api.get("/products?activo=true&limit=100")
+      .then((data) => {
+        const datosReales = data.items || data.data?.items || (Array.isArray(data) ? data : []);
+        setProductos(datosReales);
+      })
+      .catch((error) => {
+        console.error("Error al cargar productos de la tienda:", error);
+        setProductos([]);
+      })
+      .finally(() => setCargando(false));
+  }, []);
 
   // Recibe (productoId, "agregado" | "quitado") desde TarjetaProductoTienda
   const handleFavoritoChange = (productoId, accion) => {
+  requireAuth(() => {
     if (accion === "agregado") {
       setFavoritos((prev) => {
-        // Evitar duplicados
         if (prev.includes(productoId)) return prev;
         return [...prev, productoId];
       });
-      // Toast solo al agregar, igual que el de carrito
       setToast({
-        tipo:   "exito",
+        tipo: "exito",
         titulo: "Guardado en wishlist",
         mensaje: "El producto se agregó a tu lista de deseos.",
-        accion: {
-          label:   "Ver wishlist",
-          onClick: () => setWishlistAbierto(true),
-        },
+        accion: { label: "Ver wishlist", onClick: () => setWishlistAbierto(true) },
       });
     } else {
-      // "quitado" — se quita sin toast (ya hay botón de papelera visible)
       setFavoritos((prev) => prev.filter((id) => id !== productoId));
     }
-  };
-
-  const agregarAlCarrito = (producto, { talla, cantidad = 1 }) => {
-    const stockTalla       = producto.inventario?.find((i) => i.talla === talla)?.stock ?? 0;
-    const existe           = carrito.find((i) => i.producto.id === producto.id && i.talla === talla);
-    const cantidadEnCarrito = existe ? existe.cantidad : 0;
-
-    if (stockTalla === 0) {
-      setToast({
-        tipo:   "error",
-        titulo: "Talla agotada",
-        mensaje: `La talla ${talla} de "${producto.nombre}" ya no tiene stock disponible.`,
-      });
-      return;
-    }
-
-    if (cantidadEnCarrito + cantidad > stockTalla) {
-      setToast({
-        tipo:   "error",
-        titulo: "Sin unidades disponibles",
-        mensaje: `Solo hay ${stockTalla} unidad${stockTalla === 1 ? "" : "es"} disponible${stockTalla === 1 ? "" : "s"} de talla ${talla}.`,
-      });
-      return;
-    }
-
-    setCarrito((prev) => {
-      if (existe) {
-        return prev.map((i) =>
-          i.producto.id === producto.id && i.talla === talla
-            ? { ...i, cantidad: i.cantidad + cantidad }
-            : i
-        );
-      }
-      return [...prev, { producto, talla, cantidad }];
-    });
-
-    setToast({
-      tipo:   "exito",
-      titulo: "Agregado al carrito",
-      mensaje: `${producto.nombre} · Talla ${talla} × ${cantidad}`,
-      accion: { label: "Ver carrito", onClick: () => { setWishlistAbierto(false); setCarritoAbierto(true); } },
-    });
-  };
-
-  const cambiarCantidad = (productoId, talla, nuevaCantidad) => {
-    if (nuevaCantidad <= 0) {
-      setCarrito((prev) => prev.filter((i) => !(i.producto.id === productoId && i.talla === talla)));
-    } else {
-      setCarrito((prev) =>
-        prev.map((i) =>
-          i.producto.id === productoId && i.talla === talla ? { ...i, cantidad: nuevaCantidad } : i
-        )
-      );
-    }
-  };
-
-  const eliminarDelCarrito = (productoId, talla) => {
-    setCarrito((prev) => prev.filter((i) => !(i.producto.id === productoId && i.talla === talla)));
-  };
-
-  const cantidadCarrito = carrito.reduce((acc, i) => acc + i.cantidad, 0);
+  }, "Inicia sesión para guardar tus favoritos");
+};
 
   const catalogoRef = useRef(null);
   const scrollAlCatalogo = () =>
@@ -252,7 +136,7 @@ export default function Tienda() {
       lista = lista.filter((p) => p.departamento === filtros.departamento);
     if (filtros.tallas.length > 0)
       lista = lista.filter((p) =>
-        p.inventario.some((i) => filtros.tallas.includes(i.talla) && i.stock > 0)
+        (p.inventario ?? []).some((i) => filtros.tallas.includes(i.talla) && i.stock > 0)
       );
     if (filtros.soloEnStock)
       lista = lista.filter((p) => p.stock > 0);
@@ -272,6 +156,7 @@ export default function Tienda() {
       : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4";
 
   return (
+    
     <div className="min-h-screen" style={{ background: "var(--ivory-deep)" }}>
 
       <HeaderTienda
@@ -389,9 +274,9 @@ export default function Tienda() {
                     key={producto.id}
                     producto={producto}
                     vista={vista}
-                    onVistaRapida={setProductoEnVistaRapida}
+                    onVistaRapida={(producto) => navigate(`/tienda/producto/${producto.id}`)}
                     onFavoritoChange={handleFavoritoChange}
-                    favoritos={favoritos}          // ← prop nueva
+                    favoritos={favoritos}
                   />
                 ))}
               </div>
@@ -409,19 +294,8 @@ export default function Tienda() {
         onCambiarCantidad={cambiarCantidad}
         onEliminar={eliminarDelCarrito}
         onCheckout={() => { setCarritoAbierto(false); setCheckoutAbierto(true); }}
-        onVerDetalle={(producto) => { setCarritoAbierto(false); setProductoEnVistaRapida(producto); }}
+        onVerDetalle={(producto) => { setCarritoAbierto(false); navigate(`/tienda/producto/${producto.id}`); }}
       />
-
-      {productoEnVistaRapida && (
-        <VistaRapida
-          producto={productoEnVistaRapida}
-          onCerrar={() => setProductoEnVistaRapida(null)}
-          onAgregarAlCarrito={agregarAlCarrito}
-        />
-      )}
-
-      {/* Un solo sistema de toast para toda la tienda */}
-      <ToastTienda toast={toast} onCerrar={() => setToast(null)} />
 
       <Wishlist
         abierto={wishlistAbierto}
@@ -429,7 +303,7 @@ export default function Tienda() {
         favoritos={favoritos}
         productos={productos}
         carrito={carrito}
-        onProductoClick={setProductoEnVistaRapida}
+        onProductoClick={(producto) => navigate(`/tienda/producto/${producto.id}`)}
         onAgregarAlCarrito={agregarAlCarrito}       
         onQuitar={(productoId) =>
           setFavoritos((prev) => prev.filter((id) => id !== productoId))
@@ -443,18 +317,6 @@ export default function Tienda() {
         abierto={filtrosAbiertos}
         onCerrar={() => setFiltrosAbiertos(false)}
       />
-
-      {checkoutAbierto && (
-        <ModalCheckout
-          onCerrar={() => setCheckoutAbierto(false)}
-          carrito={carrito}
-          usuario={usuario}
-          onPedidoConfirmado={() => {
-            setCarrito([]);
-            localStorage.removeItem(claveCarrito);
-          }}
-        />
-      )}
     </div>
   );
 }

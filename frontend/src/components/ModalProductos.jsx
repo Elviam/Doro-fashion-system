@@ -9,17 +9,6 @@ export default function ModalProductos({ data, onEdit, onDelete, onClose, isOpen
   const stockTotal = data.inventario?.reduce((acc, item) => acc + item.stock, 0) || 0;
   const textoEstado = data.activo !== false ? "Activo" : "Inactivo";
 
-  const abrUnidad = (() => {
-    const u = data.unidad || "Pieza";
-    switch (u) {
-      case "Pieza": return "pz";
-      case "Par": return "par";
-      case "Caja": return "cj";
-      case "Paquete": return "pq";
-      default: return "u";
-    }
-  })();
-
   const footerAcciones = (
     <div className="flex flex-col sm:flex-row justify-end gap-3 w-full">
       <Boton 
@@ -134,7 +123,7 @@ export default function ModalProductos({ data, onEdit, onDelete, onClose, isOpen
                   >
                     <span className="text-sm lg:text-base font-bold uppercase">{item.talla}</span>
                     <span className={`text-xs lg:text-sm font-medium ${item.stock <= 5 && item.stock > 0 ? 'text-yellow-700 dark:text-amarillo' : 'opacity-80'}`}>
-                      {item.stock} {abrUnidad}
+                      {item.stock} pz
                     </span>
                   </div>
                 ))}
@@ -154,10 +143,7 @@ export default function ModalProductos({ data, onEdit, onDelete, onClose, isOpen
               {[
                 { label: "SKU", value: data.sku, mono: true },
                 { label: "Proveedor", value: data.supplierNombre || "Sin asignar" },
-                { label: "Unidad", value: data.unidad || "Pieza" },
-                { label: "Categoría", value: data.categoria },
-                { label: "Marca", value: data.marca },
-                { label: "Modelo", value: data.modelo }
+                { label: "Categoría", value: data.categoria }
               ].map((item, idx, arr) => (
                 <div 
                   key={item.label} 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { userCanAccessDashboard } from "../../utils/roleChecker";
+import { useRequireAuth, esClienteTienda } from "../../context/LoginRequeridoContext";
 
 const categorias = [
   { id: "todas",      label: "Todas"      },
@@ -36,18 +37,28 @@ export default function HeaderTienda({
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
   const [mostrarDropdownUsuario, setMostrarDropdownUsuario] = useState(false);
-  const dropdownRef = useRef(null);
-  const usuarioRef = useRef(null);
+  const dropdownRefMobile = useRef(null);
+  const usuarioRefMobile = useRef(null);
+  const dropdownRefDesktop = useRef(null);
+  const usuarioRefDesktop = useRef(null);
   const navigate = useNavigate();
+  const requireAuth = useRequireAuth();
+
+  // Si hay sesión pero es de staff (admin/gerente/bodeguero/vendedor), la
+  // tienda lo trata como invitado en todo lo que ve el cliente — sin tocar
+  // su token real, así puede volver al dashboard sin volver a loguearse.
+  const esCliente = esClienteTienda(usuario);
 
   useEffect(() => {
     const handleClickFuera = (e) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target) &&
-        usuarioRef.current &&
-        !usuarioRef.current.contains(e.target)
-      ) {
+      const dentroDeMobile =
+        dropdownRefMobile.current?.contains(e.target) ||
+        usuarioRefMobile.current?.contains(e.target);
+      const dentroDeDesktop =
+        dropdownRefDesktop.current?.contains(e.target) ||
+        usuarioRefDesktop.current?.contains(e.target);
+
+      if (!dentroDeMobile && !dentroDeDesktop) {
         setMostrarDropdownUsuario(false);
       }
     };
@@ -99,7 +110,7 @@ export default function HeaderTienda({
           <div className="flex items-center gap-1 md:hidden shrink-0">
             <div className="relative">
               <button
-                ref={usuarioRef}
+                ref={usuarioRefMobile}
                 onClick={() => setMostrarDropdownUsuario(!mostrarDropdownUsuario)}
                 className="w-8 h-8 rounded-[2px] text-[var(--gold-light)] hover:bg-[var(--gold-08)] flex items-center justify-center transition"
                 title="Mi cuenta"
@@ -109,19 +120,22 @@ export default function HeaderTienda({
 
               {mostrarDropdownUsuario && (
                 <div
-                  ref={dropdownRef}
+                  ref={dropdownRefMobile}
                   className="absolute top-full right-0 mt-2 w-44 bg-[var(--noir-soft)] border border-[var(--border-gold-20)] rounded-[2px] shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-1 duration-150"
                 >
                   <div className="px-3 py-2 border-b border-[var(--border-gold-20)] bg-black/20">
                     <p className="m-0 font-tag text-[9px] font-bold uppercase tracking-widest text-[var(--ash)]">
-                      Mi Cuenta
+                      {esCliente ? "Sesión iniciada" : "Explorando la tienda"}
+                    </p>
+                    <p className="m-0 mt-0.5 font-body text-[11px] font-medium text-[var(--snow)] truncate">
+                      {esCliente ? usuario?.email : "Invitado"}
                     </p>
                   </div>
 
                   <button
                     onClick={() => {
-                      navigate("/perfil");
                       setMostrarDropdownUsuario(false);
+                      requireAuth(() => navigate("/perfil"), "Inicia sesión para ver tu perfil");
                     }}
                     className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-[var(--snow)]"
                   >
@@ -129,16 +143,29 @@ export default function HeaderTienda({
                     Mi Perfil
                   </button>
 
-                  <button
-                    onClick={() => {
-                      onLogout();
-                      setMostrarDropdownUsuario(false);
-                    }}
-                    className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-rojo"
-                  >
-                    <i className="bi bi-box-arrow-right text-xs"></i>
-                    Cerrar sesión
-                  </button>
+                  {esCliente ? (
+                    <button
+                      onClick={() => {
+                        onLogout();
+                        setMostrarDropdownUsuario(false);
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-rojo"
+                    >
+                      <i className="bi bi-box-arrow-right text-xs"></i>
+                      Cerrar sesión
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setMostrarDropdownUsuario(false);
+                        requireAuth(() => {}, "Inicia sesión con una cuenta de cliente para continuar");
+                      }}
+                      className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-[var(--gold-light)]"
+                    >
+                      <i className="bi bi-box-arrow-in-right text-xs"></i>
+                      Iniciar sesión como cliente
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -197,7 +224,7 @@ export default function HeaderTienda({
         <div className="hidden md:flex items-center gap-1.5 justify-end shrink-0">
           <div className="relative">
             <button
-              ref={usuarioRef}
+              ref={usuarioRefDesktop}
               onClick={() => setMostrarDropdownUsuario(!mostrarDropdownUsuario)}
               className="w-8 h-8 rounded-[2px] text-[var(--gold-light)] hover:bg-[var(--gold-08)] flex items-center justify-center transition"
               title="Mi cuenta"
@@ -207,19 +234,22 @@ export default function HeaderTienda({
 
             {mostrarDropdownUsuario && (
               <div
-                ref={dropdownRef}
+                ref={dropdownRefDesktop}
                 className="absolute top-full right-0 mt-2 w-44 bg-[var(--noir-soft)] border border-[var(--border-gold-20)] rounded-[2px] shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-1 duration-150"
               >
                 <div className="px-3 py-2 border-b border-[var(--border-gold-20)] bg-black/20">
                   <p className="m-0 font-tag text-[9px] font-bold uppercase tracking-widest text-[var(--ash)]">
-                    Mi Cuenta
+                    {esCliente ? "Sesión iniciada" : "Explorando la tienda"}
+                  </p>
+                  <p className="m-0 mt-0.5 font-body text-[11px] font-medium text-[var(--snow)] truncate">
+                    {esCliente ? usuario?.email : "Invitado"}
                   </p>
                 </div>
 
                 <button
                   onClick={() => {
-                    navigate("/perfil");
                     setMostrarDropdownUsuario(false);
+                    requireAuth(() => navigate("/perfil"), "Inicia sesión para ver tu perfil");
                   }}
                   className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-[var(--snow)]"
                 >
@@ -227,16 +257,29 @@ export default function HeaderTienda({
                   Mi Perfil
                 </button>
 
-                <button
-                  onClick={() => {
-                    onLogout();
-                    setMostrarDropdownUsuario(false);
-                  }}
-                  className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-rojo"
-                >
-                  <i className="bi bi-box-arrow-right text-xs"></i>
-                  Cerrar sesión
-                </button>
+                {esCliente ? (
+                  <button
+                    onClick={() => {
+                      onLogout();
+                      setMostrarDropdownUsuario(false);
+                    }}
+                    className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-rojo"
+                  >
+                    <i className="bi bi-box-arrow-right text-xs"></i>
+                    Cerrar sesión
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setMostrarDropdownUsuario(false);
+                      requireAuth(() => {}, "Inicia sesión con una cuenta de cliente para continuar");
+                    }}
+                    className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-[var(--gold-light)]"
+                  >
+                    <i className="bi bi-box-arrow-in-right text-xs"></i>
+                    Iniciar sesión como cliente
+                  </button>
+                )}
               </div>
             )}
           </div>

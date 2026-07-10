@@ -21,8 +21,8 @@ export default function Toast({ message, type = 'exito', onClose }) {
           flex items-center gap-3.5 px-4 md:px-4.5 py-3 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border pointer-events-auto
           font-poppins font-bold backdrop-blur-md w-11/12 md:w-auto md:min-w-[280px] md:max-w-md
           ${isError 
-            ? 'bg-lila/40 border-morado text-rojo' 
-            : 'bg-oscuro-card border-morado/30 text-blanco' 
+            ? 'bg-noir border-rojo text-ivory'
+            : 'bg-noir border-gold text-ivory'
           }
         `}
       >
@@ -30,8 +30,8 @@ export default function Toast({ message, type = 'exito', onClose }) {
         <div className={`
           flex items-center justify-center w-10 h-10 rounded-full shrink-0
           ${isError 
-            ? 'bg-rojo text-blanco' 
-            : 'bg-morado/20 text-lila'
+            ? 'bg-rojo-dark text-snow'
+            : 'bg-gold/15 text-gold'
           }
         `}>
           <i className={`text-lg bi ${isError ? 'bi-exclamation-triangle-fill' : 'bi-stars'}`}></i>
@@ -39,7 +39,7 @@ export default function Toast({ message, type = 'exito', onClose }) {
         
         {/* Texto informativo */}
         <div className="flex flex-col flex-1 min-w-0">
-          <span className={`text-[11px] uppercase tracking-[0.22em] font-bold ${isError ? 'text-blanco' : 'text-lila'}`}>
+          <span className={`text-[11px] uppercase tracking-[0.22em] font-bold ${isError ? 'text-snow' : 'text-gold'}`}>
             {isError ? 'Atención' : "D'ORO System"}
           </span>
           <p className="text-[12px] font-medium leading-snug mt-0.5 text-blanco/90">

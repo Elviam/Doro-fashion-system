@@ -1,37 +1,10 @@
 import { z } from 'zod'
-
-const DEPARTAMENTOS_PERMITIDOS = ["Dama", "Caballero", "Unisex", ""]
-
-const CATEGORIAS_PERMITIDAS = [
-  "Playeras", "Blusas", "Camisas", "Suéteres", "Sudaderas", 
-  "Chamarras", "Abrigos", "Vestidos", "Faldas", "Shorts", 
-  "Pantalones", "Calzado", "Accesorios", ""
-]
-
-const TALLAS_SUPERIORES = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "3XL"]
-const TALLAS_INFERIORES = ["22", "24", "26", "28", "30", "32", "34", "36", "38", "40", "42", "44"]
-const TALLAS_CALZADO = ["22", "22.5", "23", "23.5", "24", "24.5", "25", "25.5", "26", "26.5", "27", "27.5", "28", "28.5", "29", "29.5", "30", "31"]
-const TALLAS_ACCESORIOS = ["Unitalla"]
-
-const TALLAS_POR_CATEGORIA = {
-  "Playeras": TALLAS_SUPERIORES,
-  "Blusas": TALLAS_SUPERIORES,
-  "Camisas": TALLAS_SUPERIORES,
-  "Suéteres": TALLAS_SUPERIORES,
-  "Sudaderas": TALLAS_SUPERIORES,
-  "Chamarras": TALLAS_SUPERIORES,
-  "Abrigos": TALLAS_SUPERIORES,
-  "Vestidos": TALLAS_SUPERIORES,
-  
-  "Faldas": TALLAS_INFERIORES,
-  "Shorts": TALLAS_INFERIORES,
-  "Pantalones": TALLAS_INFERIORES,
-  
-  "Calzado": TALLAS_CALZADO,
-  "Accesorios": TALLAS_ACCESORIOS
-}
-
-const TODAS_LAS_TALLAS = [...new Set(Object.values(TALLAS_POR_CATEGORIA).flat())]
+import {
+  CATEGORIAS_PERMITIDAS,
+  DEPARTAMENTOS_PERMITIDOS,
+  TALLAS_POR_CATEGORIA,
+  TODAS_LAS_TALLAS
+} from './products.constants.js'
 
 const booleanLike = z.union([
   z.boolean(),
@@ -62,11 +35,16 @@ export const productIdParamSchema = z.object({
 })
 
 export const createProductSchema = z.object({
+  imagenes: z
+    .array(z.string())
+    .min(1, 'Debes subir al menos una imagen del producto')
+    .max(6, 'Máximo 6 imágenes por producto'),
+
   sku: z
-  .string()
-  .min(2, 'El SKU debe tener al menos 2 caracteres')
-  .optional(),
-  
+    .string()
+    .min(2, 'El SKU debe tener al menos 2 caracteres')
+    .optional(),
+
   nombre: z
     .string({ required_error: 'El nombre es obligatorio' })
     .min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -75,15 +53,12 @@ export const createProductSchema = z.object({
 
   categoria: z.enum(CATEGORIAS_PERMITIDAS, {
     errorMap: () => ({ message: 'Categoría no válida' })
-  }).optional().nullable(),
-  
+  }),
+
   departamento: z.enum(DEPARTAMENTOS_PERMITIDOS, {
     errorMap: () => ({ message: 'Departamento no válido' })
-  }).optional().nullable(),
-  
-  unidad: nullableString,
-  marca: nullableString,
-  modelo: nullableString,
+  }),
+
   supplierId: nullableString,
   supplierNombre: nullableString,
   precioCompra: z.coerce.number().min(0, 'El precio de compra no puede ser negativo').optional().default(0),
@@ -91,14 +66,13 @@ export const createProductSchema = z.object({
   stock: z.coerce.number().min(0, 'El stock no puede ser negativo').optional().default(0),
   stockMinimo: z.coerce.number().min(0, 'El stock mínimo no puede ser negativo').optional().default(0),
   activo: z.boolean().optional().default(true),
-  imagen: z.string().optional().nullable(),
   inventario: z.array(inventarioSchema).optional().default([])
 })
 
 .superRefine((data, ctx) => {
   if (data.categoria && data.inventario && data.inventario.length > 0) {
     const tallasValidas = TALLAS_POR_CATEGORIA[data.categoria] || ["Unitalla"];
-    
+
     data.inventario.forEach((item, index) => {
       if (!tallasValidas.includes(item.talla)) {
         ctx.addIssue({
@@ -121,9 +95,6 @@ export const updateProductSchema = z.object({
   departamento: z.enum(DEPARTAMENTOS_PERMITIDOS, {
     errorMap: () => ({ message: 'Departamento no válido' })
   }).nullable().optional(),
-  unidad: z.string().nullable().optional(),
-  marca: z.string().nullable().optional(),
-  modelo: z.string().nullable().optional(),
   supplierId: z.string().nullable().optional(),
   supplierNombre: z.string().nullable().optional(),
   precioCompra: z.coerce.number().min(0, 'El precio de compra no puede ser negativo').optional(),
@@ -131,17 +102,16 @@ export const updateProductSchema = z.object({
   stock: z.coerce.number().min(0, 'El stock no puede ser negativo').optional(),
   stockMinimo: z.coerce.number().min(0, 'El stock mínimo no puede ser negativo').optional(),
   activo: z.boolean().optional(),
-  imagen: z.string().nullable().optional(),
+  imagenes: z.array(z.string()).max(6, 'Máximo 6 imágenes por producto').optional(),
   inventario: z.array(inventarioSchema).optional()
 }).refine((data) => Object.keys(data).length > 0, {
   message: 'Debes enviar al menos un campo para actualizar'
 })
 
 .superRefine((data, ctx) => {
-  // Al editar, si envían la categoría y el inventario juntos, verificamos que coincidan
   if (data.categoria && data.inventario && data.inventario.length > 0) {
     const tallasValidas = TALLAS_POR_CATEGORIA[data.categoria] || ["Unitalla"];
-    
+
     data.inventario.forEach((item, index) => {
       if (!tallasValidas.includes(item.talla)) {
         ctx.addIssue({

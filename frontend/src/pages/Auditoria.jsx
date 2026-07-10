@@ -5,19 +5,12 @@ import Paginacion from "../components/Paginacion";
 import ModalAuditoria from "../components/ModalAuditoria";
 import ToolBar from "../components/ToolBar";
 import Encabezado from "../components/Encabezado";
+import { ActionBadge, ResourceBadge } from "../components/ActionBadge";
 import { useAuth } from "../hooks/useAuth";
 import useTitulo from "../hooks/useTitulo";
 
 const LIMIT = 7;
 const API_URL = import.meta.env.VITE_API_URL;
-
-// Colores semánticos por tipo de acción — se mantienen como indicadores visuales
-const ACTION_CFG = {
-  CREATE:        { label: "CREATE",  bg: "rgba(74,222,128,0.12)",  border: "rgba(74,222,128,0.35)",  color: "#84B140" },
-  UPDATE:        { label: "UPDATE",  bg: "rgba(251,191,36,0.12)",  border: "rgba(251,191,36,0.35)",  color: "#E0DA66" },
-  DELETE:        { label: "DELETE",  bg: "rgba(244,63,94,0.12)",   border: "rgba(244,63,94,0.35)",   color: "#D04E37" },
-  TOGGLE_ACTIVE: { label: "TOGGLE",  bg: "rgba(56,189,248,0.12)",  border: "rgba(56,189,248,0.35)",  color: "#38bdf8" },
-};
 
 const OPCIONES_ACCION = [
   { label: "Todas las acciones",  value: ""             },
@@ -43,36 +36,6 @@ function fmtDateShort(iso) {
     d.toLocaleDateString("es-MX", { day: "2-digit", month: "short" }) +
     " " +
     d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })
-  );
-}
-
-function ActionBadge({ action }) {
-  const cfg = ACTION_CFG[action] || {
-    label: action, bg: "rgba(201,168,76,0.12)",
-    border: "rgba(201,168,76,0.35)", color: "#C9A84C",
-  };
-  return (
-    <span
-      className="inline-flex items-center px-2 py-0.5 rounded-[2px] text-xs font-tag font-semibold"
-      style={{ background: cfg.bg, border: `0.5px solid ${cfg.border}`, color: cfg.color }}
-    >
-      {cfg.label}
-    </span>
-  );
-}
-
-function ResourceBadge({ resource }) {
-  return (
-    <span
-      className="inline-block px-2 py-0.5 rounded-[2px] text-xs font-tag font-medium"
-      style={{
-        background: "rgba(201,168,76,0.10)",
-        border: "0.5px solid rgba(201,168,76,0.30)",
-        color: "#C9A84C",
-      }}
-    >
-      {resource}
-    </span>
   );
 }
 
@@ -242,7 +205,7 @@ export default function Auditoria() {
         <Tabla encabezados={encabezados}>
           {cargando ? (
             <tr>
-              <td colSpan={6} className="text-center py-10 text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">
+              <td colSpan={6} className="text-center py-10 text-sm lg:text-base text-noir-soft dark:text-ash">
                 <i className="bi bi-arrow-repeat animate-spin mr-2" />Cargando...
               </td>
             </tr>
@@ -254,7 +217,7 @@ export default function Auditoria() {
             </tr>
           ) : logs.length === 0 ? (
             <tr>
-              <td colSpan={6} className="text-center py-10 text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">
+              <td colSpan={6} className="text-center py-10 text-sm lg:text-base text-noir-soft dark:text-ash">
                 Sin registros que coincidan con los filtros
               </td>
             </tr>
@@ -265,7 +228,7 @@ export default function Auditoria() {
                 <tr
                   key={l.id}
                   onClick={() => handleVerDetalle(l)}
-                  className="border-b border-[var(--border-gold-20)] hover:bg-[var(--gold-08)] transition-colors cursor-pointer"
+                  className="border-b border-gold/20 hover:bg-gold/8 transition-colors cursor-pointer"
                 >
                   <td className="p-3 md:p-4 text-center">
                     <ActionBadge action={l.action} />
@@ -273,16 +236,16 @@ export default function Auditoria() {
                   <td className="p-3 md:p-4 text-center">
                     <ResourceBadge resource={l.resource} />
                   </td>
-                  <td className="p-3 md:p-4 text-center font-mono text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">
+                  <td className="p-3 md:p-4 text-center font-mono text-xs lg:text-sm text-noir-soft dark:text-ash">
                     {l.resourceId || "—"}
                   </td>
-                  <td className="p-3 md:p-4 text-center text-sm lg:text-base font-medium text-[var(--noir)] dark:text-[var(--snow)]">
+                  <td className="p-3 md:p-4 text-center text-sm lg:text-base font-medium text-noir dark:text-snow">
                     {l.usuario || "—"}
                   </td>
-                  <td className="p-3 md:p-4 text-center text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)] max-w-[140px] truncate overflow-hidden whitespace-nowrap">
+                  <td className="p-3 md:p-4 text-center text-xs lg:text-sm text-noir-soft dark:text-ash max-w-[140px] truncate overflow-hidden whitespace-nowrap">
                   {detailKeys || "—"}
                   </td>
-                  <td className="p-3 md:p-4 text-center text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">
+                  <td className="p-3 md:p-4 text-center text-xs lg:text-sm text-noir-soft dark:text-ash">
                     {fmtDateShort(l.createdAt)}
                   </td>
                 </tr>

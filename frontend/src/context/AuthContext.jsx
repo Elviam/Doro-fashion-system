@@ -89,6 +89,31 @@ export function AuthProvider({ children }) {
     setUsuario(usuario);
   };
 
+  // ── Registro de nueva cuenta ────────────────────────────────────────────
+const register = async ({ nombre, email, password }) => {
+  const res = await fetch(`${API_BASE}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nombre, email, password }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const error = new Error(data.message || "No se pudo crear la cuenta.");
+    if (data.field) error.field = data.field;
+    throw error;
+  }
+
+  // Si el backend regresa token + user, dejamos al usuario logueado de una vez
+  if (data.token && data.user) {
+    login(data.token, data.user);
+  }
+
+  return data;
+};
+
+
   const logout = () => {
 
     localStorage.removeItem("token");
@@ -105,6 +130,7 @@ export function AuthProvider({ children }) {
         usuario,
         login,
         logout,
+        register,
         loading,
         isAuthenticated: !!token,
       }}

@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router-dom';
+
 // Palette for placeholder gradients when product has no image
 const paletasPorCategoria = {
   "Playeras":   ["#9F86C0", "#E7D6FF"],
@@ -19,10 +21,10 @@ const ENVIO_GRATIS_DESDE = 1999;
 const COSTO_ENVIO        = 99;
 
 function ImagenMiniatura({ producto }) {
-  if (producto.imagen) {
+  if (producto.imagenes?.[0]) {
     return (
       <img
-        src={producto.imagen}
+        src={producto.imagenes[0]}
         alt={producto.nombre}
         className="w-full h-full object-cover"
       />
@@ -38,6 +40,7 @@ function ImagenMiniatura({ producto }) {
 }
 
 export default function SeccionCarrito({
+  
   abierto,
   onCerrar,
   carrito,
@@ -51,7 +54,7 @@ export default function SeccionCarrito({
   const total           = subtotal + envio;
   const totalArticulos  = carrito.reduce((acc, i) => acc + i.cantidad, 0);
   const faltaParaEnvio  = ENVIO_GRATIS_DESDE - subtotal;
-
+  const navigate = useNavigate();
   return (
     <>
       {/* Overlay */}
@@ -318,7 +321,6 @@ export default function SeccionCarrito({
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent",         e.currentTarget.style.borderColor = "rgba(244,63,94,0.3)")}
                       >
                         <i className="bi bi-trash text-xs" />
-                        Eliminar
                       </button>
                     </div>
                   </div>
@@ -363,7 +365,7 @@ export default function SeccionCarrito({
             </div>
 
             <button
-              onClick={onCheckout}
+               onClick={() => navigate('/tienda/checkout')}
               className="w-full mt-4 rounded-[2px] flex items-center justify-center gap-2 transition"
               style={{
                 fontFamily:    "var(--font-tag)",
@@ -380,7 +382,7 @@ export default function SeccionCarrito({
               onMouseEnter={(e) => (e.currentTarget.style.background = "var(--gold-light)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "var(--gold)")}
             >
-              <i className="bi bi-lock-fill" />
+               <i className="bi bi-lock-fill" />
               Ir a pagar · ${Number(total).toLocaleString("es-MX")}
             </button>
 

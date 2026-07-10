@@ -211,9 +211,9 @@ const esAdmin = usuarioLogeado?.role === "ADMIN" ||
       <td className="p-4 text-left text-sm font-medium">{row.nombre || "-"}</td>
       <td className="p-4 text-left text-sm truncate max-w-xs">{row.descripcion || "-"}</td>
       <td className="p-4 text-center">
-        <span className="px-3 py-1 bg-lila/20 text-morado dark:text-lila-soft rounded-full text-sm font-bold border border-lila/40">
-          {row.permissions?.length || 0}
-        </span>
+       <span className="px-3 py-1 bg-ivory text-noir border border-gold-light rounded-[2px] text-sm font-semibold">
+        {row.permissions?.length || 0}
+      </span>
       </td>
       <td className="p-4 text-center text-sm">
         {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "-"}

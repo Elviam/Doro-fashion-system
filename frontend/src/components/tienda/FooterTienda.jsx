@@ -76,7 +76,6 @@ export default function FooterTienda() {
 
   return (
     <footer
-      className="mt-16"
       style={{
         background: "var(--noir)",
         borderTop: "1px solid var(--border-gold-20)",

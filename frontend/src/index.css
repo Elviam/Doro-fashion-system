@@ -4,37 +4,24 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* ── Paleta general del sistema ─────────────────────── */
-  --color-lila-pastel: #F8F3FF;
-  --color-lila: #E7D6FF;
-  --color-lila-mid: #A68DC8;
-  --color-lila-soft: #C9B8E8;
-  --color-morado: #7750AD;
 
-  --color-oscuro: #2C2A4A;
-  --color-oscuro-card: #3A3660;
-  --color-bg-card: #231E3C;
-
-  --color-bg: #F8F5F2;
-  --color-blanco: #FFFFFF;
-
-  --color-text-muted: #5A5870;
-  --color-gris: #727285;
-
-  --color-error-bg: #572444;
-  --color-error-text: #FFCCE5;
-
+  /* ── Paleta general del sistema ──────────────────────── */
   --color-verde: #A3E378;
-  --color-rojo: #FF6B6B;
+  --color-verde-dark: #3F7A2C;
+
+  --color-rojo: #ef4444; 
+  --color-rojo-dark: #891717; 
+
   --color-amarillo: #F7CB57;
+  --color-amarillo-dark: #8A6D1D;
 
   --color-azul: #7EC9ED;
+  --color-azul-dark: #1D6FA5;
+
   --color-rosa: #ED8ABA;
   --color-naranja: #FAA86B;
-
-  --font-cinzel: 'Cinzel Decorative', serif;
-  --font-baskervville: 'Baskervville', serif;
-  --font-poppins: 'Poppins', sans-serif;
+  --color-blanco: #FFFFFF;
+  --color-text-muted: #5A5870;
 
   /* ── Paleta D'oro ──────────────────────────────────── */
   --color-gold: #C9A84C;
@@ -51,19 +38,7 @@
   --font-tag: 'Josefin Sans', sans-serif;
   --font-body: 'EB Garamond', serif;
 }
-
 :root {
-  /* ── Paleta general del sistema ─────────────────────── */
-  --color-lila: #E7D6FF;
-  --color-oscuro: #2C2A4A;
-  --color-oscuro-card: #efbc5d;
-  --color-lila-mid: #A68DC8;
-  --color-lila-soft: #C9B8E8;
-  --color-lila-pastel: #F8F3FF;
-  --color-bg: #F8F5F2;
-  --color-blanco: #FFFFFF;
-  --color-text-muted: #5A5870;
-  --color-gris: #727285;
 
   /* ── Paleta D'oro ──────────────────────────────────── */
   --gold: #d6ab34;
@@ -98,4 +73,9 @@
   --font-display: 'Cormorant Garamond', serif;
   --font-tag: 'Josefin Sans', sans-serif;
   --font-body: 'EB Garamond', serif;
+  
+}
+@keyframes shimmerGris {
+  0%, 100% { background-color: #e4e4e4; }
+  50% { background-color: #a2a2a2; }
 }

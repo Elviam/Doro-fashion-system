@@ -8,7 +8,7 @@ export default function AccionesTabla({ onVer, onEditar, onEliminar, onPermisos 
           onClick={onVer}
           className="relative group bg-transparent border-none cursor-pointer text-lg lg:text-xl outline-none transition-all
             opacity-70 hover:opacity-100
-            text-[var(--noir-soft)] hover:text-verde
+            text-[var(--noir-soft)] hover:text-verde-dark
             dark:text-[var(--snow)] dark:hover:text-verde"
         >
           <i className="bi bi-eye inline-block transition-transform group-hover:scale-125"></i>
@@ -26,7 +26,7 @@ export default function AccionesTabla({ onVer, onEditar, onEliminar, onPermisos 
           onClick={onPermisos}
           className="relative group bg-transparent border-none cursor-pointer text-lg lg:text-xl outline-none transition-all
             opacity-70 hover:opacity-100
-            text-[var(--noir-soft)] hover:text-azul
+            text-[var(--noir-soft)] hover:text-azul-dark
             dark:text-[var(--snow)] dark:hover:text-azul"
         >
           <i className="bi bi-shield-lock inline-block transition-transform group-hover:scale-125"></i>
@@ -62,7 +62,7 @@ export default function AccionesTabla({ onVer, onEditar, onEliminar, onPermisos 
           onClick={onEliminar}
           className="relative group bg-transparent border-none cursor-pointer text-lg lg:text-xl outline-none transition-all
             opacity-70 hover:opacity-100
-            text-[var(--noir-soft)] hover:text-rojo
+            text-[var(--noir-soft)] hover:text-rojo-dark
             dark:text-[var(--snow)] dark:hover:text-rojo"
         >
           <i className="bi bi-trash inline-block transition-transform group-hover:scale-125"></i>

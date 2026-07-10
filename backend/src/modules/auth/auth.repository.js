@@ -73,6 +73,7 @@ export class AuthRepository {
       role: user.role?.codigo ?? null,
       roleId: user.roleId,
       activo: user.activo,
+      createdAt: user.createdAt, 
     }
   }
 }

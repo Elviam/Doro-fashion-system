@@ -107,7 +107,6 @@ function ItemWishlist({ producto, onQuitar, onVerDetalle }) {
             onMouseLeave={(e) => (e.currentTarget.style.background = "transparent",         e.currentTarget.style.borderColor = "rgba(244,63,94,0.3)")}
           >
             <i className="bi bi-trash text-xs" />
-            Eliminar
           </button>
         </div>
       </div>
