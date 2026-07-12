@@ -6,6 +6,8 @@ export default function Tabla({
   datos, 
   renderRow,
   sortableFields = [],
+  cargando = false,
+  entidad = "elementos",
   children
 }) {
   const [sortField, setSortField] = useState(null);
@@ -185,10 +187,10 @@ export default function Tabla({
                 : sortColumnIndex === idx;
 
               return (
-                <th 
+               <th 
                   key={idx}
                   onClick={() => handleSort(idx, header)}
-                  className={`p-4 text-center font-tag text-[11px] lg:text-[13px] font-semibold uppercase tracking-[0.12em] transition-colors duration-300
+                  className={`py-2 px-4 text-center font-tag text-[11px] lg:text-[13px] font-semibold uppercase tracking-[0.12em] transition-colors duration-300
                     text-[var(--noir-soft)] dark:text-[var(--gold-light)]
                     ${isSortable ? "cursor-pointer hover:text-[var(--gold-dark)] dark:hover:text-[var(--gold)]" : ""}`}
                 >
@@ -204,7 +206,16 @@ export default function Tabla({
           </tr>
         </thead>
         <tbody className="font-body text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]">
-          {usandoNuevoSistema ? (
+          {cargando ? (
+            <tr>
+              <td
+                colSpan={encabezadosProcesados.length}
+                className="text-center py-10 text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]"
+              >
+                <i className="bi bi-arrow-repeat animate-spin mr-2" />Cargando {entidad}...
+              </td>
+            </tr>
+          ) : usandoNuevoSistema ? (
             // Nuevo sistema: datos + renderRow
             sortedRows.length === 0 ? (
               <tr>

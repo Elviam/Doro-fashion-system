@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
-const ESTADOS = ['BORRADOR', 'CONFIRMADA', 'CANCELADA']
+const ESTADOS = ['BORRADOR', 'PENDIENTE', 'CONFIRMADA', 'CANCELADA']
+const ORIGENES = ['MANUAL', 'REABASTECIMIENTO']
 
 const recepcionItemSchema = z.object({
   productId: z.string({ required_error: 'El productId es obligatorio' }).min(1, 'El productId es obligatorio'),
@@ -12,6 +13,7 @@ const recepcionItemSchema = z.object({
 export const listRecepcionesQuerySchema = z.object({
   q: z.string().optional().default(''),
   status: z.enum(ESTADOS).optional(),
+  origen: z.enum(ORIGENES).optional(),
   fechaDesde: z.string().optional(),
   page: z.coerce.number().int().min(1).optional().default(1),
   limit: z.coerce.number().int().min(1).max(500).optional().default(10)
@@ -22,16 +24,17 @@ export const recepcionIdParamSchema = z.object({
 })
 
 export const createRecepcionSchema = z.object({
-  supplierId: z.string({ required_error: 'El supplierId es obligatorio' }).min(1, 'El supplierId es obligatorio'),
+  supplierId: z.string().min(1, 'El supplierId no puede ser una cadena vacía').optional().nullable(),
   facturaProveedor: z.string().optional().nullable(),
   fecha: z.string({ required_error: 'La fecha es obligatoria' }).min(1, 'La fecha es obligatoria'),
   folio: z.union([z.string().min(2, 'El folio debe tener al menos 2 caracteres'), z.literal(''), z.undefined()]).optional(),
   comentarios: z.string().optional().nullable(),
+  origen: z.enum(ORIGENES).optional().default('MANUAL'),
   items: z.array(recepcionItemSchema).min(1, 'Debes agregar al menos una partida')
 })
 
 export const updateRecepcionSchema = z.object({
-  supplierId: z.string().min(1, 'El supplierId es obligatorio').optional(),
+  supplierId: z.string().min(1, 'El supplierId no puede ser una cadena vacía').nullable().optional(),
   facturaProveedor: z.string().nullable().optional(),
   fecha: z.string().min(1, 'La fecha es obligatoria').optional(),
   folio: z.string().min(2, 'El folio debe tener al menos 2 caracteres').optional(),

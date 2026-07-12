@@ -65,6 +65,8 @@ export const createProductSchema = z.object({
   precioVenta: z.coerce.number().min(0, 'El precio de venta no puede ser negativo').optional().default(0),
   stock: z.coerce.number().min(0, 'El stock no puede ser negativo').optional().default(0),
   stockMinimo: z.coerce.number().min(0, 'El stock mínimo no puede ser negativo').optional().default(0),
+  stockIdeal: z.coerce.number({ required_error: 'El stock ideal es obligatorio' }).min(0, 'El stock ideal no puede ser negativo'),
+  stockMaximo: z.coerce.number({ required_error: 'El stock máximo es obligatorio' }).min(0, 'El stock máximo no puede ser negativo'),
   activo: z.boolean().optional().default(true),
   inventario: z.array(inventarioSchema).optional().default([])
 })
@@ -81,6 +83,22 @@ export const createProductSchema = z.object({
           path: ['inventario', index, 'talla']
         });
       }
+    });
+  }
+
+  if (data.stockMinimo > data.stockIdeal) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'El stock ideal debe ser mayor o igual al stock mínimo',
+      path: ['stockIdeal']
+    });
+  }
+
+  if (data.stockIdeal > data.stockMaximo) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'El stock máximo debe ser mayor o igual al stock ideal',
+      path: ['stockMaximo']
     });
   }
 })
@@ -101,6 +119,8 @@ export const updateProductSchema = z.object({
   precioVenta: z.coerce.number().min(0, 'El precio de venta no puede ser negativo').optional(),
   stock: z.coerce.number().min(0, 'El stock no puede ser negativo').optional(),
   stockMinimo: z.coerce.number().min(0, 'El stock mínimo no puede ser negativo').optional(),
+  stockIdeal: z.coerce.number().min(0, 'El stock ideal no puede ser negativo').optional(),
+  stockMaximo: z.coerce.number().min(0, 'El stock máximo no puede ser negativo').optional(),
   activo: z.boolean().optional(),
   imagenes: z.array(z.string()).max(6, 'Máximo 6 imágenes por producto').optional(),
   inventario: z.array(inventarioSchema).optional()
@@ -120,6 +140,26 @@ export const updateProductSchema = z.object({
           path: ['inventario', index, 'talla']
         });
       }
+    });
+  }
+
+  const minimo = data.stockMinimo;
+  const ideal = data.stockIdeal;
+  const maximo = data.stockMaximo;
+
+  if (minimo !== undefined && ideal !== undefined && minimo > ideal) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'El stock ideal debe ser mayor o igual al stock mínimo',
+      path: ['stockIdeal']
+    });
+  }
+
+  if (ideal !== undefined && maximo !== undefined && ideal > maximo) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'El stock máximo debe ser mayor o igual al stock ideal',
+      path: ['stockMaximo']
     });
   }
 })

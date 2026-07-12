@@ -52,6 +52,7 @@ export default function ToolBar({
   busqueda, setBusqueda, placeholderBuscar = "Buscar...",
   textoBoton = "+ Nuevo", accionBoton,
   filtro2, setFiltro2, opcionesFiltro2, placeholderFiltro2,
+  filtro3, setFiltro3, opcionesFiltro3, placeholderFiltro3,
   textoBoton2, accionBoton2
 }) {
   
@@ -75,6 +76,15 @@ export default function ToolBar({
             setValor={setFiltro2} 
             opciones={opcionesFiltro2} 
             placeholder={placeholderFiltro2}
+          />
+        )}
+
+        {opcionesFiltro3 && (
+          <DropdownFiltro 
+            valor={filtro3} 
+            setValor={setFiltro3} 
+            opciones={opcionesFiltro3} 
+            placeholder={placeholderFiltro3}
           />
         )}
 

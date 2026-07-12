@@ -3,14 +3,11 @@ import autoTable from 'jspdf-autotable'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 
-// Paleta de la app en RGB
+// Paleta clara D'ORO para exportaciones
 const C = {
-  bg:      [34,  30,  58 ],   // #221E3A
-  card:    [44,  42,  72 ],   // #2C2A48
-  lila:    [86,  83,  142],   // #56538E
-  text:    [231, 214, 255],   // #E7D6FF
-  soft:    [201, 184, 232],   // #C9B8E8
-  rowAlt:  [38,  35,  65 ],   // fila alternada
+  headerBg: [247, 240, 230],  // #F7F0E6 ivory
+  text:     [0, 0, 0],        // negro
+  line:     [0, 0, 0],        // negro
 }
 
 function nombreArchivo(titulo) {
@@ -23,9 +20,9 @@ export function exportarPDF(titulo, columnas, filas) {
   const pageW = doc.internal.pageSize.getWidth()
 
   // Header
-  doc.setFillColor(...C.bg)
+  doc.setFillColor(...C.headerBg)
   doc.rect(0, 0, pageW, 28, 'F')
-  doc.setDrawColor(...C.lila)
+  doc.setDrawColor(...C.line)
   doc.setLineWidth(0.5)
   doc.line(0, 28, pageW, 28)
 
@@ -36,42 +33,46 @@ export function exportarPDF(titulo, columnas, filas) {
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8)
-  doc.setTextColor(...C.soft)
+  doc.setTextColor(...C.text)
   doc.text(
     `Generado: ${new Date().toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' })}`,
     pageW - 14, 18, { align: 'right' }
   )
 
-  autoTable(doc, {
+  doc.autoTable({
     startY: 34,
     head: [columnas.map((c) => c.header)],
     body: filas.map((fila) => columnas.map((c) => fila[c.key] ?? '—')),
     styles: {
-      fillColor: C.card,
+      fillColor: [255, 255, 255],
       textColor: C.text,
       fontSize: 8,
       cellPadding: 4,
       halign: 'center',
+      lineColor: C.line,
+      lineWidth: 0.2,
     },
     headStyles: {
-      fillColor: C.lila,
+      fillColor: C.headerBg,
       textColor: C.text,
       fontStyle: 'bold',
       fontSize: 9,
       halign: 'center',
+      lineColor: C.line,
+      lineWidth: 0.2,
     },
-    alternateRowStyles: { fillColor: C.rowAlt },
-    tableLineColor: C.lila,
-    tableLineWidth: 0.1,
+    alternateRowStyles: { fillColor: [251, 247, 240] },
+    tableLineColor: C.line,
+    tableLineWidth: 0.2,
   })
 
   // Pie de página
-  const pages = doc.internal.getNumberOfPages()
+  const pages = doc.getNumberOfPages()
   const pageH = doc.internal.pageSize.getHeight()
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i)
     doc.setFontSize(7)
-    doc.setTextColor(...C.soft)
+    doc.setTextColor(...C.text)
     doc.text("D'ORO", 14, pageH - 6)
     doc.text(`Página ${i} de ${pages}`, pageW - 14, pageH - 6, { align: 'right' })
   }
@@ -98,21 +99,32 @@ export async function exportarExcel(titulo, columnas, filas) {
   const headerRow = ws.getRow(1)
   headerRow.height = 28
   headerRow.eachCell((cell) => {
-    cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF56538E' } }
-    cell.font      = { bold: true, color: { argb: 'FFE7D6FF' }, size: 11, name: 'Calibri' }
+    cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F0E6' } }
+    cell.font      = { bold: true, color: { argb: 'FF000000' }, size: 11, name: 'Calibri' }
     cell.alignment = { horizontal: 'center', vertical: 'middle' }
-    cell.border    = { bottom: { style: 'medium', color: { argb: 'FFA68DC8' } } }
+    cell.border    = {
+      top:    { style: 'thin', color: { argb: 'FF000000' } },
+      bottom: { style: 'medium', color: { argb: 'FF000000' } },
+      left:   { style: 'thin', color: { argb: 'FF000000' } },
+      right:  { style: 'thin', color: { argb: 'FF000000' } },
+    }
   })
 
   // Filas de datos
   filas.forEach((fila, idx) => {
     const row = ws.addRow(columnas.map((c) => fila[c.key] ?? '—'))
     row.height = 22
-    const bg = idx % 2 === 0 ? 'FF221E3A' : 'FF2C2A48'
+    const bg = idx % 2 === 0 ? 'FFFFFFFF' : 'FFFBF7F0'
     row.eachCell((cell) => {
       cell.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } }
-      cell.font      = { color: { argb: 'FFE7D6FF' }, size: 10, name: 'Calibri' }
+      cell.font      = { color: { argb: 'FF000000' }, size: 10, name: 'Calibri' }
       cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      cell.border    = {
+        top: { style: 'thin', color: { argb: 'FFDDDDDD' } },
+        bottom: { style: 'thin', color: { argb: 'FFDDDDDD' } },
+        left: { style: 'thin', color: { argb: 'FFDDDDDD' } },
+        right: { style: 'thin', color: { argb: 'FFDDDDDD' } },
+      }
     })
   })
 

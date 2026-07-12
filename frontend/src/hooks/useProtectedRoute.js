@@ -8,15 +8,15 @@ const GLOBAL_PAGES = ["tienda", "perfil"];
 const ROLE_PERMISSIONS = {
   "role_admin": [
     "dashboard", "productos", "recepciones", "ventas",
-    "clientes", "proveedores", "usuarios", "auditoria", "inventario", "tienda"
+    "clientes", "proveedores", "usuarios", "auditoria", "inventario", "reabastecimiento", "tienda"
   ],
   "ADMIN": [
     "dashboard", "productos", "recepciones", "ventas",
-    "clientes", "proveedores", "usuarios", "auditoria", "roles", "inventario", "tienda"
+    "clientes", "proveedores", "usuarios", "auditoria", "roles", "inventario", "reabastecimiento", "tienda"
   ],
   "GERENTE": [
     "dashboard", "productos", "recepciones", "ventas",
-    "clientes", "proveedores", "usuarios", "auditoria", "roles", "inventario", "tienda"
+    "clientes", "proveedores", "usuarios", "auditoria", "roles", "inventario", "reabastecimiento", "tienda"
   ],
   "BODEGUERO": [
     "productos", "recepciones", "ventas", "clientes", "proveedores", "inventario", "tienda"

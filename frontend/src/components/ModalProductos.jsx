@@ -1,11 +1,34 @@
+//Ver detalles de un producto registrado
+
+import { useState, useEffect } from "react";
 import Modal from "./Modal";
 import Etiquetas from "./Etiquetas";
 import Boton from "./Boton";
+import { useAuth } from "../hooks/useAuth";
+import { obtenerUltimoLog } from "../services/auditService";
+
+function formatearFecha(fechaStr) {
+  if (!fechaStr) return "—";
+  const fecha = new Date(fechaStr);
+  if (isNaN(fecha)) return "—";
+  return fecha.toLocaleDateString("es-MX", { day: "2-digit", month: "long", year: "numeric" });
+}
 
 export default function ModalProductos({ data, onEdit, onDelete, onClose, isOpen }) {
+  const { token } = useAuth();
+  const [creadoPor, setCreadoPor] = useState(null);
+  const [cargandoCreador, setCargandoCreador] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !data?.id || !token) { setCreadoPor(null); return; }
+    setCargandoCreador(true);
+    obtenerUltimoLog({ token, resource: "products", resourceId: data.id, action: "CREATE" })
+      .then((log) => setCreadoPor(log?.usuario || null))
+      .finally(() => setCargandoCreador(false));
+  }, [isOpen, data?.id, token]);
+
   if (!data) return null;
 
-  // Cálculo del stock total
   const stockTotal = data.inventario?.reduce((acc, item) => acc + item.stock, 0) || 0;
   const textoEstado = data.activo !== false ? "Activo" : "Inactivo";
 
@@ -40,10 +63,8 @@ export default function ModalProductos({ data, onEdit, onDelete, onClose, isOpen
     >
       <div className="font-body">
         
-        {/* Contenido */}
         <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-stretch mt-4">
           
-          {/* Columna Izquierda: Imagen y Descripción */}
           <div className="w-full md:w-5/12 flex flex-col gap-4">
             
             <div className={`
@@ -51,11 +72,18 @@ export default function ModalProductos({ data, onEdit, onDelete, onClose, isOpen
               bg-[var(--snow)] border border-[var(--border-gold-40)]
               dark:bg-[var(--snow)] dark:border-[var(--border-gold-20)]
             `}>
-              <img 
-                src={data.imagen || "https://via.placeholder.com/400"} 
-                alt={data.nombre} 
-                className="w-full h-full object-contain hover:scale-105 transition-transform duration-300" 
-              />
+              {data.imagenes?.[0] ? (
+                <img 
+                  src={data.imagenes[0]} 
+                  alt={data.nombre} 
+                  className="w-full h-full object-contain hover:scale-105 transition-transform duration-300" 
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-ash">
+                  <i className="bi bi-image text-4xl"></i>
+                  <span className="text-xs">Sin imagen</span>
+                </div>
+              )}
             </div>
 
             {data.descripcion && (
@@ -69,9 +97,20 @@ export default function ModalProductos({ data, onEdit, onDelete, onClose, isOpen
                 </p>
               </div>
             )}
+
+            <div className={`
+              rounded-[2px] p-3 border transition-colors shadow-sm text-xs lg:text-sm
+              bg-[var(--snow)] border-[var(--border-gold-40)] text-[var(--noir-soft)]
+              dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)] dark:text-[var(--ash)]
+            `}>
+              <p className="flex items-center gap-2"><i className="bi bi-calendar-event"></i> Creado el {formatearFecha(data.createdAt)}</p>
+              <p className="flex items-center gap-2 mt-1">
+                <i className="bi bi-person"></i>
+                {cargandoCreador ? "Consultando..." : (creadoPor || "Sin registro de auditoría")}
+              </p>
+            </div>
           </div>
 
-          {/* Columna Derecha: Información, Precios, Stock y Ficha Técnica */}
           <div className="w-full md:w-7/12 flex flex-col">
             
             <div className="hidden md:flex flex-wrap gap-2 mb-6">

@@ -126,7 +126,7 @@ export class ProductsService {
 
     const variantes = normalizeVariantes(payload.inventario, payload.stock)
 
-    const data = {
+   const data = {
       sku: normalizedSku,
       nombre: payload.nombre.trim(),
       descripcion: normalizeOptionalText(payload.descripcion) || '',
@@ -137,6 +137,8 @@ export class ProductsService {
       precioCompra: Number(payload.precioCompra ?? 0),
       precioVenta: Number(payload.precioVenta ?? 0),
       stockMinimo: Number(payload.stockMinimo ?? 0),
+      stockIdeal: Number(payload.stockIdeal ?? 0),
+      stockMaximo: Number(payload.stockMaximo ?? 0),
       imagenes: Array.isArray(payload.imagenes) ? payload.imagenes : [],
       activo: payload.activo ?? true,
       variantes
@@ -150,12 +152,14 @@ export class ProductsService {
       resource: 'products',
       resourceId: created.id,
       details: {
-        sku: sanitized.sku,
-        nombre: sanitized.nombre,
-        stock: sanitized.stock,
-        stockMinimo: sanitized.stockMinimo,
-        activo: sanitized.activo
-      },
+          sku: sanitized.sku,
+          nombre: sanitized.nombre,
+          stock: sanitized.stock,
+          stockMinimo: sanitized.stockMinimo,
+          stockIdeal: sanitized.stockIdeal,
+          stockMaximo: sanitized.stockMaximo,
+          activo: sanitized.activo
+        },
       currentUser
     })
 
@@ -206,8 +210,9 @@ export class ProductsService {
     if (payload.precioVenta !== undefined) data.precioVenta = Number(payload.precioVenta)
     if (payload.imagenes !== undefined) data.imagenes = Array.isArray(payload.imagenes) ? payload.imagenes : []
     if (payload.stockMinimo !== undefined) data.stockMinimo = Number(payload.stockMinimo)
+    if (payload.stockIdeal !== undefined) data.stockIdeal = Number(payload.stockIdeal)
+    if (payload.stockMaximo !== undefined) data.stockMaximo = Number(payload.stockMaximo)
     if (payload.activo !== undefined) data.activo = payload.activo
-
     await productsRepository.update(id, data)
 
     if (payload.inventario !== undefined) {
@@ -228,6 +233,8 @@ export class ProductsService {
         nombre: sanitized.nombre,
         stock: sanitized.stock,
         stockMinimo: sanitized.stockMinimo,
+        stockIdeal: sanitized.stockIdeal,
+        stockMaximo: sanitized.stockMaximo,
         activo: sanitized.activo
       },
       currentUser
@@ -300,6 +307,8 @@ export class ProductsService {
       precioVenta: Number(product.precioVenta || 0),
       stock: computeTotalStock(product.variants || []),
       stockMinimo: Number(product.stockMinimo || 0),
+      stockIdeal: Number(product.stockIdeal || 0),
+      stockMaximo: Number(product.stockMaximo || 0),
       imagenes: product.imagenes || [],
       inventario,
       activo: product.activo ?? true,

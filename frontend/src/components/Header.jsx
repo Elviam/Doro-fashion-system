@@ -21,21 +21,20 @@ export default function Header({ onMenuClick }) {
   const [resultados, setResultados] = useState(null);
   const [buscando, setBuscando] = useState(false);
   const [mostrarModal, setMostrarModal] = useState(false);
-  // Controla si en pantallas pequeñas el input de búsqueda está expandido (modo icono -> input)
   const [busquedaMovilAbierta, setBusquedaMovilAbierta] = useState(false);
 
   const campanaRef = useRef(null);
   const buscadorRef = useRef(null);
   const inputBusquedaRef = useRef(null);
   const notifsRef = useRef(null);
-  const usuarioRef = useRef(null);
-  const dropdownRef = useRef(null);
+  const menuRef = useRef(null);
+  const menuDropdownRef = useRef(null);
 
   const [posNotifs, setPosNotifs] = useState({ top: 0, right: 0 });
   const [totalNotifs, setTotalNotifs] = useState(0);
   const [mostrarNotifs, setMostrarNotifs] = useState(false);
   const [notifs, setNotifs] = useState([]);
-  const [mostrarDropdownUsuario, setMostrarDropdownUsuario] = useState(false);
+  const [mostrarMenu, setMostrarMenu] = useState(false);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -48,7 +47,7 @@ export default function Header({ onMenuClick }) {
     }
   }, [isDark]);
 
-  const toggleTheme = () => setIsDark(!isDark);
+  const toggleTheme = () => setIsDark((v) => !v);
 
   useEffect(() => {
     if (query.trim().length < 2) {
@@ -116,19 +115,18 @@ export default function Header({ onMenuClick }) {
   useEffect(() => {
     const handleClickFuera = (e) => {
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target) &&
-        usuarioRef.current &&
-        !usuarioRef.current.contains(e.target)
+        menuDropdownRef.current &&
+        !menuDropdownRef.current.contains(e.target) &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target)
       ) {
-        setMostrarDropdownUsuario(false);
+        setMostrarMenu(false);
       }
     };
     document.addEventListener("mousedown", handleClickFuera);
     return () => document.removeEventListener("mousedown", handleClickFuera);
   }, []);
 
-  // Cierra el modo búsqueda en móvil si se hace click fuera del buscador
   useEffect(() => {
     if (!busquedaMovilAbierta) return;
     const handleClickFuera = (e) => {
@@ -177,7 +175,6 @@ export default function Header({ onMenuClick }) {
     });
   }
 
-  // Click en la barra de búsqueda: si ya está desplegado el dropdown, lo cierra (toggle).
   const manejarClickBuscador = () => {
     if (mostrarModal) {
       setMostrarModal(false);
@@ -206,7 +203,6 @@ export default function Header({ onMenuClick }) {
           busquedaMovilAbierta ? "flex-1" : "shrink-0 sm:flex-1 sm:max-w-md lg:max-w-lg xl:max-w-xl"
         }`}
       >
-        {/* Versión icono: visible sólo en pantallas muy pequeñas cuando el buscador está cerrado */}
         {!busquedaMovilAbierta && (
           <button
             onClick={() => setBusquedaMovilAbierta(true)}
@@ -217,7 +213,6 @@ export default function Header({ onMenuClick }) {
           </button>
         )}
 
-        {/* Input completo: siempre visible en sm+, y en móvil sólo si está expandido */}
         <div className={`relative w-full ${busquedaMovilAbierta ? "block" : "hidden sm:block"}`}>
           <i className="bi bi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[var(--gold-dark)] dark:text-[var(--gold-light)]"></i>
           <input
@@ -368,89 +363,89 @@ export default function Header({ onMenuClick }) {
         </div>
       </div>
 
-      {/* Sección derecha: tema y usuario, anclados a la esquina derecha */}
-      <div className={`flex items-center gap-2 sm:gap-2.5 lg:gap-3.5 shrink-0 ml-auto ${busquedaMovilAbierta ? "hidden sm:flex" : "flex"}`}>
-
+      {/* Sección derecha: un solo engranaje con todo dentro */}
+      <div className="relative shrink-0 ml-auto">
         <button
-          onClick={toggleTheme}
+          ref={menuRef}
+          onClick={() => setMostrarMenu((v) => !v)}
           className="flex items-center justify-center w-10 h-10 rounded-[2px] transition-all duration-300 cursor-pointer shadow-sm active:scale-95 bg-[var(--ivory-deep)] text-[var(--gold-dark)] border border-[var(--border-gold-40)] hover:bg-[var(--gold)] hover:text-[var(--noir)] dark:bg-[var(--noir-soft)] dark:text-[var(--gold-light)] dark:border-[var(--border-gold-20)] dark:hover:bg-[var(--gold)] dark:hover:text-[var(--noir)]"
-          title={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+          title="Menú"
         >
-          {isDark ? (
-            <i className="bi bi-sun-fill text-lg"></i>
-          ) : (
-            <i className="bi bi-moon-stars-fill text-lg"></i>
-          )}
+          <i className="bi bi-gear-fill text-lg"></i>
         </button>
-      </div>
-        {/* Sección derecha: tienda, tema y usuario, anclados a la esquina derecha */}
-<div className={`flex items-center gap-2 sm:gap-2.5 lg:gap-3.5 shrink-0 ml-auto ${busquedaMovilAbierta ? "hidden sm:flex" : "flex"}`}>
 
-  <button
-    onClick={() => navigate("/tienda")}
-    className="flex items-center justify-center w-10 h-10 rounded-[2px] transition-all duration-300 cursor-pointer shadow-sm active:scale-95 bg-[var(--ivory-deep)] text-[var(--gold-dark)] border border-[var(--border-gold-40)] hover:bg-[var(--gold)] hover:text-[var(--noir)] dark:bg-[var(--noir-soft)] dark:text-[var(--gold-light)] dark:border-[var(--border-gold-20)] dark:hover:bg-[var(--gold)] dark:hover:text-[var(--noir)]"
-    title="Ir a la tienda"
-  >
-    <i className="bi bi-shop text-lg"></i>
-  </button>
-
-  {/* Perfil del Usuario ... (sin cambios) */}
-
-        {/* Perfil del Usuario */}
-        <div className="relative">
-          <button
-            ref={usuarioRef}
-            onClick={() => setMostrarDropdownUsuario(!mostrarDropdownUsuario)}
-            className="flex items-center justify-center sm:justify-start gap-0 sm:gap-2.5 w-10 h-10 sm:w-auto sm:px-3.5 sm:py-1 rounded-[2px] transition-all duration-300 cursor-pointer shadow-sm bg-[var(--gold-08)] border border-[var(--border-gold-40)] hover:bg-[var(--gold-15)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:hover:bg-[var(--gold-08)]"
+       {mostrarMenu && (
+          <div
+            ref={menuDropdownRef}
+            className="absolute top-full right-0 mt-2 w-56 bg-[var(--snow)] border border-[var(--border-gold-40)] rounded-[2px] shadow-lg overflow-hidden z-50 dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)]"
           >
-            <i className="bi bi-person-circle text-xl text-[var(--gold-dark)] dark:text-[var(--gold-light)]"></i>
-
-            {/* Oculta los textos en pantallas pequeñas para mantener todo en una sola línea como iconos */}
-            <div className="text-left leading-tight hidden sm:block max-w-[130px]">
-              <p className="m-0 font-semibold text-base text-[var(--gold-dark)] dark:text-[var(--snow)] truncate font-body">
-                {usuario?.nombre || "Usuario"}
-              </p>
-              <p className="m-0 text-[12px] uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-dark)] truncate font-tag">
-                {usuario?.roleId || usuario?.role || "Invitado"}
+            {/* Mi perfil */}
+            <div className="px-3.5 py-2 border-b border-[var(--border-gold-20)]">
+              <p className="m-0 text-[12px] font-tag font-bold uppercase tracking-widest text-[var(--ash)]">
+                Mi perfil
               </p>
             </div>
 
-            <i className={`hidden sm:inline-block bi bi-chevron-down text-[10px] text-[var(--gold-dark)] dark:text-[var(--gold-light)] transition-all duration-300 ${mostrarDropdownUsuario ? "rotate-180" : ""}`}></i>
-          </button>
+            {/* Texto informativo, NO es botón: sin hover, sin onClick, cursor-default */}
+            <div className="w-full px-3.5 py-2 flex items-center gap-2.5 text-base font-body text-[var(--noir)] dark:text-[var(--snow)] cursor-default select-none">
+              <i className="bi bi-person-circle"></i>
+              <span className="truncate">{usuario?.nombre || "Usuario"}</span>
+            </div>
 
-          {mostrarDropdownUsuario && (
-            <div
-              ref={dropdownRef}
-              className="absolute top-full right-0 mt-2 w-44 bg-[var(--snow)] border border-[var(--border-gold-40)] rounded-[2px] shadow-lg overflow-hidden z-50 dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)]"
+            <button
+              onClick={() => {
+                logout();
+                navigate("/login");
+                setMostrarMenu(false);
+              }}
+              className="w-full px-3.5 py-2 text-left transition-colors flex items-center gap-2.5 text-base font-body cursor-pointer
+                text-[var(--color-rojo-dark)] dark:text-[var(--color-rojo)]
+                hover:bg-[var(--color-rojo-dark)] hover:text-[var(--snow)]
+                dark:hover:bg-[var(--color-rojo)] dark:hover:text-[var(--snow)]"
             >
-              <div className="px-3.5 py-2 border-b border-[var(--border-gold-20)]">
-                <p className="m-0 text-[12px] font-tag font-bold uppercase tracking-widest text-[var(--ash)]">
-                  Mi Cuenta
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  navigate("/perfil");
-                  setMostrarDropdownUsuario(false);
-                }}
-                className="w-full px-3.5 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 text-base font-body text-[var(--noir)] dark:text-[var(--snow)]"
-              >
-                <i className="bi bi-person-fill"></i> Mi Perfil
-              </button>
-              <button
-                onClick={() => {
-                  logout();
-                  navigate("/login");
-                  setMostrarDropdownUsuario(false);
-                }}
-                className="w-full px-3.5 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 text-base font-body text-[var(--noir)] dark:text-[var(--snow)]"
-              >
-                <i className="bi bi-box-arrow-right"></i> Cerrar sesión
-              </button>
-            </div>
-          )}
-        </div>
+              <i className="bi bi-box-arrow-right"></i> Cerrar sesión
+            </button>
 
+            {/* Otros */}
+            <div className="px-3.5 py-2 border-y border-[var(--border-gold-20)]">
+              <p className="m-0 text-[12px] font-tag font-bold uppercase tracking-widest text-[var(--ash)]">
+                Otros
+              </p>
+            </div>
+
+            <button
+              onClick={toggleTheme}
+              className="w-full px-3.5 py-2 hover:bg-[var(--gold-08)] transition-colors flex items-center justify-between gap-2.5 text-base font-body text-[var(--noir)] dark:text-[var(--snow)] cursor-pointer"
+            >
+              <span className="flex items-center gap-2.5">
+                {isDark ? <i className="bi bi-moon-stars-fill"></i> : <i className="bi bi-sun-fill"></i>}
+                Cambiar tema
+              </span>
+
+              <span
+                className={`relative w-9 h-5 rounded-full transition-colors duration-300 shrink-0 ${
+                  isDark ? "bg-[var(--gold)]" : "bg-[var(--border-gold-40)]"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-[var(--snow)] transition-transform duration-300 ${
+                    isDark ? "translate-x-4" : "translate-x-0"
+                  }`}
+                />
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                navigate("/tienda");
+                setMostrarMenu(false);
+              }}
+              className="w-full px-3.5 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 text-base font-body text-[var(--noir)] dark:text-[var(--snow)] cursor-pointer"
+            >
+              <i className="bi bi-shop"></i> Ir a tienda
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

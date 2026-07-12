@@ -4,7 +4,6 @@ import { exportarPDF, exportarExcel } from '../services/exportService'
 export default function Paginacion({
   paginaActual   = 1,
   totalRegistros = 0,
-  rangoSiguiente = "1 – 5",
   limit          = 7,
   onCambiarPagina,
   exportTitulo   = "Reporte",
@@ -35,21 +34,6 @@ export default function Paginacion({
   }
 
   const totalPaginas = Math.max(1, Math.ceil(totalRegistros / limit))
-
-  const getPaginas = () => {
-    if (totalPaginas <= 5) return Array.from({ length: totalPaginas }, (_, i) => String(i + 1))
-    const paginas = []
-    if (paginaActual <= 3) {
-      paginas.push("1", "2", "3", "4", "...", String(totalPaginas))
-    } else if (paginaActual >= totalPaginas - 2) {
-      paginas.push("1", "...", String(totalPaginas - 3), String(totalPaginas - 2), String(totalPaginas - 1), String(totalPaginas))
-    } else {
-      paginas.push("1", "...", String(paginaActual - 1), String(paginaActual), String(paginaActual + 1), "...", String(totalPaginas))
-    }
-    return paginas
-  }
-
-  const paginas  = getPaginas()
   const esPrimera = paginaActual === 1
   const esUltima  = paginaActual === totalPaginas
 
@@ -98,13 +82,8 @@ export default function Paginacion({
         )}
       </div>
 
-      {/* Contador */}
-      <span className="text-[var(--noir-soft)] dark:text-[var(--ash)] text-sm lg:text-base font-medium">
-        {rangoSiguiente} de {totalRegistros.toLocaleString()}
-      </span>
-
-      {/* Botones de navegación */}
-      <div className="flex gap-2">
+      {/* Navegación simplificada */}
+      <div className="flex items-center gap-3">
         <button
           onClick={() => !esPrimera && onCambiarPagina("‹")}
           disabled={esPrimera}
@@ -113,25 +92,9 @@ export default function Paginacion({
           ‹
         </button>
 
-        {paginas.map((p, i) =>
-          p === "..." ? (
-            <span key={i} className="w-9 h-9 lg:w-10 lg:h-10 flex items-center justify-center text-[var(--noir-soft)] dark:text-[var(--ash)] text-sm lg:text-base">
-              ...
-            </span>
-          ) : (
-            <button
-              key={i}
-              onClick={() => onCambiarPagina(p)}
-              className={`w-9 h-9 lg:w-10 lg:h-10 rounded-[2px] font-bold text-sm lg:text-base transition-all hover:scale-110 active:scale-90 flex items-center justify-center ${
-                p === String(paginaActual)
-                  ? "bg-[var(--gold)] text-[var(--noir)] border-none shadow-sm"
-                  : "bg-transparent text-[var(--noir-soft)] border border-[var(--border-gold-40)] hover:bg-[var(--gold)] hover:text-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)] dark:hover:bg-[var(--gold)] dark:hover:text-[var(--noir)]"
-              }`}
-            >
-              {p}
-            </button>
-          )
-        )}
+        <span className="text-[var(--noir-soft)] dark:text-[var(--snow)] text-sm lg:text-base font-semibold whitespace-nowrap px-1">
+          Página {paginaActual} de {totalPaginas}
+        </span>
 
         <button
           onClick={() => !esUltima && onCambiarPagina("›")}

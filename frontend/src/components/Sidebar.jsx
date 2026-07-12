@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, ClipboardList, Users, Truck, UserCog, ShieldCheck, Shield, ShoppingCart, ChevronLeft, ChevronRight, Book } from "lucide-react";
+import { LayoutDashboard, Package, ClipboardList, Users, Truck, UserCog, ShieldCheck, Shield, ShoppingCart, ChevronLeft, ChevronRight, Book, RefreshCw } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 
 const navItems = [
@@ -11,18 +11,18 @@ const navItems = [
       
     ],
   },
-  {
-    section: "GESTIÓN",
-    items: [
-      { label: "Ventas",      ruta: "/ventas",      icon: ShoppingCart,    permiso: "ventas:read" },
-      { label: "Productos",   ruta: "/productos",   icon: Package,         permiso: "products:read" },
-      { label: "Inventario",  ruta: "/inventario",  icon: Book,         permiso: "inventory:read" },
-      { label: "Recepciones", ruta: "/recepciones", icon: ClipboardList,   permiso: "recepciones:read" },
-      { label: "Clientes",    ruta: "/clientes",    icon: Users,           permiso: "clients:read" },
-      { label: "Proveedores", ruta: "/proveedores", icon: Truck,           permiso: "suppliers:read" },
-      
-    ],
-  },
+ {
+  section: "GESTIÓN",
+  items: [
+    { label: "Ventas",           ruta: "/ventas",           icon: ShoppingCart, permiso: "ventas:read" },
+    { label: "Productos",        ruta: "/productos",        icon: Package,      permiso: "products:read" },
+    { label: "Inventario",       ruta: "/inventario",        icon: Book,         permiso: "inventory:read" },
+    { label: "Reabastecimiento", ruta: "/reabastecimiento",  icon: RefreshCw,    permiso: "reabastecimiento:read" },
+    { label: "Recepciones",      ruta: "/recepciones",       icon: ClipboardList, permiso: "recepciones:read" },
+    { label: "Clientes",         ruta: "/clientes",          icon: Users,        permiso: "clients:read" },
+    { label: "Proveedores",      ruta: "/proveedores",       icon: Truck,        permiso: "suppliers:read" },
+  ],
+},
   {
     section: "CONTROL",
     items: [

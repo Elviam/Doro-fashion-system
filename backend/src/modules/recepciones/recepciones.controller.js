@@ -44,6 +44,11 @@ export class RecepcionesController {
     return res.status(200).json(result)
   }
   
+  async enviar(req, res) {
+    const result = await recepcionesService.enviar(req.params.id, req.user)
+    return res.status(200).json(result)
+  }
+  
   async cancel(req, res) {
     const result = await recepcionesService.cancelar(req.params.id, req.user)
     return res.status(200).json(result)

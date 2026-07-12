@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import { uploadImageToCloudinary } from "../services/cloudinaryClient"; 
 
@@ -18,9 +19,11 @@ import BarraCategorias from "../components/BarraCategorias";
 
 export default function Productos() {
   useTitulo("Productos");
+  const navigate = useNavigate();
   
   const [filtro, setFiltro] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState("");
+  const [filtroFecha, setFiltroFecha] = useState("");
   const [busqueda, setBusqueda] = useState("");
   
   const [productosDB, setProductosDB] = useState([]);
@@ -66,8 +69,16 @@ export default function Productos() {
   { value: "Accesorios", label: "Accesorios" },
 ];
 
+  const opcionesFiltroFecha = [
+    { value: "", label: "Todas" },
+    { value: "hoy", label: "Agregados hoy" },
+    { value: "semana", label: "Última semana" },
+    { value: "mes", label: "Último mes" },
+    { value: "anio", label: "Último año" },
+  ];
+
   const encabezadosProductos = [
-    "Imagen","Sku", "Nombre", "Departamento", "Categoría", "Precio", "Stock", "Estado", "Acciones"
+    "Imagen","Sku", "Nombre", "Departamento", "Categoría", "Precio MNX", "Estado", "Acciones"
   ];
 
   const fetchProductos = async (silencioso = false) => {
@@ -90,7 +101,36 @@ export default function Productos() {
 
   useEffect(() => {
     setPaginaActiva(1);
-  }, [filtro, filtroCategoria, busqueda]);
+  }, [filtro, filtroCategoria, filtroFecha, busqueda]);
+
+  const cumpleFiltroFecha = (fechaStr, valorFiltro) => {
+    if (!valorFiltro) return true;
+    if (!fechaStr) return false;
+
+    const fecha = new Date(fechaStr);
+    if (isNaN(fecha)) return false;
+
+    const ahora = new Date();
+
+    if (valorFiltro === "hoy") {
+      return fecha.toDateString() === ahora.toDateString();
+    }
+
+    const limite = new Date(ahora);
+    if (valorFiltro === "semana") limite.setDate(limite.getDate() - 7);
+    else if (valorFiltro === "mes") limite.setMonth(limite.getMonth() - 1);
+    else if (valorFiltro === "anio") limite.setFullYear(limite.getFullYear() - 1);
+    else return true;
+
+    return fecha >= limite;
+  };
+
+  const formatearFecha = (fechaStr) => {
+    if (!fechaStr) return "—";
+    const fecha = new Date(fechaStr);
+    if (isNaN(fecha)) return "—";
+    return fecha.toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" });
+  };
 
   const datosFiltrados = productosDB
     .filter((row) => {
@@ -100,11 +140,18 @@ export default function Productos() {
     .filter((row) => {
       return filtroCategoria === "" || row.categoria === filtroCategoria;
     })
-    .filter((row) => (
-      busqueda === "" || 
-      row.nombre.toLowerCase().includes(busqueda.toLowerCase()) || 
-      (row.sku && row.sku.toLowerCase().includes(busqueda.toLowerCase()))
-    ));
+    .filter((row) => cumpleFiltroFecha(row.createdAt, filtroFecha))
+    .filter((row) => {
+      if (busqueda === "") return true;
+      const term = busqueda.toLowerCase();
+      const fechaFormateada = formatearFecha(row.createdAt).toLowerCase();
+      return (
+        row.nombre.toLowerCase().includes(term) ||
+        (row.sku && row.sku.toLowerCase().includes(term)) ||
+        fechaFormateada.includes(term)
+      );
+    })
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
   const totalProd = productosDB.length;
   const activosProd = productosDB.filter(p => p.activo !== false).length;
@@ -116,19 +163,9 @@ export default function Productos() {
   const start = (paginaActiva - 1) * LIMIT;
   const datosPaginados = datosFiltrados.slice(start, start + LIMIT);
 
-  const textoRango = datosFiltrados.length === 0 
-    ? "0" 
-    : `${start + 1} – ${Math.min(paginaActiva * LIMIT, datosFiltrados.length)}`;
-
   const calcularStockTotal = (inventario) => {
     if (!Array.isArray(inventario)) return 0;
     return inventario.reduce((acc, item) => acc + item.stock, 0);
-  };
-
-  const getColorStock = (stock) => {
-    if (stock <= 10) return "text-rojo";       
-    if (stock <= 30) return "text-amarillo";  
-    return "text-verde";                      
   };
 
   const handleVerDetalles = (producto) => {
@@ -146,14 +183,17 @@ export default function Productos() {
       ...producto,
       pCompra: producto.precioCompra, 
       pVenta: producto.precioVenta,
-      estado: producto.activo !== false ? "Activo" : "Inactivo"
+      estado: producto.activo !== false ? "Activo" : "Inactivo",
+      stockMinimo: producto.stockMinimo ?? 0,
+      stockIdeal: producto.stockIdeal ?? 0,
+      stockMaximo: producto.stockMaximo ?? 0,
     };
     setProductoAEditar(productoMapeado);
     setIsModalVerAbierto(false); 
     setIsModalFormAbierto(true);
   };
 
-  const handleGuardarProducto = async (datosFormulario) => {
+  const handleGuardarProducto = async (datosFormulario, { irARegistrarInventario = false } = {}) => {
     if (guardando) return;
     try {
       setGuardando(true);
@@ -167,8 +207,6 @@ export default function Productos() {
 
       const imagenesFinal = [...urlsExistentes, ...urlsSubidas];
 
-      const stockCalculado = calcularStockTotal(datosFormulario.inventario);
-
       const payload = {
         sku: datosFormulario.sku || `SKU-${Date.now().toString().slice(-6)}`, 
         nombre: datosFormulario.nombre,
@@ -179,20 +217,28 @@ export default function Productos() {
         descripcion: datosFormulario.descripcion,
         precioCompra: Number(datosFormulario.pCompra),
         precioVenta: Number(datosFormulario.pVenta),
-        stock: stockCalculado, 
         activo: datosFormulario.estado === "Activo",
-        inventario: datosFormulario.inventario,
+        inventario: datosFormulario.inventario || [],
         imagenes: imagenesFinal,
         stockMinimo: Number(datosFormulario.stockMinimo),
-        unidad: datosFormulario.unidad,
+        stockIdeal: Number(datosFormulario.stockIdeal),
+        stockMaximo: Number(datosFormulario.stockMaximo),
         supplierId: datosFormulario.supplierId,
         supplierNombre: datosFormulario.supplierNombre
       };
 
+      let respuesta;
       if (productoAEditar && productoAEditar.id) {
-        await api.patch(`/products/${productoAEditar.id}`, payload);
+        respuesta = await api.patch(`/products/${productoAEditar.id}`, payload);
       } else {
-        await api.post('/products', payload);
+        respuesta = await api.post('/products', payload);
+      }
+
+      if (irARegistrarInventario) {
+        const idProducto = productoAEditar?.id || respuesta?.id || respuesta?.data?.id;
+        setIsModalFormAbierto(false);
+        navigate(`/inventario?editar=${idProducto}`);
+        return;
       }
 
       setIsModalFormAbierto(false);
@@ -312,71 +358,76 @@ export default function Productos() {
         opcionesFiltro2={opcionesFiltroCategoria}
         placeholderFiltro2="Categoría"
 
+        filtro3={filtroFecha}
+        setFiltro3={setFiltroFecha}
+        opcionesFiltro3={opcionesFiltroFecha}
+        placeholderFiltro3="Fecha"
+
         busqueda={busqueda} 
         setBusqueda={setBusqueda}
-        placeholderBuscar="Buscar por SKU, nombre..." 
+        placeholderBuscar="Buscar por SKU, nombre, fecha..." 
         textoBoton="+ Producto"
         accionBoton={handleNuevoProducto}
       />
 
-      {cargando ? (
-        <div className="p-20 text-center italic text-ash">Cargando catálogo...</div>
-      ) : (
-        <Tabla encabezados={encabezadosProductos}>
-          {datosPaginados.map((row, i) => {
-            const stockTotal = calcularStockTotal(row.inventario);
-            const estadoTexto = row.activo !== false ? "Activo" : "Inactivo";
-            
-            return (
-              <tr key={i} className="border-b border-gold/10 hover:bg-gold/8 transition-colors">
-                <td className="p-2 text-center">
-                  <div className="w-12 h-12 mx-auto rounded-[2px] overflow-hidden bg-noir-soft border border-gold/20">
-                    {row.imagenes?.[0] ? (
-                      <img
-                        src={row.imagenes[0]}
-                        alt={row.nombre}
-                        loading="lazy"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <i className="bi bi-image text-ash text-sm" />
-                      </div>
-                    )}
-                  </div>
-                </td>
-                <td className="p-4 text-center text-sm font-mono text-gold-dark dark:text-gold-light">{row.sku}</td>
-                <td className="p-4 text-center text-sm font-medium">{row.nombre}</td>
-                <td className="p-4 text-center text-xs font-bold uppercase tracking-wider">
-                  {row.departamento}
-                </td>
-                <td className="p-4 text-center">
-                  <Etiquetas contenido={row.categoria} />
-                </td>
-                <td className="p-4 text-center">${row.precioVenta || row.pVenta}</td>
-                <td className={`p-4 text-center text-sm font-bold ${getColorStock(stockTotal)}`}>
-                  {stockTotal}
-                </td>
-                <td className="p-4 text-center">
-                  <Etiquetas contenido={estadoTexto} />
-                </td>
-                <td className="p-4 align-middle text-center">
-                  <AccionesTabla 
-                    onVer={() => handleVerDetalles(row)}
-                    onEditar={() => handleEditarProducto(row)}
-                    onEliminar={() => handleEliminarProducto(row.id)}
-                  />
-                </td>
-              </tr>
-            );
-          })}
-        </Tabla>
-      )}
+      <Tabla encabezados={encabezadosProductos} cargando={cargando} entidad="productos">
+        {datosPaginados.map((row, i) => {
+          const estadoTexto = row.activo !== false ? "Activo" : "Inactivo";
+          const sinInventario = calcularStockTotal(row.inventario) === 0;
+
+          return (
+            <tr
+              key={i}
+              onClick={() => handleVerDetalles(row)}
+              className="border-b border-gold/10 hover:bg-gold/8 transition-colors cursor-pointer"
+            >
+              <td className="py-1.5 px-2 text-center">
+                <div className="w-12 h-12 mx-auto rounded-[2px] overflow-hidden bg-noir-soft border border-gold/20">
+                  {row.imagenes?.[0] ? (
+                    <img
+                      src={row.imagenes[0]}
+                      alt={row.nombre}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <i className="bi bi-image text-ash text-sm" />
+                    </div>
+                  )}
+                </div>
+              </td>
+              <td className="py-2 px-4 text-center text-sm font-mono text-gold-dark dark:text-gold-light">{row.sku}</td>
+              <td className="py-2 px-4 text-center text-sm font-medium">{row.nombre}</td>
+              <td className="py-2 px-4 text-center text-xs font-bold uppercase tracking-wider">
+                {row.departamento}
+              </td>
+              <td className="py-2 px-4 text-center">
+                <Etiquetas contenido={row.categoria} />
+              </td>
+              <td className="py-2 px-4 text-center">${row.precioVenta || row.pVenta}</td>
+              <td className="py-2 px-4 text-center">
+                <Etiquetas contenido={estadoTexto} />
+              </td>
+              <td
+                className="py-2 px-4 align-middle text-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <AccionesTabla 
+                  onVer={() => handleVerDetalles(row)}
+                  onEditar={() => handleEditarProducto(row)}
+                  onEliminar={() => handleEliminarProducto(row.id)}
+                  onRegistrarStock={sinInventario ? () => navigate(`/inventario?editar=${row.id}`) : undefined}
+                />
+              </td>
+            </tr>
+          );
+        })}
+      </Tabla>
  
       <Paginacion
         paginaActual={paginaActiva}
         totalRegistros={datosFiltrados.length}
-        rangoSiguiente={textoRango}
         limit={LIMIT}
         onCambiarPagina={handleCambiarPagina}
         exportTitulo="Catálogo de Productos"
@@ -388,6 +439,7 @@ export default function Productos() {
           { header: "Precio Venta", key: "precio",       width: 14 },
           { header: "Stock Total",  key: "stock",        width: 10 },
           { header: "Estado",       key: "estado",       width: 12 },
+          { header: "Fecha Registro", key: "fecha",      width: 16 },
         ]}
         exportFilas={datosFiltrados.map((p) => ({
           sku:          p.sku,
@@ -397,6 +449,7 @@ export default function Productos() {
           precio:       `$${Number(p.precioVenta || p.pVenta || 0).toLocaleString("es-MX")}`,
           stock:        calcularStockTotal(p.inventario),
           estado:       p.activo !== false ? "Activo" : "Inactivo",
+          fecha:        formatearFecha(p.createdAt),
         }))}
       />
 

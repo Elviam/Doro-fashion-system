@@ -11,6 +11,7 @@ import Ventas from './pages/Ventas'
 import Auditoria from "./pages/Auditoria";
 import Proveedores from "./pages/Proveedores";
 import Dashboard from "./pages/Dashboard";
+import Reabastecimiento from "./pages/Reabastecimiento";
 import Tienda from "./pages/Tienda";
 import Roles from "./pages/Roles";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -29,6 +30,8 @@ import StaffLogin from "./pages/StaffLogin";
 import Checkout from "./pages/tienda/Checkout";
 import DetalleProductoTienda from "./pages/tienda/DetalleProductoTienda";
 import TiendaProviders from "./components/tienda/TiendaProviders";
+import MisPedidos from "./pages/MisPedidos";
+import GenerarPedido from "./pages/GenerarPedido";
 
 import "./App.css";
 
@@ -183,6 +186,37 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/reabastecimiento"
+          element={
+            <ProtectedRoute requiredPage="reabastecimiento">
+              <Layout>
+                <Reabastecimiento />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/reabastecimiento/pedidos"
+          element={
+            <ProtectedRoute requiredPage="reabastecimiento">
+              <Layout>
+                <MisPedidos />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+    <Route
+      path="/reabastecimiento/generar-pedido"
+      element={
+        <ProtectedRoute requiredPage="reabastecimiento">
+          <Layout>
+            <GenerarPedido />
+          </Layout>
+        </ProtectedRoute>
+      }
+    />
 
         <Route
           path="/perfil"
