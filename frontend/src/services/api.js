@@ -16,7 +16,10 @@ async function request(path, options = {}) {
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
-    throw new Error(err.message || `Error ${res.status}`)
+    const detalles = err.errors && typeof err.errors === 'object'
+      ? Object.values(err.errors).join(' ')
+      : ''
+    throw new Error([err.message || `Error ${res.status}`, detalles].filter(Boolean).join(': '))
   }
 
   return res.json()

@@ -32,7 +32,7 @@ function obtenerVariantesBajas(producto) {
     .filter((fila) => fila.stockRequerido >= 1);
 }
 export default function Reabastecimiento() {
-  useTitulo("Reabastecimiento");
+  useTitulo("Resumen");
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -93,27 +93,27 @@ const encabezadosTabla = [
         <td className="py-2 px-4 text-center font-body text-sm font-bold">
           <span className={claseNumero}>{fila.stockActual}</span>
         </td>
-        <td className="py-2 px-4 text-center font-body text-sm">
-          <span className={claseNumero}>{fila.stockRequerido}</span>
+        <td className="py-2 px-4 text-center font-body text-sm text-[var(--noir-soft)] dark:text-[var(--snow)]">
+          {fila.stockRequerido}
         </td>
-        <td className="py-2 px-4 text-center font-body text-sm">
-          <span className={claseNumero}>{fila.stockIdeal}</span>
+        <td className="py-2 px-4 text-center font-body text-sm text-[var(--noir-soft)] dark:text-[var(--snow)]">
+          {fila.stockIdeal}
         </td>
       </tr>
     );
   };
 
   const tabs = [
-    { label: "Resumen", active: location.pathname === "/reabastecimiento", onClick: () => navigate("/reabastecimiento") },
-    { label: "Mis pedidos", active: location.pathname === "/reabastecimiento/pedidos", onClick: () => navigate("/reabastecimiento/pedidos") },
-    { label: "Generar pedido", active: location.pathname === "/reabastecimiento/generar-pedido", onClick: () => navigate("/reabastecimiento/generar-pedido") },
+    { label: "Resumen", icon: "resumen", active: location.pathname === "/reabastecimiento", onClick: () => navigate("/reabastecimiento") },
+    { label: "Generar pedido", icon: "generarPedido", active: location.pathname === "/reabastecimiento/generar-pedido", onClick: () => navigate("/reabastecimiento/generar-pedido") },
+    { label: "Mis pedidos", icon: "misPedidos", active: location.pathname === "/reabastecimiento/pedidos", onClick: () => navigate("/reabastecimiento/pedidos") },
   ];
 
  return (
-    <div className="p-4 sm:p-6 lg:p-8 pb-16 flex flex-col gap-6 font-body">
+    <div className="p-4 sm:p-6 lg:p-8 pb-28 sm:pb-8 flex flex-col gap-6 font-body">
 
       <Encabezado
-        titulo="Reabastecimiento"
+        titulo="Resumen"
         onActualizar={() => setRefreshKey((k) => k + 1)}
         tabs={tabs}
       />

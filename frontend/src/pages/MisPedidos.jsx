@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Encabezado from "../components/Encabezado";
 import Etiquetas from "../components/Etiquetas";
 import { fetchPedidos, enviarPedido, ESTADO_PEDIDO_LABELS } from "../services/pedidos.service";
+import useTitulo from "../hooks/useTitulo";
 
 function formatFechaCorta(iso) {
   if (!iso) return "—";
@@ -20,6 +21,7 @@ function formatFolioPedido(folio) {
 }
 
 export default function MisPedidos() {
+  useTitulo("Mis pedidos");
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -49,14 +51,14 @@ export default function MisPedidos() {
   };
 
   const tabs = [
-    { label: "Resumen", active: location.pathname === "/reabastecimiento", onClick: () => navigate("/reabastecimiento") },
-    { label: "Mis pedidos", active: location.pathname === "/reabastecimiento/pedidos", onClick: () => navigate("/reabastecimiento/pedidos") },
-    { label: "Generar pedido", active: location.pathname === "/reabastecimiento/generar-pedido", onClick: () => navigate("/reabastecimiento/generar-pedido") },
+    { label: "Resumen", icon: "resumen", active: location.pathname === "/reabastecimiento", onClick: () => navigate("/reabastecimiento") },
+    { label: "Generar pedido", icon: "generarPedido", active: location.pathname === "/reabastecimiento/generar-pedido", onClick: () => navigate("/reabastecimiento/generar-pedido") },
+    { label: "Mis pedidos", icon: "misPedidos", active: location.pathname === "/reabastecimiento/pedidos", onClick: () => navigate("/reabastecimiento/pedidos") },
   ];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 flex flex-col gap-6 font-body">
-      <Encabezado titulo="Reabastecimiento" tabs={tabs} />
+    <div className="p-4 sm:p-6 lg:p-8 pb-28 sm:pb-8 flex flex-col gap-6 font-body">
+      <Encabezado titulo="Mis pedidos" tabs={tabs} />
 
       {cargando ? (
         <div className="text-center py-10 text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">

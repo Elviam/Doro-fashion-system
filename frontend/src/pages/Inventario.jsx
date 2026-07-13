@@ -88,28 +88,35 @@ export default function Inventario() {
       if (!producto) throw new Error("No se encontró el producto.");
 
       const inventarioActual = Array.isArray(producto.inventario) ? [...producto.inventario] : [];
-      const idx = inventarioActual.findIndex((i) => i.talla === datos.talla);
-      const cantidadAnterior = idx >= 0 ? inventarioActual[idx].stock : 0;
+      const nuevoInventario = inventarioActual.map((item) => ({ ...item }));
 
-      let cantidadNueva;
-      if (datos.tipo === "sumar")  cantidadNueva = cantidadAnterior + datos.cantidad;
-      if (datos.tipo === "restar") cantidadNueva = Math.max(0, cantidadAnterior - datos.cantidad);
-      if (datos.tipo === "fijar")  cantidadNueva = datos.cantidad;
+      const tallas = Array.isArray(datos.tallas) ? datos.tallas : [datos.talla].filter(Boolean);
+      const resumen = tallas.map((talla) => {
+        const idx = nuevoInventario.findIndex((i) => i.talla === talla);
+        const cantidadAnterior = idx >= 0 ? Number(nuevoInventario[idx].stock || 0) : 0;
+        let cantidadNueva;
+        if (datos.tipo === "sumar") cantidadNueva = cantidadAnterior + Number(datos.cantidad);
+        if (datos.tipo === "restar") cantidadNueva = Math.max(0, cantidadAnterior - Number(datos.cantidad));
+        if (datos.tipo === "fijar") cantidadNueva = Number(datos.cantidad);
 
-      const nuevoInventario = idx >= 0
-        ? inventarioActual.map((it, i) => i === idx ? { ...it, stock: cantidadNueva } : it)
-        : [...inventarioActual, { talla: datos.talla, stock: cantidadNueva }];
+        if (idx >= 0) {
+          nuevoInventario[idx] = { ...nuevoInventario[idx], stock: cantidadNueva };
+        } else {
+          nuevoInventario.push({ talla, stock: cantidadNueva });
+        }
 
-      const stockTotalNuevo = nuevoInventario.reduce((acc, it) => acc + it.stock, 0);
+        return { talla, cantidadAnterior, cantidadNueva };
+      });
+
+      const stockTotalNuevo = nuevoInventario.reduce((acc, it) => acc + Number(it.stock || 0), 0);
 
       await api.patch(`/products/${producto.id}`, {
         inventario: nuevoInventario,
         stock: stockTotalNuevo,
         _ajusteManual: {
-          talla: datos.talla,
+          tallas: resumen.map(({ talla, cantidadAnterior, cantidadNueva }) => ({ talla, cantidadAnterior, cantidadNueva })),
           tipo: datos.tipo,
-          cantidadAnterior,
-          cantidadNueva,
+          cantidad: Number(datos.cantidad),
           motivo: datos.motivo,
           notas: datos.notas,
           evidencia: datos.evidencia,
@@ -118,7 +125,8 @@ export default function Inventario() {
 
       setIsEditarOpen(false);
       setRefreshKey((k) => k + 1);
-      showToast(`Stock de "${producto.nombre}" (${datos.talla}) actualizado: ${cantidadAnterior} → ${cantidadNueva}`, "success");
+      const detalle = resumen.map(({ talla, cantidadAnterior, cantidadNueva }) => `${talla}: ${cantidadAnterior} → ${cantidadNueva}`).join(", ");
+      showToast(`Stock de "${producto.nombre}" actualizado: ${detalle}`, "success");
     } catch (err) {
       setModalConf({
         isOpen: true, tipo: "confirmar", titulo: "Error al ajustar",

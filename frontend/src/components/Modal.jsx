@@ -1,4 +1,4 @@
-export default function Modal({ isOpen, onClose, titulo, footer, children, ancho = "max-w-md" }) {
+export default function Modal({ isOpen, onClose, titulo, footer, children, ancho = "max-w-md", tituloClassName = "" }) {
   if (!isOpen) return null;
 
   return (
@@ -25,7 +25,7 @@ export default function Modal({ isOpen, onClose, titulo, footer, children, ancho
           border-[var(--border-gold-25)]
           dark:border-[var(--border-gold-20)]
         `}>
-          <h2 className="text-xl lg:text-2xl font-display font-bold uppercase tracking-widest text-[var(--noir)] dark:text-[var(--snow)] m-0">
+          <h2 className={`text-xl lg:text-2xl font-display font-bold uppercase tracking-widest text-[var(--noir)] dark:text-[var(--snow)] m-0 ${tituloClassName}`}> 
             {titulo}
           </h2>
           <button 

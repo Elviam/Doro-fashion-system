@@ -66,7 +66,8 @@ export default function Tienda() {
   useEffect(() => {
     api.get("/products?activo=true&limit=100")
       .then((data) => {
-        const datosReales = data.items || data.data?.items || (Array.isArray(data) ? data : []);
+        const datosReales = (data.items || data.data?.items || (Array.isArray(data) ? data : []))
+          .filter((producto) => producto.activo !== false);
         setProductos(datosReales);
       })
       .catch((error) => {

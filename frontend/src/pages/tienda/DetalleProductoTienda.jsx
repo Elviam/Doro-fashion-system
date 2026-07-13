@@ -121,6 +121,11 @@ export default function DetalleProductoTienda() {
       .then((res) => {
         if (!activo) return;
         const data = res.item || res.data?.item || res;
+        if (data.activo === false) {
+          setProducto(null);
+          setError(true);
+          return;
+        }
         setProducto(data);
         setImagenActiva(0);
         const disponibles = (data.inventario || []).filter((i) => i.stock > 0);

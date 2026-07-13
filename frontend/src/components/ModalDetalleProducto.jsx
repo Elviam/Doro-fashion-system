@@ -40,7 +40,7 @@ export default function ModalDetalleProducto({ isOpen, onClose, producto, onEdit
   const ajuste = ultimoMovimiento?.details?._ajusteManual;
 
   const footerAcciones = (
-    <div className="flex flex-col sm:flex-row justify-end gap-3 w-full">
+    <div className="w-full flex flex-row flex-wrap justify-start items-center gap-3">
       <Boton variante="fantasma" onClick={onClose}>Cerrar</Boton>
       <Boton variante="claro" onClick={() => { onClose(); onEditar(producto); }}>
         <i className="bi bi-pencil-square"></i> Editar Producto
@@ -53,7 +53,7 @@ export default function ModalDetalleProducto({ isOpen, onClose, producto, onEdit
       <div className="flex flex-col md:flex-row gap-6 font-body">
 
         <div className="w-full md:w-4/12 flex flex-col gap-3">
-          <div className="w-full aspect-square rounded-[2px] p-4 flex items-center justify-center shadow-md bg-[var(--snow)] border border-[var(--border-gold-40)] dark:bg-[var(--snow)] dark:border-[var(--border-gold-20)]">
+          <div className="w-full max-w-[220px] mx-auto md:mx-0 aspect-square rounded-[2px] p-3 flex items-center justify-center shadow-md bg-[var(--snow)] border border-[var(--border-gold-40)] dark:bg-[var(--snow)] dark:border-[var(--border-gold-20)]">
             {producto.imagenes?.[0] ? (
               <img src={producto.imagenes[0]} alt={producto.nombre} className="w-full h-full object-contain" />
             ) : (
@@ -61,7 +61,7 @@ export default function ModalDetalleProducto({ isOpen, onClose, producto, onEdit
             )}
           </div>
           <div className="text-center">
-            <span className="font-mono text-xs px-2 py-1 rounded-[2px] bg-[var(--gold-08)] text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{producto.sku}</span>
+            <span className="text-xs px-2 py-1 rounded-[2px] bg-[var(--gold-08)] text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{producto.sku}</span>
           </div>
         </div>
 
@@ -70,23 +70,31 @@ export default function ModalDetalleProducto({ isOpen, onClose, producto, onEdit
             <Etiquetas contenido={producto.categoria} />
           </div>
 
-        {producto.descripcion && (
-            <p className="text-sm font-medium leading-relaxed text-[var(--noir)] dark:text-[var(--snow)]">{producto.descripcion}</p>
+          {producto.descripcion && (
+            <p className="text-sm leading-relaxed text-[var(--noir)] dark:text-[var(--snow)]">{producto.descripcion}</p>
           )}
 
           <div className="grid grid-cols-2 gap-4 p-4 rounded-[2px] bg-gold/8 border border-gold/40 dark:bg-noir/40 dark:border-gold/20">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-noir-soft dark:text-ash mb-1">Stock Total</p>
-              <p className="text-2xl font-bold text-noir dark:text-snow">{stockTotal}</p>
+              <p className="text-2xl font-semibold text-noir dark:text-snow">{stockTotal}</p>
             </div>
             <div>
               <p className="text-[10px] uppercase tracking-wider text-noir-soft dark:text-ash mb-1">Stock Mínimo</p>
-              <p className={`text-2xl font-bold ${stockTotal <= stockMinimo ? "text-rojo" : "text-noir dark:text-snow"}`}>{stockMinimo}</p>
+              <p className={`text-2xl font-semibold ${stockTotal <= stockMinimo ? "text-rojo" : "text-noir dark:text-snow"}`}>{stockMinimo}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-noir-soft dark:text-ash mb-1">Stock Ideal</p>
+              <p className="text-xl font-semibold text-noir dark:text-snow">{Number(producto.stockIdeal) || 0}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-noir-soft dark:text-ash mb-1">Stock Máximo</p>
+              <p className="text-xl font-semibold text-noir dark:text-snow">{Number(producto.stockMaximo) || 0}</p>
             </div>
           </div>
 
           <div>
-            <p className="text-xs font-tag font-bold uppercase tracking-wider text-gold-dark dark:text-ash mb-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gold-dark dark:text-ash mb-2">
               <i className="bi bi-box-seam mr-1"></i> Existencias por Talla
             </p>
             <div className="flex flex-wrap gap-2">
@@ -106,7 +114,7 @@ export default function ModalDetalleProducto({ isOpen, onClose, producto, onEdit
           </div>
 
           <div className="rounded-[2px] p-4 border bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)]">
-            <p className="text-xs font-tag font-bold uppercase tracking-wider text-gold-dark dark:text-ash mb-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gold-dark dark:text-ash mb-2">
               <i className="bi bi-clock-history mr-1"></i> Último Movimiento
             </p>
             {cargandoLog ? (

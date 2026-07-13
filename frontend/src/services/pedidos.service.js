@@ -40,12 +40,13 @@ export async function fetchPedidos({ page = 1, limit = 20 } = {}) {
   return { items: data.items || [], total: data.total ?? 0 };
 }
 
-export async function crearPedido({ supplierId, items, comentarios }) {
+export async function crearPedido({ supplierId, items, comentarios, folio }) {
   const body = {
     origen: "REABASTECIMIENTO",
     fecha: new Date().toISOString(),
     supplierId: supplierId || null,
     comentarios: comentarios || undefined,
+    folio: folio?.trim() || undefined,
     items,
   };
 

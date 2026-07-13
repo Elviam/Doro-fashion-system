@@ -33,7 +33,7 @@ export default function ModalProductos({ data, onEdit, onDelete, onClose, isOpen
   const textoEstado = data.activo !== false ? "Activo" : "Inactivo";
 
   const footerAcciones = (
-    <div className="flex flex-col sm:flex-row justify-end gap-3 w-full">
+    <div className="w-full flex flex-row flex-wrap justify-start items-center gap-3">
       <Boton 
         variante="secundario" 
         onClick={onDelete} 
@@ -68,7 +68,7 @@ export default function ModalProductos({ data, onEdit, onDelete, onClose, isOpen
           <div className="w-full md:w-5/12 flex flex-col gap-4">
             
             <div className={`
-              w-full aspect-square rounded-[2px] p-4 flex items-center justify-center shadow-md shrink-0 transition-colors
+              w-full max-w-[220px] mx-auto md:mx-0 aspect-square rounded-[2px] p-3 flex items-center justify-center shadow-md shrink-0 transition-colors
               bg-[var(--snow)] border border-[var(--border-gold-40)]
               dark:bg-[var(--snow)] dark:border-[var(--border-gold-20)]
             `}>
@@ -76,7 +76,7 @@ export default function ModalProductos({ data, onEdit, onDelete, onClose, isOpen
                 <img 
                   src={data.imagenes[0]} 
                   alt={data.nombre} 
-                  className="w-full h-full object-contain hover:scale-105 transition-transform duration-300" 
+                  className="w-full h-full object-contain" 
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-ash">
@@ -92,7 +92,7 @@ export default function ModalProductos({ data, onEdit, onDelete, onClose, isOpen
                 bg-[var(--snow)] border-[var(--border-gold-40)] text-[var(--noir)]
                 dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)] dark:text-[var(--snow)] dark:shadow-none
               `}>
-                <p className="text-sm lg:text-base leading-relaxed text-justify italic opacity-90">
+                <p className="text-sm lg:text-base leading-relaxed opacity-90">
                   "{data.descripcion}"
                 </p>
               </div>
@@ -143,8 +143,18 @@ export default function ModalProductos({ data, onEdit, onDelete, onClose, isOpen
               </div>
             </div>
 
-            <div className="mb-8">
-              <p className="text-xs lg:text-sm font-tag font-bold mb-4 uppercase tracking-wider flex items-center gap-2 text-[var(--gold-dark)] dark:text-[var(--ash)]">
+            <div className="mb-6">
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--gold-08)] p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)]">Stock ideal</p>
+                  <p className="mt-1 text-lg font-semibold text-[var(--noir)] dark:text-[var(--snow)]">{data.stockIdeal || 0}</p>
+                </div>
+                <div className="rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--gold-08)] p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)]">Stock máximo</p>
+                  <p className="mt-1 text-lg font-semibold text-[var(--noir)] dark:text-[var(--snow)]">{data.stockMaximo || 0}</p>
+                </div>
+              </div>
+              <p className="text-xs lg:text-sm font-semibold mb-4 uppercase tracking-wider flex items-center gap-2 text-[var(--gold-dark)] dark:text-[var(--ash)]">
                 <i className="bi bi-box-seam"></i> Existencias de Inventario
               </p>
               <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">

@@ -218,7 +218,6 @@ export default function Productos() {
         precioCompra: Number(datosFormulario.pCompra),
         precioVenta: Number(datosFormulario.pVenta),
         activo: datosFormulario.estado === "Activo",
-        inventario: datosFormulario.inventario || [],
         imagenes: imagenesFinal,
         stockMinimo: Number(datosFormulario.stockMinimo),
         stockIdeal: Number(datosFormulario.stockIdeal),
@@ -226,6 +225,12 @@ export default function Productos() {
         supplierId: datosFormulario.supplierId,
         supplierNombre: datosFormulario.supplierNombre
       };
+
+      // Las tallas y cantidades se administran desde Inventario. Al editar no
+      // se deben reenviar ni reemplazar las variantes existentes.
+      if (!productoAEditar) {
+        payload.inventario = datosFormulario.inventario || [];
+      }
 
       let respuesta;
       if (productoAEditar && productoAEditar.id) {

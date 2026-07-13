@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, ClipboardList, Users, Truck, UserCog, ShieldCheck, Shield, ShoppingCart, ChevronLeft, ChevronRight, Book, RefreshCw } from "lucide-react";
+import { LayoutDashboard, Package, ClipboardList, Users, Truck, UserCog, ShieldCheck, Shield, ShoppingCart, ChevronLeft, ChevronRight, ChevronDown, Book, RefreshCw } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 
 const navItems = [
@@ -17,7 +17,14 @@ const navItems = [
     { label: "Ventas",           ruta: "/ventas",           icon: ShoppingCart, permiso: "ventas:read" },
     { label: "Productos",        ruta: "/productos",        icon: Package,      permiso: "products:read" },
     { label: "Inventario",       ruta: "/inventario",        icon: Book,         permiso: "inventory:read" },
-    { label: "Reabastecimiento", ruta: "/reabastecimiento",  icon: RefreshCw,    permiso: "reabastecimiento:read" },
+    {
+      label: "Reabastecimiento", ruta: "/reabastecimiento", icon: RefreshCw, permiso: "reabastecimiento:read",
+      subitems: [
+        { label: "Resumen", ruta: "/reabastecimiento" },
+        { label: "Generar pedido", ruta: "/reabastecimiento/generar-pedido" },
+        { label: "Mis pedidos", ruta: "/reabastecimiento/pedidos" },
+      ],
+    },
     { label: "Recepciones",      ruta: "/recepciones",       icon: ClipboardList, permiso: "recepciones:read" },
     { label: "Clientes",         ruta: "/clientes",          icon: Users,        permiso: "clients:read" },
     { label: "Proveedores",      ruta: "/proveedores",       icon: Truck,        permiso: "suppliers:read" },
@@ -50,6 +57,9 @@ export default function Sidebar({ onCerrar }) {
   const location   = useLocation();
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem("sidebar-collapsed") === "true"
+  );
+  const [reabastecimientoAbierto, setReabastecimientoAbierto] = useState(
+    () => location.pathname.startsWith("/reabastecimiento")
   );
 
   const [esDesktop, setEsDesktop] = useState(
@@ -181,28 +191,32 @@ export default function Sidebar({ onCerrar }) {
               }
 
               <div className="flex flex-col gap-1.5">
-                {itemsConPermiso.map(({ label, ruta, icon: Icon }) => {
-                  const isActive = location.pathname === ruta;
+                {itemsConPermiso.map(({ label, ruta, icon: Icon, subitems }) => {
+                  const isActive = subitems
+                    ? location.pathname.startsWith(ruta)
+                    : location.pathname === ruta;
+                  const abrirSubmenu = () => setReabastecimientoAbierto((abierto) => !abierto);
 
                   return (
-                    <button
-                      key={label}
-                      onClick={() => {
-                        navigate(ruta);
-                        if (!esDesktop) {
-                          onCerrar?.();
-                        }
-                      }}
-                      title={isCollapsed ? label : undefined}
-                      
-                      className={`group relative flex items-center w-full h-11 rounded-[2px] transition-all duration-300 overflow-hidden ${
-                        isCollapsed ? "justify-center px-0" : "gap-3.5 px-4.5"
-                      } ${
-                        isActive
-                          ? "bg-[var(--gold-15)] border border-[var(--border-gold-25)] shadow-[0_0_20px_var(--gold-15)]"
-                          : "bg-transparent hover:bg-[var(--gold-08)]"
-                      }`}
-                    >
+                    <div key={label}>
+                      <button
+                        onClick={() => {
+                          if (subitems && !isCollapsed) {
+                            abrirSubmenu();
+                            return;
+                          }
+                          navigate(ruta);
+                          if (!esDesktop) onCerrar?.();
+                        }}
+                        title={isCollapsed ? label : undefined}
+                        className={`group relative flex items-center w-full h-11 rounded-[2px] transition-all duration-300 overflow-hidden ${
+                          isCollapsed ? "justify-center px-0" : "gap-3.5 px-4.5"
+                        } ${
+                          isActive
+                            ? "bg-[var(--gold-15)] border border-[var(--border-gold-25)] shadow-[0_0_20px_var(--gold-15)]"
+                            : "bg-transparent hover:bg-[var(--gold-08)]"
+                        }`}
+                      >
                       {isActive && (
                         <div
                           className="absolute left-0 top-1/2 -translate-y-1/2 w-1.25 h-[70%] rounded-r-full"
@@ -232,7 +246,30 @@ export default function Sidebar({ onCerrar }) {
                           {label}
                         </span>
                       )}
-                    </button>
+                      {subitems && !isCollapsed && (
+                        <ChevronDown size={16} className={`ml-auto text-[var(--gold-dark)] dark:text-[var(--gold-light)] transition-transform ${reabastecimientoAbierto ? "rotate-180" : ""}`} />
+                      )}
+                      </button>
+                      {subitems && !isCollapsed && reabastecimientoAbierto && (
+                        <div className="ml-9 mt-1 mb-1 flex flex-col gap-1 border-l border-[var(--border-gold-25)] pl-3 dark:border-[var(--border-gold-20)]">
+                          {subitems.map((subitem) => {
+                            const subActivo = location.pathname === subitem.ruta;
+                            return (
+                              <button
+                                key={subitem.ruta}
+                                onClick={() => {
+                                  navigate(subitem.ruta);
+                                  if (!esDesktop) onCerrar?.();
+                                }}
+                                className={`text-left py-1.5 text-sm transition-colors ${subActivo ? "font-semibold text-[var(--noir)] dark:text-[var(--snow)]" : "text-[var(--noir-soft)]/75 hover:text-[var(--noir)] dark:text-[var(--ash)] dark:hover:text-[var(--snow)]"}`}
+                              >
+                                {subitem.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>

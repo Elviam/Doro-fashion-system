@@ -1,3 +1,11 @@
+import { LayoutDashboard, ClipboardPlus, PackageCheck } from "lucide-react";
+
+const ICONOS_PESTANAS = {
+  resumen: LayoutDashboard,
+  generarPedido: ClipboardPlus,
+  misPedidos: PackageCheck,
+};
+
 export default function Encabezado({ titulo, tabs }) {
 
   return (
@@ -16,20 +24,24 @@ export default function Encabezado({ titulo, tabs }) {
 
         {/* Lado Derecho: Pestañas (solo sm+) */}
         {tabs && tabs.length > 0 && (
-          <div className="hidden sm:flex items-center gap-1 p-1 rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] bg-[var(--gold-08)] shrink-0">
-            {tabs.map((tab) => (
-              <button
+          <div className="hidden sm:flex lg:hidden items-center gap-1 p-1 rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] bg-[var(--gold-08)] shrink-0">
+            {tabs.map((tab) => {
+              const Icono = ICONOS_PESTANAS[tab.icon];
+              return <button
                 key={tab.label}
                 onClick={tab.onClick}
                 className={`px-3.5 py-2 text-xs lg:text-sm font-bold font-body rounded-[1px] transition-all duration-300 cursor-pointer active:scale-95 ${
                   tab.active
-                    ? "bg-[var(--gold)] text-[var(--noir)]"
-                    : "bg-transparent text-[var(--gold-dark)] dark:text-[var(--gold-light)] hover:bg-[var(--gold-15)]"
+                    ? "bg-[var(--ivory)] text-[var(--noir)] dark:bg-[var(--noir)] dark:text-[var(--snow)]"
+                    : "bg-transparent text-[var(--noir)] dark:text-[var(--ash)] hover:bg-[var(--gold-15)]"
                 }`}
               >
-                {tab.label}
+                <span className="flex flex-col items-center leading-tight gap-0.5">
+                  {Icono && <Icono aria-hidden="true" size={15} strokeWidth={2} />}
+                  <span>{tab.label}</span>
+                </span>
               </button>
-            ))}
+            })}
           </div>
         )}
       </div>
@@ -42,24 +54,25 @@ export default function Encabezado({ titulo, tabs }) {
             border-t border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)]
             pb-[env(safe-area-inset-bottom)]"
         >
-          {tabs.map((tab) => (
-            <button
+          {tabs.map((tab) => {
+            const Icono = ICONOS_PESTANAS[tab.icon];
+            return <button
               key={tab.label}
               onClick={tab.onClick}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 text-[11px] font-bold font-body transition-colors duration-300 cursor-pointer active:scale-95 ${
                 tab.active
-                  ? "text-[var(--gold-dark)] dark:text-[var(--gold-light)]"
-                  : "text-[var(--noir-soft)]/70 dark:text-[var(--ash)]"
+                  ? "text-[var(--noir)] dark:text-[var(--snow)]"
+                  : "text-[var(--noir)] dark:text-[var(--ash)]"
               }`}
             >
-              <span
-                className={`w-1.5 h-1.5 rounded-full transition-colors duration-300 ${
-                  tab.active ? "bg-[var(--gold)]" : "bg-transparent"
-                }`}
-              />
-              {tab.label}
+              <span className={`flex flex-col items-center justify-center gap-0.5 px-2 py-1 rounded-[2px] transition-colors ${
+                tab.active ? "bg-[var(--ivory)] dark:bg-[var(--noir)]" : ""
+              }`}>
+                {Icono && <Icono aria-hidden="true" size={15} strokeWidth={2} />}
+                <span>{tab.label}</span>
+              </span>
             </button>
-          ))}
+          })}
         </div>
       )}
     </>
