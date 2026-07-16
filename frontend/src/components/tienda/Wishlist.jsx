@@ -1,5 +1,18 @@
 import { useState } from "react";
 
+function IconoCorazon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className="w-6 h-6 text-rojo"
+    >
+      <path d="M12 21.35 10.55 20.03C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35Z" />
+    </svg>
+  );
+}
+
 const paletasPorCategoria = {
   "Playeras":   ["#9F86C0", "#E7D6FF"],
   "Blusas":     ["#ED8ABA", "#E7D6FF"],
@@ -163,7 +176,7 @@ export default function Wishlist({
           style={{ borderBottom: "1px solid var(--border-gold-20)" }}
         >
           <div className="flex items-center gap-3">
-            <i className="bi bi-heart-fill text-2xl text-rojo" />
+            <IconoCorazon />
             <div>
               <p
                 style={{
@@ -226,8 +239,8 @@ export default function Wishlist({
               >
                 Tu wishlist está vacía
               </p>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: "var(--ash)", marginTop: "6px" }}>
-                Toca el corazón en cualquier producto para guardarlo
+              <p className="inline-flex items-center justify-center gap-1.5" style={{ fontFamily: "var(--font-body)", fontSize: "13px", color: "var(--ash)", marginTop: "6px" }}>
+                Toca el <i className="bi bi-heart" aria-hidden="true" /> en cualquier producto para guardarlo
               </p>
               <button
                 onClick={onCerrar}

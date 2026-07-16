@@ -437,6 +437,8 @@ export default function Header({ onMenuClick }) {
 
             <button
               onClick={() => {
+                // La tienda no conserva sesiones administrativas.
+                logout();
                 navigate("/tienda");
                 setMostrarMenu(false);
               }}

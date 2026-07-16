@@ -1,7 +1,16 @@
 import { ventasRepository } from './ventas.repository.js'
-import { inventoryRepository } from '../inventory/inventory.repository.js'
 import { clientsRepository } from '../clients/clients.repository.js'
 import { logAuditEvent } from '../../utils/audit.js'
+import { prisma } from '../../lib/prisma.js'
+
+const ENVIO_GRATIS_DESDE = 999
+const COSTO_ENVIO = 99
+const TRANSICIONES_PERMITIDAS = {
+  PENDIENTE: ['PAGADO', 'CANCELADO'],
+  PAGADO: ['ENVIADO', 'CANCELADO'],
+  ENVIADO: [],
+  CANCELADO: [],
+}
 
 // Busca un cliente existente por su correo electrónico o crea uno nuevo
 // a partir de la información proporcionada en el checkout. De esta forma,
@@ -75,24 +84,29 @@ export class VentasService {
   }
 
   async create(payload, currentUser = null) {
-    const cliente = await findOrCreateClient(payload.cliente)
-
-    const items = payload.items.map((item) => ({
-      productId: item.productoId,
-      nombreProducto: item.nombre,
-      imagenProducto: item.imagen || null,
-      talla: item.talla,
-      cantidad: item.cantidad,
-      precioUnitario: item.precioUnitario,
-    }))
+    const items = await this.buildTrustedItems(payload.items)
+    // The order belongs to the authenticated account, never to a value that
+    // can be altered in the checkout form. This keeps the purchase history
+    // tied to the correct client profile.
+    if (!currentUser?.email) {
+      const error = new Error('Usuario no autenticado')
+      error.statusCode = 401
+      throw error
+    }
+    const cliente = await findOrCreateClient({
+      ...payload.cliente,
+      email: currentUser.email,
+    })
+    const subtotal = items.reduce((total, item) => total + item.cantidad * item.precioUnitario, 0)
+    const envio = subtotal >= ENVIO_GRATIS_DESDE ? 0 : COSTO_ENVIO
 
     const data = {
-      numeroPedido: payload.numeroPedido || `PED-${Date.now()}`,
+      numeroPedido: `PED-${Date.now()}`,
       clientId: cliente.id,
       metodoPago: payload.metodoPago,
-      subtotal: payload.subtotal,
-      envio: payload.envio,
-      total: payload.total,
+      subtotal,
+      envio,
+      total: subtotal + envio,
       estado: 'PENDIENTE',
       items,
     }
@@ -116,36 +130,64 @@ export class VentasService {
   }
 
   async updateEstado(id, estado, currentUser = null) {
-    const venta = await ventasRepository.findById(id)
-    if (!venta) {
-      const error = new Error('Venta no encontrada')
-      error.statusCode = 404
-      throw error
-    }
+    const { ventaAnterior, updated } = await prisma.$transaction(async (tx) => {
+      const venta = await tx.sale.findUnique({
+        where: { id },
+        include: { items: true, cliente: true },
+      })
+      if (!venta) {
+        const error = new Error('Venta no encontrada')
+        error.statusCode = 404
+        throw error
+      }
+      if (!TRANSICIONES_PERMITIDAS[venta.estado]?.includes(estado)) {
+        const error = new Error(`No se puede cambiar una venta ${venta.estado} a ${estado}`)
+        error.statusCode = 400
+        throw error
+      }
 
-    const updated = await ventasRepository.update(id, { estado })
+      if (estado === 'PAGADO') {
+        for (const item of venta.items) {
+          const resultado = await tx.productVariant.updateMany({
+            where: { productId: item.productId, talla: item.talla, stock: { gte: item.cantidad } },
+            data: { stock: { decrement: item.cantidad } },
+          })
+          if (resultado.count !== 1) {
+            const error = new Error(`No hay stock suficiente para ${item.nombreProducto} en talla ${item.talla}`)
+            error.statusCode = 409
+            throw error
+          }
+          await tx.inventoryMovement.create({
+            data: { productId: item.productId, tipo: 'SALIDA', cantidad: item.cantidad, motivo: `VENTA ${venta.numeroPedido} - Talla ${item.talla}` },
+          })
+        }
+      }
+
+      if (estado === 'CANCELADO' && venta.estado === 'PAGADO') {
+        for (const item of venta.items) {
+          await tx.productVariant.update({
+            where: { productId_talla: { productId: item.productId, talla: item.talla } },
+            data: { stock: { increment: item.cantidad } },
+          })
+          await tx.inventoryMovement.create({
+            data: { productId: item.productId, tipo: 'ENTRADA', cantidad: item.cantidad, motivo: `CANCELACION VENTA ${venta.numeroPedido} - Talla ${item.talla}` },
+          })
+        }
+      }
+
+      const actualizada = await tx.sale.update({
+        where: { id }, data: { estado }, include: { items: true, cliente: true },
+      })
+      return { ventaAnterior: venta, updated: actualizada }
+    })
     const sanitized = this.sanitize(updated)
-
-    // Descuenta el stock de los productos cuando una venta se marca como pagada.
-    if (estado === 'PAGADO' && venta.estado !== 'PAGADO') {
-      for (const item of venta.items) {
-        await this.applyStockChange(item, -item.cantidad, currentUser, 'VENTA')
-      }
-    }
-    // Restaura el stock de los productos si una venta previamente pagada
-    // es cancelada.
-    if (estado === 'CANCELADO' && venta.estado === 'PAGADO') {
-      for (const item of venta.items) {
-        await this.applyStockChange(item, item.cantidad, currentUser, 'CANCELACION_VENTA')
-      }
-    }
 
     await logAuditEvent({
       action: 'UPDATE',
       resource: 'ventas',
       resourceId: id,
       details: {
-        estadoAnterior: venta.estado,
+        estadoAnterior: ventaAnterior.estado,
         estadoNuevo: estado,
         cliente: sanitized.cliente.nombre,
       },
@@ -155,18 +197,52 @@ export class VentasService {
     return sanitized
   }
 
- // Ajusta el stock de una `ProductVariant` y registra el movimiento
-// correspondiente para mantener un historial de auditoría.
-  async applyStockChange(item, delta, currentUser, motivo) {
-    const variant = await inventoryRepository.findVariant(item.productId, item.talla)
-    if (!variant) return
+  // Obtiene datos confiables del catálogo y verifica disponibilidad antes de crear una venta.
+  async buildTrustedItems(requestedItems) {
+    const cantidadesPorVariante = new Map()
+    for (const item of requestedItems) {
+      const key = `${item.productoId}:${item.talla}`
+      const previous = cantidadesPorVariante.get(key)
+      cantidadesPorVariante.set(key, {
+        productoId: item.productoId,
+        talla: item.talla,
+        cantidad: (previous?.cantidad || 0) + item.cantidad,
+      })
+    }
 
-    await inventoryRepository.adjustVariantStock(item.productId, item.talla, delta)
-    await inventoryRepository.createMovement({
-      productId: item.productId,
-      tipo: delta > 0 ? 'ENTRADA' : 'SALIDA',
-      cantidad: Math.abs(delta),
-      motivo,
+    const productIds = [...new Set(requestedItems.map((item) => item.productoId))]
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds }, activo: true },
+      include: { variants: true },
+    })
+    const productsById = new Map(products.map((product) => [product.id, product]))
+
+    return [...cantidadesPorVariante.values()].map((item) => {
+      const product = productsById.get(item.productoId)
+      if (!product) {
+        const error = new Error('Uno de los productos ya no esta disponible')
+        error.statusCode = 400
+        throw error
+      }
+      const variant = product.variants.find((v) => v.talla === item.talla)
+      if (!variant) {
+        const error = new Error(`La talla ${item.talla} no esta disponible para ${product.nombre}`)
+        error.statusCode = 400
+        throw error
+      }
+      if (variant.stock < item.cantidad) {
+        const error = new Error(`No hay stock suficiente para ${product.nombre} en talla ${item.talla}`)
+        error.statusCode = 409
+        throw error
+      }
+      return {
+        productId: product.id,
+        nombreProducto: product.nombre,
+        imagenProducto: product.imagenes[0] || null,
+        talla: variant.talla,
+        cantidad: item.cantidad,
+        precioUnitario: Number(product.precioVenta),
+      }
     })
   }
 

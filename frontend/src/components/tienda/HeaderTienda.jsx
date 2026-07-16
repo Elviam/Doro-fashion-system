@@ -16,7 +16,6 @@ const categorias = [
   { id: "Faldas",     label: "Faldas"     },
   { id: "Shorts",     label: "Shorts"     },
   { id: "Pantalones", label: "Pantalones" },
-  { id: "Calzado",    label: "Calzado"    },
   { id: "Accesorios", label: "Accesorios" },
 ];
 
@@ -43,11 +42,31 @@ export default function HeaderTienda({
   const usuarioRefDesktop = useRef(null);
   const navigate = useNavigate();
   const requireAuth = useRequireAuth();
+  const [busquedaLocal, setBusquedaLocal] = useState("");
+  const valorBusqueda = busqueda ?? busquedaLocal;
+  const cambiarBusqueda = setBusqueda || setBusquedaLocal;
+  const buscar = onBuscar || (() => navigate(`/tienda${valorBusqueda ? `?q=${encodeURIComponent(valorBusqueda)}` : ""}`));
+  const seleccionarCategoria = onSeleccionarCategoria || ((id) => navigate(`/tienda${id && id !== "todas" ? `?categoria=${encodeURIComponent(id)}` : ""}`));
+  const abrirCarrito = onAbrirCarrito || (() => navigate("/tienda?panel=carrito"));
+  const abrirWishlist = onAbrirWishlist || (() => navigate("/tienda?panel=wishlist"));
+  const cerrarSesion = onLogout || (() => navigate("/login"));
+  const irDashboard = onIrAlDashboard || (() => navigate("/dashboard"));
 
   // Si hay sesión pero es de staff (admin/gerente/bodeguero/vendedor), la
   // tienda lo trata como invitado en todo lo que ve el cliente — sin tocar
   // su token real, así puede volver al dashboard sin volver a loguearse.
   const esCliente = esClienteTienda(usuario);
+
+  const iniciarSesionCliente = () => {
+    setMostrarDropdownUsuario(false);
+
+    if (usuario && !esCliente) {
+      cerrarSesion();
+      return;
+    }
+
+    navigate("/login", { state: { from: window.location.pathname } });
+  };
 
   useEffect(() => {
     const handleClickFuera = (e) => {
@@ -95,6 +114,12 @@ export default function HeaderTienda({
 
           {/* Logo */}
           <div className="flex items-baseline gap-1.5 shrink-0 select-none">
+            <button
+              type="button"
+              onClick={() => navigate("/tienda")}
+              aria-label="Ir al inicio de la tienda D'ORO Boutique"
+              className="flex items-baseline gap-1.5 shrink-0 select-none bg-transparent border-0 p-0 cursor-pointer"
+            >
             <h1
               className="font-display text-xl sm:text-2xl md:text-2xl lg:text-3xl tracking-tight leading-none text-[var(--gold-light)]"
               style={{ fontWeight: 300, letterSpacing: "0.08em" }}
@@ -104,6 +129,7 @@ export default function HeaderTienda({
             <span className="font-tag text-[7px] sm:text-[9px] tracking-[2px] sm:tracking-[3px] text-[var(--ash)] uppercase font-semibold">
               Boutique
             </span>
+            </button>
           </div>
 
           {/* Acciones — móvil (mismo estilo que desktop) */}
@@ -146,7 +172,7 @@ export default function HeaderTienda({
                   {esCliente ? (
                     <button
                       onClick={() => {
-                        onLogout();
+                        cerrarSesion();
                         setMostrarDropdownUsuario(false);
                       }}
                       className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-rojo"
@@ -156,10 +182,7 @@ export default function HeaderTienda({
                     </button>
                   ) : (
                     <button
-                      onClick={() => {
-                        setMostrarDropdownUsuario(false);
-                        requireAuth(() => {}, "Inicia sesión con una cuenta de cliente para continuar");
-                      }}
+                      onClick={iniciarSesionCliente}
                       className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-[var(--gold-light)]"
                     >
                       <i className="bi bi-box-arrow-in-right text-xs"></i>
@@ -171,7 +194,7 @@ export default function HeaderTienda({
             </div>
 
             <button
-              onClick={onAbrirWishlist}
+              onClick={abrirWishlist}
               className="relative w-8 h-8 rounded-[2px] text-[var(--gold-light)] hover:bg-[var(--gold-08)] flex items-center justify-center transition"
               title="Wishlist"
             >
@@ -184,7 +207,7 @@ export default function HeaderTienda({
             </button>
 
             <button
-              onClick={onAbrirCarrito}
+              onClick={abrirCarrito}
               className="relative w-8 h-8 rounded-[2px] bg-[var(--gold)] text-[var(--noir)] hover:bg-[var(--gold-light)] flex items-center justify-center transition"
               title="Carrito"
             >
@@ -198,7 +221,7 @@ export default function HeaderTienda({
 
             {userCanAccessDashboard(usuario) && (
               <button
-                onClick={onIrAlDashboard}
+                onClick={irDashboard}
                 className="w-8 h-8 rounded-[2px] text-verde hover:bg-verde hover:text-[var(--noir)] flex items-center justify-center transition"
                 title="Ir al dashboard"
               >
@@ -212,9 +235,9 @@ export default function HeaderTienda({
         <div className="relative w-full box-border">
           <i className="bi bi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ash)] text-xs" />
           <input
-            value={busqueda}
-            onChange={(e) => { setBusqueda(e.target.value); if (!e.target.value) onBuscar(); }}
-            onKeyDown={(e) => e.key === "Enter" && onBuscar()}
+            value={valorBusqueda}
+            onChange={(e) => { cambiarBusqueda(e.target.value); if (!e.target.value) buscar(); }}
+            onKeyDown={(e) => e.key === "Enter" && buscar()}
             placeholder="Busca prendas, categorías…"
             className="w-full bg-[var(--noir-soft)] text-[var(--snow)] border border-[var(--border-gold-20)] rounded-[2px] pl-9 pr-4 py-1.5 sm:py-2 font-body text-xs sm:text-sm outline-none hover:border-[var(--border-gold-40)] focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)] transition placeholder-[var(--ash)] box-border"
           />
@@ -260,7 +283,7 @@ export default function HeaderTienda({
                 {esCliente ? (
                   <button
                     onClick={() => {
-                      onLogout();
+                      cerrarSesion();
                       setMostrarDropdownUsuario(false);
                     }}
                     className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-rojo"
@@ -270,10 +293,7 @@ export default function HeaderTienda({
                   </button>
                 ) : (
                   <button
-                    onClick={() => {
-                      setMostrarDropdownUsuario(false);
-                      requireAuth(() => {}, "Inicia sesión con una cuenta de cliente para continuar");
-                    }}
+                    onClick={iniciarSesionCliente}
                     className="w-full px-3 py-2 text-left hover:bg-[var(--gold-08)] transition-colors flex items-center gap-2.5 font-body text-xs font-medium text-[var(--gold-light)]"
                   >
                     <i className="bi bi-box-arrow-in-right text-xs"></i>
@@ -285,7 +305,7 @@ export default function HeaderTienda({
           </div>
 
           <button
-            onClick={onAbrirWishlist}
+            onClick={abrirWishlist}
             className="relative w-8 h-8 rounded-[2px] text-[var(--gold-light)] hover:bg-[var(--gold-08)] flex items-center justify-center transition"
             title="Wishlist"
           >
@@ -298,7 +318,7 @@ export default function HeaderTienda({
           </button>
 
           <button
-            onClick={onAbrirCarrito}
+            onClick={abrirCarrito}
             className="relative w-8 h-8 rounded-[2px] bg-[var(--gold)] text-[var(--noir)] hover:bg-[var(--gold-light)] flex items-center justify-center transition"
             title="Carrito"
           >
@@ -312,7 +332,7 @@ export default function HeaderTienda({
 
           {userCanAccessDashboard(usuario) && (
             <button
-              onClick={onIrAlDashboard}
+              onClick={irDashboard}
               className="w-8 h-8 rounded-[2px] text-verde hover:bg-verde hover:text-[var(--noir)] flex items-center justify-center transition"
               title="Ir al dashboard"
             >
@@ -328,7 +348,7 @@ export default function HeaderTienda({
           {categorias.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => onSeleccionarCategoria(cat.id)}
+              onClick={() => seleccionarCategoria(cat.id)}
               className={`relative px-2.5 py-1.5 font-tag text-[11px] sm:text-sm font-semibold tracking-wide uppercase whitespace-nowrap transition-colors ${
                 categoriaActiva === cat.id
                   ? "text-[var(--snow)]"
@@ -345,12 +365,12 @@ export default function HeaderTienda({
       </div>
 
       {/* Categorías — desktop */}
-      <nav className="hidden md:block border-t border-[var(--border-gold-20)] overflow-x-auto custom-scrollbar">
+      <nav className="hidden md:block border-t border-[var(--border-gold-20)] overflow-x-auto scrollbar-none">
         <div className="flex items-center justify-center gap-1 min-w-max mx-auto px-6 lg:px-10">
           {categorias.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => onSeleccionarCategoria(cat.id)}
+              onClick={() => seleccionarCategoria(cat.id)}
               className={`relative px-3.5 py-2.5 font-tag text-[12px] font-semibold tracking-wide uppercase whitespace-nowrap transition-colors ${
                 categoriaActiva === cat.id
                   ? "text-[var(--snow)]"

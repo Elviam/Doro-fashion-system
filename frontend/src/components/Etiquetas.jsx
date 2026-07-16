@@ -38,7 +38,17 @@ export default function Etiquetas({ contenido }) {
       dark:bg-amarillo/20 dark:text-amarillo dark:border-amarillo/30
     `,
 
+    PENDIENTE: `
+      bg-amarillo/40 text-amarillo border-amarillo/60
+      dark:bg-amarillo/20 dark:text-amarillo dark:border-amarillo/30
+    `,
+
     pagado: `
+      bg-green-600/15 text-green-700 border-green-600/60
+      dark:bg-verde/20 dark:text-verde dark:border-verde/30
+    `,
+
+    PAGADO: `
       bg-green-600/15 text-green-700 border-green-600/60
       dark:bg-verde/20 dark:text-verde dark:border-verde/30
     `,
@@ -48,12 +58,22 @@ export default function Etiquetas({ contenido }) {
       dark:bg-azul/20 dark:border-azul/30
     `,
 
+    ENVIADO: `
+      bg-azul/30 text-azul border-azul/50
+      dark:bg-azul/20 dark:border-azul/30
+    `,
+
     entregado: `
       bg-green-600/15 text-green-700 border-green-600/60
       dark:bg-verde/20 dark:text-verde dark:border-verde/30
     `,
 
     cancelado: `
+      bg-red-600/15 text-red-700 border-red-600/60
+      dark:bg-rojo/20 dark:text-rojo dark:border-rojo/30
+    `,
+
+    CANCELADO: `
       bg-red-600/15 text-red-700 border-red-600/60
       dark:bg-rojo/20 dark:text-rojo dark:border-rojo/30
     `,

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { api } from "../services/api";
 
 const formatMoney = (n) => `$${Number(n).toLocaleString("es-MX")}`;
@@ -12,7 +12,6 @@ const formatFecha = (iso) => {
 
 // Solo mes y año, para "Miembro desde" — se ve más limpio que la fecha completa
 const formatMesAnio = (iso) => {
-  console.log("usuario recibido en PerfilCliente:", usuario);
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("es-MX", {
     month: "long", year: "numeric",
@@ -21,23 +20,24 @@ const formatMesAnio = (iso) => {
 
 function EstadoBadge({ estado }) {
   const estilos = {
-    pendiente: "bg-amarillo/12 border-amarillo/35 text-yellow-700 dark:text-amarillo",
-    pagado: "bg-verde/12 border-verde/35 text-green-700 dark:text-verde",
-    enviado: "bg-azul/12 border-azul/35 text-blue-700 dark:text-azul",
-    entregado: "bg-verde/12 border-verde/35 text-green-700 dark:text-verde",
-    cancelado: "bg-rojo/12 border-rojo/35 text-red-700 dark:text-rojo",
+    pendiente: "border-gold text-gold",
+    pagado: "bg-verde/12 border-verde/35 text-verde-dark dark:text-verde",
+    enviado: "bg-azul/12 border-azul/35 text-azul-dark dark:text-azul",
+    entregado: "bg-verde/12 border-verde/35 text-verde-dark dark:text-verde",
+    cancelado: "bg-rojo/12 border-rojo/35 text-rojo-dark dark:text-rojo",
   };
 
-  const clases = estilos[estado] || estilos.pendiente;
+  const key = estado?.toLowerCase();
+  const clases = estilos[key] || estilos.pendiente;
+  const label = estado ? estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase() : "—";
 
   return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-[2px] text-xs lg:text-sm font-tag font-semibold capitalize whitespace-nowrap border ${clases}`}
-    >
-      {estado}
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-[2px] text-xs lg:text-sm font-tag font-semibold whitespace-nowrap border ${clases}`}>
+      {label}
     </span>
   );
 }
+ 
 
 export default function PerfilCliente({ usuario }) {
   const [compras, setCompras] = useState([]);
@@ -67,31 +67,6 @@ export default function PerfilCliente({ usuario }) {
       cargarCompras();
     }
   }, [usuario?.id, usuario?.email]);
-
-  // Deduplicar productos comprados a través de todos los pedidos.
-  // Se queda con la compra más reciente de cada producto (por si compró el mismo artículo dos veces).
-  const productosComprados = useMemo(() => {
-    const mapa = new Map();
-    for (const compra of compras) {
-      for (const item of compra.items ?? []) {
-        const clave = item.productoId || item.producto?.id || item.nombre;
-        if (!clave) continue;
-        const existente = mapa.get(clave);
-        if (!existente || new Date(compra.createdAt) > new Date(existente.fechaCompra)) {
-          mapa.set(clave, {
-            nombre: item.nombre || item.producto?.nombre || "Producto",
-            imagen: item.imagen || item.producto?.imagen || null,
-            talla: item.talla,
-            fechaCompra: compra.createdAt,
-            precio: item.precioUnitario || item.precio || 0,
-          });
-        }
-      }
-    }
-    return Array.from(mapa.values()).sort(
-      (a, b) => new Date(b.fechaCompra) - new Date(a.fechaCompra)
-    );
-  }, [compras]);
 
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto px-2 sm:px-4">
@@ -155,41 +130,7 @@ export default function PerfilCliente({ usuario }) {
         </div>
       </div>
 
-      {/* Productos comprados — deduplicados, para recompra rápida y referencia de talla */}
-      {productosComprados.length > 0 && (
-        <div className="rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] shadow-lg p-4 sm:p-6 w-full bg-[var(--snow)] backdrop-blur-sm">
-          <h3 className="font-display text-base lg:text-lg font-bold text-[var(--noir)] mb-4 flex items-center gap-2">
-            <i className="bi bi-bag-heart-fill text-[var(--gold)]" />
-            Productos que ya compraste
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {productosComprados.slice(0, 8).map((p, idx) => (
-              <div
-                key={idx}
-                className="rounded-[2px] border border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)] bg-[var(--gold-08)] overflow-hidden group"
-              >
-                <div className="aspect-square w-full bg-[var(--noir-soft)]/5 flex items-center justify-center overflow-hidden">
-                  {p.imagen ? (
-                    <img src={p.imagen} alt={p.nombre} loading="lazy" className="w-full h-full object-cover" />
-                  ) : (
-                    <i className="bi bi-image text-2xl text-[var(--gold)]/40" />
-                  )}
-                </div>
-                <div className="p-2">
-                  <p className="text-xs lg:text-sm font-semibold text-[var(--noir)] dark:text-[var(--snow)] truncate">
-                    {p.nombre}
-                  </p>
-                  <p className="text-[10px] lg:text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">
-                    {p.talla ? `Talla ${p.talla} · ` : ""}{formatFecha(p.fechaCompra)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] shadow-lg p-4 sm:p-6 w-full bg-[var(--snow)] backdrop-blur-sm">
+      <div className="rounded-[2px] border border-[var(--border-gold-40)] shadow-lg p-4 sm:p-6 w-full bg-[var(--snow)] backdrop-blur-sm">
         <h3 className="font-display text-base lg:text-lg font-bold text-[var(--noir)] mb-4 flex items-center gap-2">
           <i className="bi bi-bag-check-fill text-[var(--gold)]" />
           Mis Compras
@@ -214,17 +155,17 @@ export default function PerfilCliente({ usuario }) {
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                      <span className="font-tag text-xs lg:text-sm font-bold text-[var(--noir)] dark:text-[var(--snow)] truncate">Pedido #{compra.id}</span>
+                      <span className="font-tag text-xs lg:text-sm font-bold text-[var(--noir-soft)] truncate">Pedido #{compra.numeroPedido || compra.id}</span>
                       <EstadoBadge estado={compra.estado} />
                     </div>
                     <p className="font-body text-[11px] lg:text-xs text-[var(--noir-soft)] dark:text-[var(--ash)] mb-2">
                       {formatFecha(compra.createdAt)}
                     </p>
                     
-                    <div className="font-body text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)] space-y-1 bg-[var(--snow)] dark:bg-[var(--noir)] p-2 rounded-[2px] border border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)]">
+                    <div className="font-body text-xs lg:text-sm text-[var(--noir-soft)] space-y-1 bg-[var(--border-gold-55)] p-2 rounded-[2px] border border-[var(--border-gold-25)]">
                       {compra.items?.slice(0, 2).map((item, idx) => (
                         <div key={idx} className="truncate">
-                          • {item.nombre || item.producto?.nombre} <span className="text-[var(--gold-dark)] dark:text-[var(--gold-light)] font-bold">x{item.cantidad}</span>
+                          • {item.nombre || item.producto?.nombre} <span className="text-[var(--noir-soft)] font-bold">x{item.cantidad}</span>
                         </div>
                       ))}
                       {compra.items?.length > 2 && (
@@ -249,64 +190,75 @@ export default function PerfilCliente({ usuario }) {
       </div>
 
       {compraSeleccionada && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-[var(--noir)]/80 backdrop-blur-sm p-2 sm:p-4 animate-fade-in">
-          <div className="bg-[var(--snow)] dark:bg-[var(--noir-soft)] rounded-t-[2px] sm:rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] shadow-2xl p-4 sm:p-6 w-full max-w-lg max-h-[85vh] sm:max-h-[80vh] overflow-y-auto flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-4 pb-2 border-b border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)]">
-                <h3 className="font-display text-lg lg:text-xl font-bold text-[var(--noir)] dark:text-[var(--snow)] flex items-center gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--noir)]/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-[var(--snow)] rounded-[2px] border border-[var(--border-gold-40)] shadow-2xl w-full max-w-lg max-h-[calc(100vh-2rem)] sm:max-h-[80vh] overflow-hidden flex flex-col">
+              <div className="shrink-0 flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[var(--border-gold-25)]">
+                <h3 className="font-display text-lg lg:text-xl font-bold text-[var(--noir)] flex items-center gap-2">
                   <i className="bi bi-receipt text-[var(--gold)]" />
                   Detalles del Pedido
                 </h3>
                 <button
                   onClick={() => setCompraSeleccionada(null)}
-                  className="text-[var(--noir-soft)] dark:text-[var(--ash)] hover:text-[var(--gold)] p-1 transition"
+                  className="text-[var(--noir-soft)] hover:text-[var(--gold-dark)] p-1 transition"
                 >
                   <i className="bi bi-x-lg text-lg" />
                 </button>
               </div>
 
+              <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 custom-scrollbar">
               <div className="space-y-3 font-body text-xs sm:text-sm lg:text-base">
-                <div className="grid grid-cols-2 gap-2 bg-[var(--gold-08)] p-2 rounded-[2px] border border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)]">
+                <div className="grid grid-cols-2 gap-2 bg-[var(--gold-08)] p-2 rounded-[2px] border border-[var(--border-gold-25)]">
                   <div>
-                    <p className="text-[11px] lg:text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">ID Pedido</p>
-                    <p className="font-mono text-xs lg:text-sm text-[var(--noir)] dark:text-[var(--snow)] truncate">{compraSeleccionada.id}</p>
+                    <p className="text-[11px] lg:text-xs text-[var(--noir-soft)]">ID Pedido</p>
+                    <p className="font-mono text-xs lg:text-sm text-[var(--noir)] truncate">{compraSeleccionada.id}</p>
                   </div>
                   <div>
-                    <p className="text-[11px] lg:text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">Fecha</p>
-                    <p className="text-[var(--noir)] dark:text-[var(--snow)] font-semibold">{formatFecha(compraSeleccionada.createdAt)}</p>
+                    <p className="text-[11px] lg:text-xs text-[var(--noir-soft)]">Fecha</p>
+                    <p className="text-[var(--noir)] font-semibold">{formatFecha(compraSeleccionada.createdAt)}</p>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-center py-1">
-                  <span className="text-[var(--noir-soft)] dark:text-[var(--ash)]">Estado Actual:</span>
+                  <span className="text-[var(--noir-soft)]">Estado Actual:</span>
                   <EstadoBadge estado={compraSeleccionada.estado} />
                 </div>
 
                 {compraSeleccionada.metodoPago && (
-                  <div className="flex justify-between items-center py-1 border-t border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)]">
-                    <span className="text-[var(--noir-soft)] dark:text-[var(--ash)]">Método de Pago:</span>
-                    <span className="text-[var(--noir)] dark:text-[var(--snow)] capitalize">{compraSeleccionada.metodoPago}</span>
+                  <div className="flex justify-between items-center py-1 border-t border-[var(--border-gold-25)]">
+                    <span className="text-[var(--noir-soft)]">Método de Pago:</span>
+                    <span className="text-[var(--noir)] capitalize">{compraSeleccionada.metodoPago}</span>
                   </div>
                 )}
 
                 <div className="pt-2">
-                  <p className="font-tag text-[11px] lg:text-xs text-[var(--noir-soft)] dark:text-[var(--ash)] mb-2 font-bold uppercase tracking-wider">
+                  <p className="font-tag text-[11px] lg:text-xs text-[var(--noir-soft)] mb-2 font-bold uppercase tracking-wider">
                     Artículos ({compraSeleccionada.items?.length || 0})
                   </p>
                   <div className="space-y-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
                     {compraSeleccionada.items?.map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center p-2 bg-[var(--gold-08)] rounded-[2px] border border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)] gap-4">
+                      <div key={idx} className="flex justify-between items-center p-2 bg-[var(--gold-08)] rounded-[2px] border border-[var(--border-gold-25)] gap-4">
                         <div className="min-w-0 flex-1">
-                          <p className="text-xs sm:text-sm lg:text-base font-semibold text-[var(--noir)] dark:text-[var(--snow)] truncate">{item.nombre || item.producto?.nombre}</p>
-                          <p className="text-[11px] lg:text-xs text-[var(--noir-soft)] dark:text-[var(--ash)] space-x-2">
+                          <p className="text-xs sm:text-sm lg:text-base font-semibold text-[var(--noir)] truncate">{item.nombre || item.producto?.nombre}</p>
+                          <p className="text-[11px] lg:text-xs text-[var(--noir-soft)] space-x-2">
                             {item.talla && <span>Talla: {item.talla}</span>}
                             {item.color && <span>Color: {item.color}</span>}
                             <span>Cant: {item.cantidad}</span>
                           </p>
                         </div>
-                        <p className="text-xs sm:text-sm lg:text-base font-bold text-[var(--gold-dark)] dark:text-[var(--gold-light)] shrink-0">
+                        <p className="text-xs sm:text-sm lg:text-base font-bold text-[var(--noir)] shrink-0">
                           {formatMoney((item.precioUnitario || item.precio || 0) * item.cantidad)}
                         </p>
+                        <div className="w-12 h-16 shrink-0 overflow-hidden rounded-[2px] bg-[var(--ivory)] border border-[var(--border-gold-25)] flex items-center justify-center">
+                          {item.imagen || item.producto?.imagen ? (
+                            <img
+                              src={item.imagen || item.producto.imagen}
+                              alt={item.nombre || item.producto?.nombre || "Producto"}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <i className="bi bi-image text-lg text-[var(--gold)]/50" aria-hidden="true" />
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -316,30 +268,32 @@ export default function PerfilCliente({ usuario }) {
                 <div className="bg-[var(--gold-08)] rounded-[2px] p-3 sm:p-4 space-y-1.5 mt-3">
                   {compraSeleccionada.subtotal > 0 && (
                     <div className="flex justify-between text-xs sm:text-sm lg:text-base">
-                      <span className="text-[var(--noir-soft)] dark:text-[var(--ash)]">Subtotal:</span>
-                      <span className="text-[var(--noir)] dark:text-[var(--snow)]">{formatMoney(compraSeleccionada.subtotal)}</span>
+                      <span className="text-[var(--noir-soft)]">Subtotal:</span>
+                      <span className="text-[var(--noir)]">{formatMoney(compraSeleccionada.subtotal)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-xs sm:text-sm lg:text-base">
-                    <span className="text-[var(--noir-soft)] dark:text-[var(--ash)]">Envío:</span>
-                    <span className="text-[var(--noir)] dark:text-[var(--snow)]">
+                    <span className="text-[var(--noir-soft)]">Envío:</span>
+                    <span className="text-[var(--noir)]">
                       {Number(compraSeleccionada.envio) > 0 ? formatMoney(compraSeleccionada.envio) : "Gratis"}
                     </span>
                   </div>
-                  <div className="flex justify-between text-base lg:text-lg font-bold pt-2 border-t border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)]">
-                    <span className="text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Total:</span>
-                    <span className="text-[var(--noir)] dark:text-[var(--snow)]">{formatMoney(compraSeleccionada.total)}</span>
+                  <div className="flex justify-between text-base lg:text-lg font-bold pt-2 border-t border-[var(--border-gold-40)]">
+                    <span className="text-[var(--noir)]">Total:</span>
+                    <span className="text-[var(--noir)]">{formatMoney(compraSeleccionada.total)}</span>
                   </div>
                 </div>
               </div>
             </div>
 
+            <div className="shrink-0 px-4 sm:px-6 py-3 border-t border-[var(--border-gold-25)]">
             <button
               onClick={() => setCompraSeleccionada(null)}
-              className="font-tag w-full py-2.5 rounded-[2px] bg-[var(--gold)] text-[var(--noir)] font-bold hover:bg-[var(--gold-light)] transition mt-4 shadow-md"
+              className="font-tag w-full py-2.5 rounded-[2px] bg-[var(--gold)] text-[var(--noir)] font-bold hover:bg-[var(--gold-light)] transition shadow-md"
             >
               Cerrar Detalle
             </button>
+            </div>
           </div>
         </div>
       )}

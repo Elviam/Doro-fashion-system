@@ -40,6 +40,7 @@ const OPCIONES_ESTADO = [
   { value: "",          label: "Todos" },
   { value: "PENDIENTE", label: "Pendientes" },
   { value: "PAGADO",    label: "Pagados" },
+  { value: "ENVIADO",   label: "Enviados" },
   { value: "CANCELADO", label: "Cancelados" },
 ];
 
@@ -148,7 +149,7 @@ export default function Ventas() {
           onActualizar={() => setRefresh((r) => r + 1)}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 w-full mb-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 w-full mb-2">
           <Tarjetas
             label="Total pedidos"
             value={ventas.length}
@@ -183,6 +184,15 @@ export default function Ventas() {
             icon="bi bi-x-circle"
             onClick={() => setFiltroEstado("CANCELADO")}
             isActive={filtroEstado === "CANCELADO"}
+          />
+          <Tarjetas
+            label="Enviados"
+            value={ventas.filter((v) => v.estado === "ENVIADO").length}
+            sub="En camino al cliente"
+            accent="#3a86bc"
+            icon="bi bi-truck"
+            onClick={() => setFiltroEstado("ENVIADO")}
+            isActive={filtroEstado === "ENVIADO"}
           />
           <Tarjetas
             label="Ingresos"
@@ -274,9 +284,9 @@ export default function Ventas() {
               </td>
               <td className="p-4 text-center whitespace-nowrap">
                 {{
-                  tarjeta: <span className="px-2.5 py-1 rounded-full text-xs font-bold border bg-azul/10 text-azul border-azul/30">Tarjeta</span>,
-                  oxxo:    <span className="px-2.5 py-1 rounded-full text-xs font-bold border bg-amarillo/10 text-amarillo border-amarillo/30">OXXO</span>,
-                  spei:    <span className="px-2.5 py-1 rounded-full text-xs font-bold border bg-verde/10 text-verde border-verde/30">SPEI</span>,
+                  tarjeta: <span className="px-2.5 py-1 rounded-full text-xs font-bold border bg-azul/10 text-azul-dark dark:text-azul border-azul/30">Tarjeta</span>,
+                  oxxo:    <span className="px-2.5 py-1 rounded-full text-xs font-bold border bg-amarillo/10 text-amarillo-dark dark:text-amarillo border-amarillo/30">OXXO</span>,
+                  spei:    <span className="px-2.5 py-1 rounded-full text-xs font-bold border bg-verde/10 text-verde-dark dark:text-verde border-verde/30">SPEI</span>,
                 }[v.metodoPago] ?? <span className="text-sm capitalize">{v.metodoPago}</span>}
               </td>
               <td className="p-4 text-center text-sm whitespace-nowrap text-[var(--noir-soft)] dark:text-[var(--snow)]">

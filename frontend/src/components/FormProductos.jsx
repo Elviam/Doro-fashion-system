@@ -217,18 +217,20 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
   };
 
   const footerAcciones = (
-    <div className="flex flex-col sm:flex-row justify-end gap-3 w-full">
+  <div className="flex flex-col sm:flex-row sm:justify-between gap-3 w-full">
+    <Boton variante="oscuro" onClick={handleGuardarYRegistrarClick} tipo="button" className="w-full sm:w-auto">
+      <i className="bi bi-box-seam"></i> Agregar Inventario
+    </Boton>
+    <div className="flex flex-row justify-end gap-3 w-full sm:w-auto">
       <Boton variante="secundario" onClick={handleIntentarCerrar} tipo="button">
         <i className="bi bi-x-lg"></i> Cancelar
-      </Boton>
-      <Boton variante="oscuro" onClick={handleGuardarYRegistrarClick} tipo="button">
-        <i className="bi bi-box-seam"></i> Agregar Inventario
       </Boton>
       <Boton variante="claro" onClick={handleGuardarClick} tipo="button">
         <i className="bi bi-save"></i> Guardar
       </Boton>
     </div>
-  );
+  </div>
+);
 
   return (
     <>
@@ -411,21 +413,11 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
             p-5 rounded-[2px] border transition-colors shadow-sm
             bg-[var(--snow)] border-[var(--border-gold-40)]
             dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
-          `}>
+          `} >
             <div className="flex items-center gap-2 mb-4">
               <h3 className="text-sm lg:text-base font-tag uppercase flex items-center gap-2 text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
                 <i className="bi bi-bell"></i> Niveles de Stock
               </h3>
-              <button
-                type="button"
-                onClick={() => setMostrarAyudaStock((visible) => !visible)}
-                className="w-5 h-5 rounded-full border border-[var(--gold-dark)] text-[11px] font-bold leading-none text-[var(--gold-dark)] hover:bg-[var(--gold-dark)] hover:text-[var(--snow)] dark:border-[var(--gold-light)] dark:text-[var(--gold-light)] dark:hover:bg-[var(--gold-light)] dark:hover:text-[var(--noir)]"
-                aria-label="Mostrar ayuda sobre los niveles de stock"
-                aria-expanded={mostrarAyudaStock}
-                title="Ayuda sobre niveles de stock"
-              >
-                ?
-              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -469,11 +461,25 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
               </div>
             </div>
 
-            {mostrarAyudaStock && <p className="text-xs lg:text-sm mt-3 text-[var(--noir-soft)] dark:text-[var(--ash)]">
-              Cuando el stock total baje del <strong>Mínimo</strong>, aparecerá como alerta crítica en Inventario y Reabastecimiento. 
-              El <strong>Ideal</strong> es la meta de reposición y el <strong>Máximo</strong> es el tope recomendado de almacenamiento. 
-              Debe cumplirse: Mínimo ≤ Ideal ≤ Máximo. El registro y ajuste de tallas/cantidades se hace desde <strong>Inventario</strong>.
-            </p>}
+            {mostrarAyudaStock && (
+            <div className="flex items-start gap-2 mt-3">
+              <button
+                type="button"
+                onClick={() => setMostrarAyudaStock(false)}
+                className="w-5 h-5 mt-0.5 shrink-0 rounded-full border border-[var(--gold-dark)] text-[11px] font-bold leading-none text-[var(--gold-dark)] hover:bg-[var(--gold-dark)] hover:text-[var(--snow)] dark:border-[var(--gold-light)] dark:text-[var(--gold-light)] dark:hover:bg-[var(--gold-light)] dark:hover:text-[var(--noir)]"
+                aria-label="Ocultar ayuda sobre los niveles de stock"
+                title="Ayuda sobre niveles de stock"
+              >
+                ?
+              </button>
+              <p className="text-xs lg:text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">
+                Cuando el stock total baje del <strong>Mínimo</strong>, aparecerá como alerta crítica en Inventario y Reabastecimiento. 
+                El <strong>Ideal</strong> es la meta de reposición y el <strong>Máximo</strong> es el tope recomendado de almacenamiento. 
+                Debe cumplirse: Mínimo ≤ Ideal ≤ Máximo. El registro y ajuste de tallas/cantidades se hace desde <strong>Inventario</strong>.
+              </p>
+            </div>
+          )}
+
           </div>
 
         </form>

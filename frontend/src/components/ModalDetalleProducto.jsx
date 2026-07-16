@@ -40,9 +40,11 @@ export default function ModalDetalleProducto({ isOpen, onClose, producto, onEdit
   const ajuste = ultimoMovimiento?.details?._ajusteManual;
 
   const footerAcciones = (
-    <div className="w-full flex flex-row flex-wrap justify-start items-center gap-3">
-      <Boton variante="fantasma" onClick={onClose}>Cerrar</Boton>
-      <Boton variante="claro" onClick={() => { onClose(); onEditar(producto); }}>
+    <div className="w-full flex flex-wrap items-center justify-end gap-3">
+      <Boton variante="secundario" onClick={onClose} className="min-w-[110px]">
+        Cerrar
+      </Boton>
+      <Boton variante="oscuro" onClick={() => { onClose(); onEditar(producto); }} className="min-w-[168px]">
         <i className="bi bi-pencil-square"></i> Editar Producto
       </Boton>
     </div>

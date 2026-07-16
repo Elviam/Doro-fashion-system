@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 function ImagenProducto({ producto, className = "" }) {
   const [cargada, setCargada] = useState(false);
@@ -27,7 +27,6 @@ function ImagenProducto({ producto, className = "" }) {
   );
 }
 
-// Botón de favorito reutilizable — separado para no repetir el stopPropagation
 function BotonFavorito({ esFavorito, onToggle, size = "w-8 h-8" }) {
   return (
     <button
@@ -58,7 +57,6 @@ function EtiquetaAgotado() {
   );
 }
 
-// Maneja click y teclado (Enter/Espacio) para que la tarjeta sea accesible como botón
 function useTarjetaClickeable(onVistaRapida, producto) {
   const handleClick = () => onVistaRapida(producto);
   const handleKeyDown = (e) => {
@@ -70,8 +68,26 @@ function useTarjetaClickeable(onVistaRapida, producto) {
   return { handleClick, handleKeyDown };
 }
 
+function InfoProducto({ producto, className = "" }) {
+  return (
+    <div className={`flex flex-col gap-1 min-w-0 ${className}`}>
+      <h3
+        className="min-w-0 w-full line-clamp-2 min-h-[2.5em] text-[15px] sm:text-base font-semibold leading-tight"
+        style={{ fontFamily: "var(--font-body)", color: "var(--snow)" }}
+      >
+        {producto.nombre}
+      </h3>
+      <p
+        className="text-base sm:text-lg font-extrabold tabular-nums"
+        style={{ color: "var(--gold-light)" }}
+      >
+        ${Number(producto.precioVenta).toLocaleString("es-MX")}
+      </p>
+    </div>
+  );
+}
+
 function TarjetaLista({ producto, onVistaRapida, onFavoritoChange, favoritos }) {
-  const todasLasTallas = producto.inventario ?? [];
   const agotado = producto.stock === 0;
   const esFavorito = favoritos.includes(producto.id);
   const { handleClick, handleKeyDown } = useTarjetaClickeable(onVistaRapida, producto);
@@ -87,64 +103,22 @@ function TarjetaLista({ producto, onVistaRapida, onFavoritoChange, favoritos }) 
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className="flex gap-4 rounded-[2px] overflow-hidden transition-all cursor-pointer outline-none focus-visible:ring-2"
+      className="flex gap-4 min-h-[150px] rounded-[2px] overflow-hidden transition-all cursor-pointer outline-none focus-visible:ring-2"
       style={{ background: "var(--noir-soft)", border: "1px solid var(--border-gold-20)" }}
       onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--border-gold-40)")}
       onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border-gold-20)")}
     >
-      <div className="w-32 sm:w-44 shrink-0 relative">
+      <div className="w-32 sm:w-44 aspect-[3/4] shrink-0 relative">
         <ImagenProducto producto={producto} />
         <BotonFavorito esFavorito={esFavorito} onToggle={toggleFavorito} />
         {agotado && <EtiquetaAgotado />}
       </div>
-      <div className="flex-1 py-4 pr-4 flex flex-col gap-1 min-w-0">
-        <p
-          className="text-[11px] uppercase tracking-widest font-bold truncate"
-          style={{ fontFamily: "var(--font-tag)", color: "var(--gold)" }}
-        >
-          {producto.categoria} · {producto.departamento}
-        </p>
-        <h3
-          className="text-sm sm:text-base font-semibold leading-tight"
-          style={{ fontFamily: "var(--font-body)", color: "var(--snow)" }}
-        >
-          {producto.nombre}
-        </h3>
-        <p
-          className="text-lg sm:text-xl font-extrabold tabular-nums"
-          style={{ color: "var(--gold-light)" }}
-        >
-          ${Number(producto.precioVenta).toLocaleString("es-MX")}
-        </p>
-        {todasLasTallas.length > 0 && (
-          <p
-            className="text-xs flex flex-wrap gap-x-1.5"
-            style={{ fontFamily: "var(--font-body)", color: "var(--ash)" }}
-          >
-            Tallas:{" "}
-            {todasLasTallas.map((item) => (
-              <span
-                key={item.talla}
-                className={item.stock === 0 ? "line-through opacity-30" : ""}
-              >
-                {item.talla}
-              </span>
-            ))}
-          </p>
-        )}
-        <span
-          className="mt-auto pt-3 text-[11px] font-bold uppercase tracking-wider inline-flex items-center gap-1"
-          style={{ fontFamily: "var(--font-tag)", color: "var(--gold)" }}
-        >
-          <i className="bi bi-eye" /> Ver detalle
-        </span>
-      </div>
+      <InfoProducto producto={producto} className="flex-1 justify-center py-4 pr-4" />
     </div>
   );
 }
 
 function TarjetaGrid({ producto, onVistaRapida, onFavoritoChange, favoritos }) {
-  const todasLasTallas = producto.inventario ?? [];
   const agotado = producto.stock === 0;
   const esFavorito = favoritos.includes(producto.id);
   const { handleClick, handleKeyDown } = useTarjetaClickeable(onVistaRapida, producto);
@@ -160,7 +134,7 @@ function TarjetaGrid({ producto, onVistaRapida, onFavoritoChange, favoritos }) {
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className="group relative rounded-[2px] overflow-hidden transition-all hover:-translate-y-1 cursor-pointer outline-none focus-visible:ring-2"
+      className="group relative h-full min-h-[430px] flex flex-col rounded-[2px] overflow-hidden transition-all hover:-translate-y-1 cursor-pointer outline-none focus-visible:ring-2"
       style={{
         background: "var(--noir-soft)",
         border: "1px solid var(--border-gold-20)",
@@ -175,51 +149,14 @@ function TarjetaGrid({ producto, onVistaRapida, onFavoritoChange, favoritos }) {
         e.currentTarget.style.boxShadow = "none";
       }}
     >
-      {/* Imagen */}
-      <div className="relative aspect-[4/5]">
+      <div className="relative aspect-[3/4] shrink-0">
         <ImagenProducto producto={producto} className="absolute inset-0" />
         <BotonFavorito esFavorito={esFavorito} onToggle={toggleFavorito} />
         {agotado && <EtiquetaAgotado />}
       </div>
 
-      {/* Info */}
-      <div className="p-3 sm:p-3.5">
-        <p
-          className="text-[10px] uppercase tracking-widest font-bold mb-1 truncate"
-          style={{ fontFamily: "var(--font-tag)", color: "var(--gold)" }}
-        >
-          {producto.categoria}
-        </p>
-        <h3
-          className="text-[12px] sm:text-[13px] font-semibold line-clamp-2 min-h-[2.5em] leading-tight"
-          style={{ fontFamily: "var(--font-body)", color: "var(--snow)" }}
-        >
-          {producto.nombre}
-        </h3>
-        <p
-          className="text-sm sm:text-base font-extrabold tabular-nums mt-1"
-          style={{ color: "var(--gold-light)" }}
-        >
-          ${Number(producto.precioVenta).toLocaleString("es-MX")}
-        </p>
-        {todasLasTallas.length > 0 && (
-          <p
-            className="text-[10px] mt-1 flex flex-wrap gap-x-1.5"
-            style={{ fontFamily: "var(--font-body)", color: "var(--ash)" }}
-          >
-            {todasLasTallas.map((item) => (
-              <span
-                key={item.talla}
-                className={item.stock === 0 ? "line-through opacity-30" : ""}
-              >
-                {item.talla}
-              </span>
-            ))}
-          </p>
-        )}
-      </div>
+      <InfoProducto producto={producto} className="min-h-[96px] justify-between p-3.5 sm:p-4" />
 
-      {/* Indicador sutil de "ver detalle", no bloquea nada */}
       <div className="pointer-events-none absolute inset-0 ring-0 group-hover:ring-1 transition-all" style={{ boxShadow: "inset 0 0 0 1px var(--border-gold-40)" }} />
     </div>
   );

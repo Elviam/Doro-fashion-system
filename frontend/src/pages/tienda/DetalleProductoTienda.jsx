@@ -33,13 +33,13 @@ function GaleriaImagenes({ producto, imagenActiva, setImagenActiva }) {
   const [cargada, setCargada] = useState(false);
   const imagenes = producto.imagenes?.length ? producto.imagenes : [];
 
-  useEffect(() => { setCargada(false); }, [imagenActiva]);
+  useEffect(() => { setCargada(false); }, [imagenActiva, producto.id]);
 
   if (imagenes.length === 0) {
     const [c0, c1, c2] = paletasPorCategoria[producto.categoria] || ["#B8923D", "#F7F0E6", "#0A0A0A"];
     return (
       <div
-        className="w-full aspect-square rounded-[2px] flex items-center justify-center border border-[var(--border-gold-25)]"
+        className="w-full aspect-[3/4] rounded-[2px] flex items-center justify-center overflow-hidden"
         style={{
           background: `radial-gradient(120% 100% at 20% 0%, ${c1}, transparent 55%),
                        radial-gradient(120% 100% at 90% 100%, ${c2}aa, transparent 60%),
@@ -62,7 +62,10 @@ function GaleriaImagenes({ producto, imagenActiva, setImagenActiva }) {
         }
       `}</style>
 
-      <div className="relative w-full aspect-square rounded-[2px] overflow-hidden border border-[var(--border-gold-25)]">
+      <div
+        className="relative w-full md:mx-auto aspect-[3/4] max-h-[calc(100vh-190px)] rounded-[2px] overflow-hidden"
+        style={{ maxWidth: "min(100%, calc((100vh - 190px) * 0.75))" }}
+      >
         {!cargada && (
           <div
             className="absolute inset-0"
@@ -73,6 +76,12 @@ function GaleriaImagenes({ producto, imagenActiva, setImagenActiva }) {
           src={imagenes[imagenActiva]}
           alt={producto.nombre}
           onLoad={() => setCargada(true)}
+          onError={() => {
+            if (imagenActiva < imagenes.length - 1) setImagenActiva(imagenActiva + 1);
+            else setCargada(true);
+          }}
+          loading="eager"
+          decoding="async"
           className={`w-full h-full object-cover transition-opacity duration-300 ${cargada ? "opacity-100" : "opacity-0"}`}
         />
       </div>
@@ -111,6 +120,10 @@ export default function DetalleProductoTienda() {
   const [cantidad, setCantidad] = useState(1);
 
   useTitulo(producto ? producto.nombre : "Producto");
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [id]);
 
   useEffect(() => {
     let activo = true;
@@ -186,16 +199,9 @@ export default function DetalleProductoTienda() {
       <HeaderTienda />
 
       <main className="bg-[var(--ivory)] pb-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-6 lg:pt-8">
 
-          <button
-            onClick={() => navigate(-1)}
-            className="font-tag text-[11px] tracking-[0.15em] uppercase font-bold text-[var(--gold-dark)] flex items-center gap-2 mb-8 bg-transparent border-none p-0 cursor-pointer hover:opacity-75 transition"
-          >
-            <i className="bi bi-arrow-left"></i> Volver
-          </button>
-
-          <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+          <div className="grid md:grid-cols-[minmax(0,0.88fr)_minmax(0,1fr)] gap-8 lg:gap-12 items-start">
 
             <GaleriaImagenes producto={producto} imagenActiva={imagenActiva} setImagenActiva={setImagenActiva} />
 

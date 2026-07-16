@@ -94,10 +94,9 @@ export default function Inventario() {
       const resumen = tallas.map((talla) => {
         const idx = nuevoInventario.findIndex((i) => i.talla === talla);
         const cantidadAnterior = idx >= 0 ? Number(nuevoInventario[idx].stock || 0) : 0;
-        let cantidadNueva;
-        if (datos.tipo === "sumar") cantidadNueva = cantidadAnterior + Number(datos.cantidad);
-        if (datos.tipo === "restar") cantidadNueva = Math.max(0, cantidadAnterior - Number(datos.cantidad));
-        if (datos.tipo === "fijar") cantidadNueva = Number(datos.cantidad);
+        const cantidadNueva = datos.valoresPorTalla
+          ? Number(datos.valoresPorTalla[talla])
+          : Number(datos.cantidad);
 
         if (idx >= 0) {
           nuevoInventario[idx] = { ...nuevoInventario[idx], stock: cantidadNueva };

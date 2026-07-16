@@ -26,7 +26,8 @@ export function canAccessDashboard(roleId) {
  */
 export function getUserRole(usuario) {
   if (!usuario) return null;
-  return usuario?.roleId || usuario?.role || null;
+  // `roleId` es el identificador interno; `role` es el código funcional.
+  return usuario?.role || usuario?.roleId || null;
 }
 
 /**

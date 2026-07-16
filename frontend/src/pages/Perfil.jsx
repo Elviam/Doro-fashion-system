@@ -9,12 +9,16 @@ import HeaderTienda from "../components/tienda/HeaderTienda";
 import FooterTienda from "../components/tienda/FooterTienda";
 import Layout from "../components/Layout";
 import useTitulo from "../hooks/useTitulo";
+import { useCarrito } from "../context/CarritoContext";
+import { useWishlist } from "../context/WishlistContext";
 
 export default function Perfil() {
   useTitulo("Perfil");
   const { usuario, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const esAdmin = userCanAccessDashboard(usuario);
+  const { cantidadCarrito } = useCarrito();
+  const { favoritos } = useWishlist();
 
   const [busqueda, setBusqueda] = useState("");
 
@@ -52,9 +56,10 @@ export default function Perfil() {
         busqueda={busqueda}
         setBusqueda={setBusqueda}
         onBuscar={handleBuscar}
-        cantidadCarrito={0}
-        cantidadWishlist={0}
-        onAbrirCarrito={() => {}}
+        cantidadCarrito={cantidadCarrito}
+        cantidadWishlist={favoritos.length}
+        onAbrirCarrito={() => navigate("/tienda?panel=carrito")}
+        onAbrirWishlist={() => navigate("/tienda?panel=wishlist")}
         categoriaActiva=""
         onSeleccionarCategoria={() => {}}
         onLogout={handleLogout}

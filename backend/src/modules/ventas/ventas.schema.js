@@ -1,20 +1,15 @@
 import { z } from 'zod'
 
-const ESTADOS_PERMITIDOS = ['PENDIENTE', 'PAGADO', 'CANCELADO']
+const ESTADOS_PERMITIDOS = ['PENDIENTE', 'PAGADO', 'ENVIADO', 'CANCELADO']
 const METODOS_PAGO = ['tarjeta', 'oxxo', 'spei']
 
 const itemVentaSchema = z.object({
   productoId:     z.string().min(1, 'El id del producto es obligatorio'),
-  nombre:         z.string().min(1, 'El nombre del producto es obligatorio'),
-  imagen:         z.string().optional().default(''),
   talla:          z.string().min(1, 'La talla es obligatoria'),
   cantidad:       z.coerce.number().int().min(1, 'La cantidad debe ser al menos 1'),
-  precioUnitario: z.coerce.number().min(0, 'El precio no puede ser negativo'),
 })
 
 export const createVentaSchema = z.object({
-  numeroPedido: z.string().optional(),
-  clienteId:    z.string().optional().default(''),
   cliente: z.object({
     nombre:  z.string().min(2, 'El nombre es obligatorio'),
     email:   z.string().email('El email no es válido'),
@@ -26,9 +21,6 @@ export const createVentaSchema = z.object({
     errorMap: () => ({ message: 'Método de pago no válido' })
   }),
   items:    z.array(itemVentaSchema).min(1, 'Debe incluir al menos un producto'),
-  subtotal: z.coerce.number().min(0),
-  envio:    z.coerce.number().min(0),
-  total:    z.coerce.number().min(0),
 })
 
 export const ventaIdParamSchema = z.object({

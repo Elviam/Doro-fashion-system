@@ -194,7 +194,7 @@ export default function Recepciones() {
               <td className="p-4 text-center text-sm">{formatDate(row.fecha)}</td>
               <td className="p-4 text-center text-sm">{row.recibidoPor || row.createdBy || "—"}</td>
               <td className="p-4 text-center text-sm">{row.items.length} ({row.piezasTotales} pzas.)</td>
-              <td className="p-4 text-center text-sm font-bold text-verde">{formatMoney(row.total)}</td>
+              <td className="p-4 text-center text-sm font-bold text-verde-dark dark:text-verde">{formatMoney(row.total)}</td>
               <td className="p-4 text-center">
                 <Etiquetas contenido={ESTADO_LABELS[row.status] || row.status} />
               </td>

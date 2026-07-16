@@ -2,6 +2,8 @@ import { useState } from "react";
 import { api } from "../../services/api";
 
 const pasos = ["Envío", "Pago", "Confirmación"];
+const ENVIO_GRATIS_DESDE = 799;
+const COSTO_ENVIO = 99;
 
 const generarNumeroPedido = () => `AUR-${(Date.now() % 89999) + 10000}`;
 
@@ -63,21 +65,13 @@ export default function ModalCheckout({ onCerrar, carrito, onPedidoConfirmado, u
     setEnviando(true);
     try {
       await api.post("/ventas", {
-        numeroPedido,
-        clienteId:  usuario?.id ?? "",
         cliente:    { nombre: datos.nombre, email: datos.email, calle: datos.calle, cp: datos.cp, ciudad: datos.ciudad },
         metodoPago: datos.metodoPago,
         items:      carrito.map((i) => ({
           productoId:     i.producto.id,
-          nombre:         i.producto.nombre,
-          imagen:         i.producto.imagen || "",
           talla:          i.talla,
           cantidad:       i.cantidad,
-          precioUnitario: i.producto.precioVenta,
         })),
-        subtotal,
-        envio,
-        total,
       });
       setPaso(3);
     } catch (err) {
@@ -88,7 +82,7 @@ export default function ModalCheckout({ onCerrar, carrito, onPedidoConfirmado, u
   };
 
   const subtotal       = carrito.reduce((acc, i) => acc + i.producto.precioVenta * i.cantidad, 0);
-  const envio          = subtotal >= 999 || subtotal === 0 ? 0 : 99;
+  const envio          = subtotal >= ENVIO_GRATIS_DESDE || subtotal === 0 ? 0 : COSTO_ENVIO;
   const total          = subtotal + envio;
   const totalArticulos = carrito.reduce((acc, i) => acc + i.cantidad, 0);
 

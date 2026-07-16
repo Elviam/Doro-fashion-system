@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -232,7 +232,7 @@ export default function StaffLogin() {
   useTitulo("Acceso Administrativo — D'oro");
 
   const navigate = useNavigate();
-  const { login, usuario: usuarioDelContexto, token } = useAuth();
+  const { login } = useAuth();
 
   const [showPass, setShowPass] = useState(false);
   const [loading,  setLoading]  = useState(false);
@@ -244,13 +244,8 @@ export default function StaffLogin() {
     formState: { errors: formErrors, isSubmitting },
   } = useForm({ resolver: zodResolver(staffLoginSchema) });
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (token && usuarioDelContexto) {
-      const role = usuarioDelContexto?.roleId || usuarioDelContexto?.role;
-      navigate(role === 'CLIENTE' ? '/tienda' : '/dashboard', { replace: true });
-    }
-  }, [token, usuarioDelContexto, navigate]);
+  // Esta ruta siempre muestra el formulario. Una sesión de cliente solo se
+  // reemplaza cuando las credenciales de staff son válidas.
 
   const onSubmit = async (data) => {
     try {

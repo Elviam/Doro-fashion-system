@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { LoginRequeridoProvider } from "./context/LoginRequeridoContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Layout from "./components/Layout";
@@ -30,6 +29,7 @@ import StaffLogin from "./pages/StaffLogin";
 import Checkout from "./pages/tienda/Checkout";
 import DetalleProductoTienda from "./pages/tienda/DetalleProductoTienda";
 import TiendaProviders from "./components/tienda/TiendaProviders";
+import TiendaComoInvitado from "./components/tienda/TiendaComoInvitado";
 import MisPedidos from "./pages/MisPedidos";
 import GenerarPedido from "./pages/GenerarPedido";
 
@@ -40,7 +40,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* Redirección principal */}
-        <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="/" element={<Home />} />
 
         {/* Home */}
         <Route path="/home" element={<Home />} />
@@ -52,11 +52,12 @@ function App() {
         <Route path="/register" element={<Register />} />
        
           {/* Tienda (para clientes) — carrito y login-requerido compartidos */}
-          <Route element={<TiendaProviders />}>
-            <Route path="/tienda" element={<Tienda />} />
-            <Route path="/tienda/producto/:id" element={<DetalleProductoTienda />} />
-            <Route path="/tienda/checkout" element={<Checkout />} />
-          </Route>
+          <Route element={<TiendaComoInvitado />}>
+            <Route element={<TiendaProviders />}>
+              <Route path="/tienda" element={<Tienda />} />
+              <Route path="/tienda/producto/:id" element={<DetalleProductoTienda />} />
+              <Route path="/tienda/checkout" element={<Checkout />} />
+            </Route>
       
         {/*Footer de Tienda*/}
         <Route path="/tienda/envios"          element={<Envios />} />
@@ -66,7 +67,8 @@ function App() {
         <Route path="/tienda/faq"             element={<FAQ />} />
         <Route path="/tienda/sobre-doro"      element={<SobreDoro />} />
         <Route path="/tienda/sustentabilidad" element={<Sustentabilidad />} />
-        <Route path="/tienda/terminos"        element={<Terminos />} />
+            <Route path="/tienda/terminos"        element={<Terminos />} />
+          </Route>
     
         {/* Dashboard */}
         <Route
@@ -222,9 +224,9 @@ function App() {
           path="/perfil"
           element={
             <ProtectedRoute requiredPage="perfil">
-              <LoginRequeridoProvider>
+              <TiendaProviders>
                 <Perfil />
-              </LoginRequeridoProvider>
+              </TiendaProviders>
             </ProtectedRoute>
           }
         />

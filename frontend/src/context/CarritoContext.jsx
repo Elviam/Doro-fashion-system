@@ -1,28 +1,74 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { AuthContext } from "./AuthContext";
 import { useRequireAuth, esClienteTienda } from "./LoginRequeridoContext";
 import ToastTienda from "../components/tienda/ToastTienda";
+import { api } from "../services/api";
 
 const CarritoContext = createContext(null);
+
+function leerCarrito(clave) {
+  if (!clave) return [];
+  try {
+    const valor = JSON.parse(localStorage.getItem(clave) ?? "[]");
+    return Array.isArray(valor) ? valor : [];
+  } catch {
+    return [];
+  }
+}
 
 export function CarritoProvider({ children }) {
   const requireAuth = useRequireAuth();
   const { usuario } = useContext(AuthContext);
   const clienteReal = esClienteTienda(usuario) ? usuario : null;
-  const claveCarrito = `carrito_${clienteReal?.id ?? "guest"}`;
-
-  const [carrito, setCarrito] = useState(
-    () => JSON.parse(localStorage.getItem(claveCarrito) ?? "[]")
-  );
+  const claveCarrito = clienteReal ? `carrito_v2_${clienteReal.id}` : null;
+  const [carrito, setCarrito] = useState([]);
   const [toast, setToast] = useState(null);
   const [carritoAbierto, setCarritoAbierto] = useState(false);
+  const claveHidratada = useRef(null);
 
   useEffect(() => {
+    let cancelado = false;
+    if (!claveCarrito) {
+      claveHidratada.current = null;
+      setCarrito([]);
+      setCarritoAbierto(false);
+      return undefined;
+    }
+
+    api.get("/products?activo=true&limit=100")
+      .then((respuesta) => {
+        const productos = respuesta.items || respuesta.data?.items || (Array.isArray(respuesta) ? respuesta : []);
+        const porId = new Map(productos.filter((producto) => producto.activo !== false).map((producto) => [producto.id, producto]));
+        const carritoValido = leerCarrito(claveCarrito).flatMap((item) => {
+          const producto = porId.get(item?.producto?.id);
+          const variante = producto?.inventario?.find((v) => v.talla === item?.talla);
+          const cantidad = Number(item?.cantidad);
+          if (!producto || !variante || variante.stock <= 0 || !Number.isInteger(cantidad) || cantidad < 1) return [];
+          return [{ producto, talla: variante.talla, cantidad: Math.min(cantidad, variante.stock) }];
+        });
+        if (!cancelado) {
+          claveHidratada.current = claveCarrito;
+          setCarrito(carritoValido);
+        }
+      })
+      .catch(() => {
+        if (!cancelado) {
+          claveHidratada.current = claveCarrito;
+          setCarrito([]);
+        }
+      });
+
+    return () => { cancelado = true; };
+  }, [claveCarrito]);
+
+  useEffect(() => {
+    if (!claveCarrito || claveHidratada.current !== claveCarrito) return;
     localStorage.setItem(claveCarrito, JSON.stringify(carrito));
   }, [carrito, claveCarrito]);
 
   const agregarAlCarrito = (producto, { talla, cantidad = 1 }) => {
     requireAuth(() => {
+      if (!clienteReal || producto?.activo === false) return;
       const stockTalla = producto.inventario?.find((i) => i.talla === talla)?.stock ?? 0;
       const existe = carrito.find((i) => i.producto.id === producto.id && i.talla === talla);
       const cantidadEnCarrito = existe ? existe.cantidad : 0;
@@ -72,7 +118,7 @@ export function CarritoProvider({ children }) {
 
   const vaciarCarrito = () => {
     setCarrito([]);
-    localStorage.removeItem(claveCarrito);
+    if (claveCarrito) localStorage.removeItem(claveCarrito);
   };
 
   const cantidadCarrito = carrito.reduce((acc, i) => acc + i.cantidad, 0);

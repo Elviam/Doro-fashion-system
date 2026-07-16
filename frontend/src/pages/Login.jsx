@@ -339,7 +339,7 @@ export default function Login() {
   // Redirige si ya está autenticado
   useEffect(() => {
     if (token && usuarioDelContexto) {
-      const role = usuarioDelContexto?.roleId || usuarioDelContexto?.role;
+      const role = usuarioDelContexto?.role || usuarioDelContexto?.roleId;
       const destino = location.state?.from || (role === 'CLIENTE' ? '/tienda' : '/dashboard');
       navigate(destino, { replace: true });
     }
@@ -347,7 +347,7 @@ export default function Login() {
 
   useEffect(() => {
     if (usuarioLogeado && usuarioDelContexto) {
-      const role = usuarioDelContexto?.roleId || usuarioDelContexto?.role;
+      const role = usuarioDelContexto?.role || usuarioDelContexto?.roleId;
       const destino = location.state?.from || (role === 'CLIENTE' ? '/tienda' : '/dashboard');
       navigate(destino, { replace: true });
     }

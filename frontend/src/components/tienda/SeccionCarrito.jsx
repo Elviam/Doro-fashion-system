@@ -17,7 +17,7 @@ const paletasPorCategoria = {
   "Accesorios": ["#C9B8E8", "#ED8ABA"],
 };
 
-const ENVIO_GRATIS_DESDE = 1999;
+const ENVIO_GRATIS_DESDE = 799;
 const COSTO_ENVIO        = 99;
 
 function ImagenMiniatura({ producto }) {

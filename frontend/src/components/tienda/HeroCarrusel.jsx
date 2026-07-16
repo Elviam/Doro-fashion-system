@@ -3,32 +3,25 @@ import img1 from "../../assets/images/clothes-rack-1.png";
 import img2 from "../../assets/images/clothes-rack-2.png";
 import img3 from "../../assets/images/products.png";
 
-const beneficios = [
-  { icono: "bi-truck",        titulo: "Envío en 24 horas",      sub: "CDMX · GDL · MTY"            },
-  { icono: "bi-arrow-repeat", titulo: "30 días de devolución",  sub: "Cambios sin costo"           },
-  { icono: "bi-shield-check", titulo: "Pagos seguros",          sub: "Tarjeta · OXXO · SPEI"        },
-  { icono: "bi-gem",          titulo: "Piezas certificadas",    sub: "Materia prima de origen"      },
-];
-
 const banners = [
   {
-    kicker: "Herencia y maestría",
-    titulo: "Cuatro décadas de oficio",
-    sub: "Desde 1986, D'oro construye prendas que no caducan. Cada pieza nace del diálogo entre la tradición italiana y el diseño contemporáneo.",
+    kicker: "Herencia y maestria",
+    titulo: "Cuatro decadas de oficio",
+    sub: "Desde 1986, D'oro construye prendas que no caducan. Cada pieza nace del dialogo entre la tradicion italiana y el diseno contemporaneo.",
     cta: "Conoce nuestra historia",
     imagen: img1,
   },
   {
-    kicker: "Confección a mano",
-    titulo: "Dieciséis manos, una pieza",
-    sub: "Sin producción masiva. Cada prenda pasa por un taller donde el acabado interior recibe la misma atención que el exterior.",
-    cta: "Ver la colección",
+    kicker: "Confeccion a mano",
+    titulo: "Dieciseis manos, una pieza",
+    sub: "Sin produccion masiva. Cada prenda pasa por un taller donde el acabado interior recibe la misma atencion que el exterior.",
+    cta: "Ver la coleccion",
     imagen: img2,
   },
   {
-    kicker: "Diseño atemporal",
-    titulo: "Lo que viste hoy, lo recordarás",
-    sub: "Materia prima certificada, confección artesanal y un principio que no negociamos: la elegancia no pasa de moda.",
+    kicker: "Diseno atemporal",
+    titulo: "Lo que viste hoy, lo recordaras",
+    sub: "Materia prima certificada, confeccion artesanal y un principio que no negociamos: la elegancia no pasa de moda.",
     cta: "Comprar ahora",
     imagen: img3,
   },
@@ -52,7 +45,6 @@ export default function HeroCarrusel() {
         className="relative rounded-[2px] overflow-hidden shadow-2xl h-[340px] sm:h-[420px] md:h-[500px] w-full box-border"
         style={{ border: "1px solid var(--border-gold-20)" }}
       >
-
         <img
           src={banner.imagen}
           alt={banner.titulo}
@@ -60,7 +52,6 @@ export default function HeroCarrusel() {
           style={{ filter: "brightness(0.82) saturate(0.9)" }}
         />
 
-       {/* Degradado para móvil */}
         <div
           className="absolute inset-0 md:hidden"
           style={{
@@ -69,7 +60,6 @@ export default function HeroCarrusel() {
           }}
         />
 
-        {/* Degradado para escritorio */}
         <div
           className="absolute inset-0 hidden md:block"
           style={{
@@ -184,47 +174,6 @@ export default function HeroCarrusel() {
             ))}
           </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-3 mt-3 md:mt-4 w-full box-border">
-        {beneficios.map((b) => (
-          <div
-            key={b.titulo}
-            className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 rounded-[2px] p-3 md:p-4 box-border min-w-0"
-            style={{ background: "var(--snow)", border: "1px solid var(--border-gold-20)" }}
-          >
-            <div
-              className="w-9 h-9 sm:w-11 sm:h-11 rounded-[2px] flex items-center justify-center shrink-0"
-              style={{ background: "var(--gold-08)", color: "var(--gold-dark)" }}
-            >
-              <i className={`bi ${b.icono} text-base sm:text-xl`} />
-            </div>
-            <div className="min-w-0 w-full">
-              <p
-                className="truncate"
-                style={{
-                  fontFamily: "var(--font-tag)",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  letterSpacing: "0.04em",
-                  color: "var(--noir)",
-                }}
-              >
-                {b.titulo}
-              </p>
-              <p
-                className="truncate"
-                style={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: "11px",
-                  color: "var(--ash)",
-                }}
-              >
-                {b.sub || "\u00A0"}
-              </p>
-            </div>
-          </div>
-        ))}
       </div>
     </section>
   );

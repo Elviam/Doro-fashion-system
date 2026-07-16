@@ -4,14 +4,13 @@ const departamentos = ["Dama", "Caballero", "Unisex"];
 
 const tallasSuperiores = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "3XL"];
 const tallasInferiores = ["22", "24", "26", "28", "30", "32", "34", "36", "38", "40", "42", "44"];
-const tallasCalzado    = ["22", "22.5", "23", "23.5", "24", "24.5", "25", "25.5", "26", "26.5", "27", "27.5", "28", "28.5", "29", "29.5", "30", "31"];
 
 // Quick price presets for one-click filtering
 const PRESETS_PRECIO = [
-  { label: "Menos de $1,000", min: 0, max: 1000 },
-  { label: "$1,000 – $3,000", min: 1000, max: 3000 },
-  { label: "$3,000 – $6,000", min: 3000, max: 6000 },
-  { label: "Más de $6,000", min: 6000, max: RANGO_PRECIO.max },
+  { label: "Menos de $800", min: 0, max: 800 },
+  { label: "$800 - $1,500", min: 800, max: 1500 },
+  { label: "$1,500 - $2,250", min: 1500, max: 2250 },
+  { label: "$2,250 - $3,000", min: 2250, max: RANGO_PRECIO.max },
 ];
 
 function toggleTalla(tallas, talla) {
@@ -223,10 +222,11 @@ function SeccionFiltro({ titulo, children, ultima = false }) {
   );
 }
 
-function ContenidoFiltros({ filtros, setFiltro, onLimpiar, onCerrar }) {
+function ContenidoFiltros({ filtros, setFiltro, onLimpiar, onCerrar, filtrosActivos = 0 }) {
   const presetActivo = PRESETS_PRECIO.find(
     (p) => p.min === filtros.precioMin && p.max === filtros.precioMax
   );
+  const hayFiltros = filtrosActivos > 0;
 
   return (
     <div
@@ -250,22 +250,28 @@ function ContenidoFiltros({ filtros, setFiltro, onLimpiar, onCerrar }) {
         <div className="flex items-center gap-3">
           <button
             onClick={onLimpiar}
+            disabled={!hayFiltros}
+            className="rounded-[2px] transition"
             style={{
               fontFamily: "var(--font-tag)",
-              fontSize: "9px",
+              fontSize: "10px",
               letterSpacing: "0.16em",
               textTransform: "uppercase",
-              color: "var(--noir)",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              textDecoration: "underline",
-              padding: 0,
+              color: hayFiltros ? "var(--noir)" : "var(--ash)",
+              background: hayFiltros ? "var(--gold)" : "transparent",
+              border: hayFiltros ? "1px solid var(--gold)" : "1px solid var(--border-gold-25)",
+              cursor: hayFiltros ? "pointer" : "default",
+              padding: "7px 12px",
+              fontWeight: 700,
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--gold-dark)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--noir)")}
+            onMouseEnter={(e) => {
+              if (hayFiltros) e.currentTarget.style.background = "var(--gold-light)";
+            }}
+            onMouseLeave={(e) => {
+              if (hayFiltros) e.currentTarget.style.background = "var(--gold)";
+            }}
           >
-            Limpiar
+            {hayFiltros ? "Limpiar" : "Sin filtros"}
           </button>
           {onCerrar && (
             <button
@@ -458,46 +464,6 @@ function ContenidoFiltros({ filtros, setFiltro, onLimpiar, onCerrar }) {
         </div>
       </SeccionFiltro>
 
-      {/* Tallas calzado */}
-      <SeccionFiltro titulo="Talla calzado">
-        <div className="flex flex-wrap gap-1.5">
-          {tallasCalzado.map((t) => {
-            const activa = filtros.tallas.includes(t);
-            return (
-              <button
-                key={t}
-                onClick={() => setFiltro("tallas", toggleTalla(filtros.tallas, t))}
-                className="min-w-[40px] h-9 px-2 rounded-[2px] transition-all"
-                style={{
-                  fontFamily: "var(--font-tag)",
-                  fontSize: "11px",
-                  fontWeight: 600,
-                  letterSpacing: "0.04em",
-                  background: activa ? "var(--gold)" : "transparent",
-                  color: "var(--noir)",
-                  border: activa ? "1px solid var(--gold)" : "1px solid var(--border-gold-40)",
-                  cursor: "pointer",
-                }}
-                onMouseEnter={(e) => {
-                  if (!activa) {
-                    e.currentTarget.style.borderColor = "var(--gold-dark)";
-                    e.currentTarget.style.background = "var(--gold-08)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!activa) {
-                    e.currentTarget.style.borderColor = "var(--border-gold-40)";
-                    e.currentTarget.style.background = "transparent";
-                  }
-                }}
-              >
-                {t}
-              </button>
-            );
-          })}
-        </div>
-      </SeccionFiltro>
-
       {/* Solo en stock */}
       <SeccionFiltro titulo="Disponibilidad" ultima>
         <label className="flex items-center gap-2 cursor-pointer mt-3">
@@ -529,7 +495,7 @@ function ContenidoFiltros({ filtros, setFiltro, onLimpiar, onCerrar }) {
   );
 }
 
-export function DrawerFiltros({ filtros, setFiltro, onLimpiar, abierto, onCerrar }) {
+export function DrawerFiltros({ filtros, setFiltro, onLimpiar, filtrosActivos = 0, abierto, onCerrar }) {
   return (
     <>
       <div
@@ -551,16 +517,16 @@ export function DrawerFiltros({ filtros, setFiltro, onLimpiar, abierto, onCerrar
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-10 h-[2px] mx-auto mb-4" style={{ background: "var(--gold)", opacity: 0.5 }} />
-        <ContenidoFiltros filtros={filtros} setFiltro={setFiltro} onLimpiar={onLimpiar} onCerrar={onCerrar} />
+        <ContenidoFiltros filtros={filtros} setFiltro={setFiltro} onLimpiar={onLimpiar} filtrosActivos={filtrosActivos} onCerrar={onCerrar} />
       </div>
     </>
   );
 }
 
-export default function FiltrosSidebar({ filtros, setFiltro, onLimpiar }) {
+export default function FiltrosSidebar({ filtros, setFiltro, onLimpiar, filtrosActivos = 0 }) {
   return (
     <aside className="sticky top-32 self-start hidden lg:block w-[260px] shrink-0">
-      <ContenidoFiltros filtros={filtros} setFiltro={setFiltro} onLimpiar={onLimpiar} />
+      <ContenidoFiltros filtros={filtros} setFiltro={setFiltro} onLimpiar={onLimpiar} filtrosActivos={filtrosActivos} />
     </aside>
   );
 }

@@ -5,8 +5,12 @@ import HeaderTienda from "../../components/tienda/HeaderTienda";
 import FooterTienda from "../../components/tienda/FooterTienda";
 import { useAuth } from "../../hooks/useAuth";
 import useTitulo from "../../hooks/useTitulo";
+import { useCarrito } from "../../context/CarritoContext";
+import { useWishlist } from "../../context/WishlistContext";
 
 const pasos = ["Envío", "Pago", "Confirmación"];
+const ENVIO_GRATIS_DESDE = 799;
+const COSTO_ENVIO = 99;
 
 const generarNumeroPedido = () => `AUR-${(Date.now() % 89999) + 10000}`;
 
@@ -23,11 +27,9 @@ export default function Checkout() {
   useTitulo("Checkout — D'oro");
   const navigate = useNavigate();
   const { usuario } = useAuth();
-
-  const claveCarrito = `carrito_${usuario?.id ?? "guest"}`;
-  const [carrito] = useState(
-    () => JSON.parse(localStorage.getItem(claveCarrito) ?? "[]")
-  );
+  const { carrito, cantidadCarrito, vaciarCarrito } = useCarrito();
+  const { favoritos } = useWishlist();
+  const [busquedaHeader, setBusquedaHeader] = useState("");
 
   const nombreCompleto = usuario ? `${usuario.nombre ?? ""} ${usuario.apellido ?? ""}`.trim() : "";
 
@@ -80,24 +82,16 @@ export default function Checkout() {
     setEnviando(true);
     try {
       await api.post("/ventas", {
-        numeroPedido,
-        clienteId:  usuario?.id ?? "",
         cliente:    { nombre: datos.nombre, email: datos.email, calle: datos.calle, cp: datos.cp, ciudad: datos.ciudad },
         metodoPago: datos.metodoPago,
         items:      carrito.map((i) => ({
           productoId:     i.producto.id,
-          nombre:         i.producto.nombre,
-          imagen:         i.producto.imagen || "",
           talla:          i.talla,
           cantidad:       i.cantidad,
-          precioUnitario: i.producto.precioVenta,
         })),
-        subtotal,
-        envio,
-        total,
       });
       setPaso(3);
-      localStorage.removeItem(claveCarrito);
+      vaciarCarrito();
     } catch (err) {
       setErrorPago(err.message || "No se pudo procesar el pago. Intenta de nuevo.");
     } finally {
@@ -120,13 +114,26 @@ export default function Checkout() {
   };
 
   const subtotal       = carrito.reduce((acc, i) => acc + i.producto.precioVenta * i.cantidad, 0);
-  const envio          = subtotal >= 999 || subtotal === 0 ? 0 : 99;
+  const envio          = subtotal >= ENVIO_GRATIS_DESDE || subtotal === 0 ? 0 : COSTO_ENVIO;
   const total          = subtotal + envio;
   const totalArticulos = carrito.reduce((acc, i) => acc + i.cantidad, 0);
 
   return (
     <>
-      <HeaderTienda />
+      <HeaderTienda
+        busqueda={busquedaHeader}
+        setBusqueda={setBusquedaHeader}
+        onBuscar={() => navigate(`/tienda${busquedaHeader ? `?q=${encodeURIComponent(busquedaHeader)}` : ""}`)}
+        cantidadCarrito={cantidadCarrito}
+        cantidadWishlist={favoritos.length}
+        onAbrirCarrito={() => navigate("/tienda?panel=carrito")}
+        onAbrirWishlist={() => navigate("/tienda?panel=wishlist")}
+        categoriaActiva="todas"
+        onSeleccionarCategoria={(id) => navigate(`/tienda${id && id !== "todas" ? `?categoria=${encodeURIComponent(id)}` : ""}`)}
+        onLogout={() => navigate("/tienda")}
+        usuario={usuario}
+        onIrAlDashboard={() => navigate("/dashboard")}
+      />
 
       <main className="bg-[var(--ivory)] pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-10">

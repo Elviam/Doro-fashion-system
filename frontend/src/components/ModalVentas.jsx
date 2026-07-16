@@ -178,7 +178,7 @@ export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onC
         </div>
 
         {/* Acciones de estado */}
-        {puedeActualizar && venta.estado !== "CANCELADO" && (
+        {puedeActualizar && !["CANCELADO", "ENVIADO"].includes(venta.estado) && (
           <div className="flex flex-wrap gap-2 mb-2">
             {venta.estado === "PENDIENTE" && (
               <Boton
@@ -187,6 +187,15 @@ export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onC
                 tipo="button"
               >
                 <i className="bi bi-check-circle mr-1" /> Marcar como pagado
+              </Boton>
+            )}
+            {venta.estado === "PAGADO" && (
+              <Boton
+                variante="claro"
+                onClick={() => onCambiarEstado(venta.id, "ENVIADO")}
+                tipo="button"
+              >
+                <i className="bi bi-truck mr-1" /> Marcar como enviado
               </Boton>
             )}
             <button

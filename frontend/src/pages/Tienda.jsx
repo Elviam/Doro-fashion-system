@@ -1,5 +1,5 @@
 import { useState, useMemo, useContext, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import HeaderTienda from "../components/tienda/HeaderTienda";
 import FooterTienda from "../components/tienda/FooterTienda";
@@ -17,6 +17,7 @@ import { api } from "../services/api";
 import useTitulo from "../hooks/useTitulo";
 import { useRequireAuth, esClienteTienda } from "../context/LoginRequeridoContext";
 import { useCarrito } from "../context/CarritoContext";
+import { useWishlist } from "../context/WishlistContext";
 
 const filtrosIniciales = {
   precioMin: RANGO_PRECIO.min,
@@ -26,10 +27,20 @@ const filtrosIniciales = {
   soloEnStock: false,
 };
 
+const contarFiltrosActivos = (filtros, categoriaActiva, busqueda) =>
+  (categoriaActiva !== "todas" ? 1 : 0) +
+  (busqueda.trim() ? 1 : 0) +
+  (filtros.departamento ? 1 : 0) +
+  filtros.tallas.length +
+  (filtros.soloEnStock ? 1 : 0) +
+  (filtros.precioMin > RANGO_PRECIO.min ? 1 : 0) +
+  (filtros.precioMax < RANGO_PRECIO.max ? 1 : 0);
+
 export default function Tienda() {
   useTitulo("Tienda");
 
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const requireAuth = useRequireAuth();
   const { logout, usuario } = useContext(AuthContext);
 
@@ -40,6 +51,7 @@ export default function Tienda() {
   const clienteReal = esClienteTienda(usuario) ? usuario : null;
 
   const { carrito, agregarAlCarrito, cambiarCantidad, eliminarDelCarrito, cantidadCarrito, carritoAbierto, setCarritoAbierto, setToast } = useCarrito();
+  const { favoritos, setFavoritos } = useWishlist();
   const [busqueda, setBusqueda]               = useState("");
   const [categoriaActiva, setCategoriaActiva] = useState("todas");
   const [ordenamiento, setOrdenamiento]       = useState("relevancia");
@@ -52,16 +64,23 @@ export default function Tienda() {
   const [toast]                       = useState(null);
 
   // ── Favoritos ─────────────────────────────────────────────────────────────
-  const claveWishlist = `favoritos_${clienteReal?.id ?? "guest"}`;
-  const [favoritos, setFavoritos] = useState(
-    () => JSON.parse(localStorage.getItem(claveWishlist) ?? "[]")
-  );
   const [wishlistAbierto, setWishlistAbierto] = useState(false);
 
   // Sincronizar favoritos → localStorage cada vez que cambian
   useEffect(() => {
-    localStorage.setItem(claveWishlist, JSON.stringify(favoritos));
-  }, [favoritos, claveWishlist]);
+    const panel = searchParams.get("panel");
+    const categoria = searchParams.get("categoria");
+    const consulta = searchParams.get("q");
+    if (panel === "carrito") setCarritoAbierto(true);
+    if (panel === "wishlist") setWishlistAbierto(true);
+    if (categoria) setCategoriaActiva(categoria);
+    if (consulta !== null) setBusqueda(consulta);
+    if (panel) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("panel");
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [searchParams, setCarritoAbierto, setSearchParams]);
 
   useEffect(() => {
     api.get("/products?activo=true&limit=100")
@@ -80,6 +99,7 @@ export default function Tienda() {
   // Recibe (productoId, "agregado" | "quitado") desde TarjetaProductoTienda
   const handleFavoritoChange = (productoId, accion) => {
   requireAuth(() => {
+    if (!clienteReal || !productos.some((producto) => producto.id === productoId)) return;
     if (accion === "agregado") {
       setFavoritos((prev) => {
         if (prev.includes(productoId)) return prev;
@@ -112,8 +132,15 @@ export default function Tienda() {
   };
   
   const setFiltro     = (key, value) => setFiltros((f) => ({ ...f, [key]: value }));
-  const limpiarFiltros = () => setFiltros(filtrosIniciales);
+  const limpiarFiltros = () => {
+    setFiltros(filtrosIniciales);
+    setBusqueda("");
+    setCategoriaActiva("todas");
+    setSearchParams({}, { replace: true });
+  };
   const handleLogout  = () => { logout(); navigate("/login"); };
+
+  const filtrosActivos = contarFiltrosActivos(filtros, categoriaActiva, busqueda);
 
   const productosFiltrados = useMemo(() => {
     let lista = [...productos];
@@ -144,8 +171,6 @@ export default function Tienda() {
     switch (ordenamiento) {
       case "precio_asc":  lista.sort((a, b) => a.precioVenta - b.precioVenta); break;
       case "precio_desc": lista.sort((a, b) => b.precioVenta - a.precioVenta); break;
-      case "nombre_asc":  lista.sort((a, b) => a.nombre.localeCompare(b.nombre)); break;
-      case "nombre_desc": lista.sort((a, b) => b.nombre.localeCompare(a.nombre)); break;
       default: break;
     }
     return lista;
@@ -177,9 +202,9 @@ export default function Tienda() {
 
       <HeroCarrusel />
 
-      <section ref={catalogoRef} className="max-w-[1480px] mx-auto px-6 lg:px-10 mt-10">
+      <section ref={catalogoRef} className="max-w-[1480px] mx-auto px-6 lg:px-10 mt-10 pb-16">
         <div className="flex gap-6">
-          <FiltrosSidebar filtros={filtros} setFiltro={setFiltro} onLimpiar={limpiarFiltros} />
+          <FiltrosSidebar filtros={filtros} setFiltro={setFiltro} onLimpiar={limpiarFiltros} filtrosActivos={filtrosActivos} />
 
           <div className="flex-1 min-w-0">
             <BarraOrdenamiento
@@ -189,12 +214,7 @@ export default function Tienda() {
               vista={vista}
               setVista={setVista}
               onAbrirFiltros={() => setFiltrosAbiertos(true)}
-              filtrosActivos={
-                (filtros.departamento ? 1 : 0) +
-                filtros.tallas.length +
-                (filtros.soloEnStock ? 1 : 0) +
-                (filtros.precioMax < 2000 ? 1 : 0)
-              }
+              filtrosActivos={filtrosActivos}
             />
 
             {cargando ? (
@@ -315,6 +335,7 @@ export default function Tienda() {
         filtros={filtros}
         setFiltro={setFiltro}
         onLimpiar={limpiarFiltros}
+        filtrosActivos={filtrosActivos}
         abierto={filtrosAbiertos}
         onCerrar={() => setFiltrosAbiertos(false)}
       />

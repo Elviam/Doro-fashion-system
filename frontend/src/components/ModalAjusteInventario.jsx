@@ -5,8 +5,6 @@ import Boton from "./Boton";
 import { TALLAS_POR_CATEGORIA } from "../constants/categorias";
 import { uploadImageToCloudinary } from "../services/cloudinaryClient";
 
-const TIPOS_AJUSTE = ["Sumar (+)", "Restar (−)", "Fijar valor exacto"];
-
 const MOTIVOS_AJUSTE = [
   { label: "Nueva Recepción",        evidenciaObligatoria: true  },
   { label: "Prenda dañada",          evidenciaObligatoria: true  },
@@ -18,14 +16,8 @@ const MOTIVOS_AJUSTE = [
   { label: "Otro",                   evidenciaObligatoria: false },
 ];
 
-function labelToTipo(label) {
-  if (label.startsWith("Sumar"))  return "sumar";
-  if (label.startsWith("Restar")) return "restar";
-  return "fijar";
-}
-
 export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guardando, producto }) {
-  const [form, setForm] = useState({ tallas: [], tipo: "Sumar (+)", cantidad: "", motivo: "", notas: "" });
+  const [form, setForm] = useState({ valoresPorTalla: {}, motivo: "", notas: "" });
   const [evidencia, setEvidencia] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [errors, setErrors] = useState({});
@@ -38,7 +30,11 @@ export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guar
 
   useEffect(() => {
     if (isOpen) {
-      setForm({ tallas: [], tipo: "Sumar (+)", cantidad: "", motivo: "", notas: "" });
+      const tallas = TALLAS_POR_CATEGORIA[producto?.categoria] || ["Unitalla"];
+      const valoresPorTalla = Object.fromEntries(
+        tallas.map((talla) => [talla, String(stockPorTalla[talla] ?? 0)])
+      );
+      setForm({ valoresPorTalla, motivo: "", notas: "" });
       setEvidencia([]);
       setErrors({});
     }
@@ -71,11 +67,14 @@ export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guar
 
   const validar = () => {
     const e = {};
-    if (!form.tallas.length) e.tallas = "Selecciona al menos una talla.";
-    if (!form.cantidad || isNaN(Number(form.cantidad)) || Number(form.cantidad) <= 0)
-      e.cantidad = "Ingresa una cantidad válida mayor a 0.";
+    tallasDisponibles.forEach((talla) => {
+      const valor = form.valoresPorTalla[talla];
+      if (valor === "" || !Number.isInteger(Number(valor)) || Number(valor) < 0) {
+        e[`talla-${talla}`] = "Ingresa un valor entero igual o mayor a 0.";
+      }
+    });
     if (!form.motivo) e.motivo = "Selecciona un motivo.";
-    if (!form.notas.trim()) e.notas = "Las notas son obligatorias.";
+    if (form.motivo === "Otro" && !form.notas.trim()) e.notas = "Las notas son obligatorias para este motivo.";
     if (evidenciaRequerida && evidencia.length === 0)
       e.evidencia = "Este motivo requiere al menos una foto de evidencia.";
     setErrors(e);
@@ -89,9 +88,12 @@ export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guar
       const urlsEvidencia = await Promise.all(evidencia.map((f) => uploadImageToCloudinary(f)));
       onGuardar({
         productoId: producto.id,
-        tallas: form.tallas,
-        tipo: labelToTipo(form.tipo),
-        cantidad: Number(form.cantidad),
+        tallas: tallasDisponibles,
+        valoresPorTalla: Object.fromEntries(
+          tallasDisponibles.map((talla) => [talla, Number(form.valoresPorTalla[talla])])
+        ),
+        tipo: "fijar",
+        cantidad: 0,
         motivo: form.motivo,
         notas: form.notas,
         evidencia: urlsEvidencia,
@@ -102,7 +104,7 @@ export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guar
   };
 
   const footerModal = (
-    <div className="w-full flex flex-row flex-wrap justify-start items-center gap-3">
+    <div className="w-full flex flex-row flex-wrap justify-end items-center gap-3">
       <Boton variante="claro" onClick={onClose} tipo="button">Cancelar</Boton>
       <Boton variante="oscuro" onClick={handleSubmit} tipo="button">
         {(guardando || subiendo)
@@ -143,41 +145,34 @@ export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guar
               <label className="text-[11px] lg:text-xs font-tag uppercase tracking-wider pl-1 text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
                 Tallas <span className="text-rojo">*</span>
               </label>
-              <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="mt-2 grid grid-cols-2 gap-3">
                 {tallasDisponibles.map((talla) => {
-                  const seleccionada = form.tallas.includes(talla);
                   return (
-                    <button
+                    <div
                       key={talla}
-                      type="button"
-                      onClick={() => {
-                        setForm((prev) => ({
-                          ...prev,
-                          tallas: seleccionada
-                            ? prev.tallas.filter((item) => item !== talla)
-                            : [...prev.tallas, talla],
-                        }));
-                        if (errors.tallas) setErrors((prev) => ({ ...prev, tallas: "" }));
-                      }}
-                      className={`rounded-[2px] border px-3 py-2 text-sm transition-colors ${seleccionada ? "bg-[var(--noir)] text-[var(--snow)] border-[var(--noir)]" : "bg-[var(--snow)] text-[var(--noir)] border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)]"}`}
+                      className="grid grid-cols-2 items-center rounded-[2px] border p-1.5 bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)]"
                     >
-                      <div className="font-semibold">{talla}</div>
-                      <div className="text-[10px] opacity-70">Stock {stockPorTalla[talla] ?? 0}</div>
-                    </button>
+                      <label htmlFor={`stock-${talla}`} className="w-full text-center text-xs font-semibold text-noir dark:text-snow">{talla}</label>
+                      <input
+                        id={`stock-${talla}`}
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={form.valoresPorTalla[talla] ?? ""}
+                        onChange={(e) => {
+                          const { value } = e.target;
+                          setForm((prev) => ({ ...prev, valoresPorTalla: { ...prev.valoresPorTalla, [talla]: value } }));
+                          if (errors[`talla-${talla}`]) setErrors((prev) => ({ ...prev, [`talla-${talla}`]: "" }));
+                        }}
+                        className="w-20 justify-self-center rounded-[2px] border px-1 py-1.5 text-center text-sm bg-[var(--snow)] text-[var(--noir)] border-[var(--border-gold-40)] focus:outline-none focus:border-[var(--gold-dark)] dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)] dark:focus:border-[var(--gold-light)]"
+                      />
+                      {errors[`talla-${talla}`] && <p className="mt-1 text-[9px] leading-tight text-rojo">{errors[`talla-${talla}`]}</p>}
+                    </div>
                   );
                 })}
               </div>
-              {errors.tallas && <p className="text-rojo text-[10px] mt-1 pl-1">{errors.tallas}</p>}
             </div>
 
-            <Input label="Tipo de ajuste" tipo="select" name="tipo" value={form.tipo}
-              onChange={handleChange} opciones={TIPOS_AJUSTE} requerido />
-
-            <div>
-              <Input label="Cantidad" tipo="number" name="cantidad" value={form.cantidad}
-                onChange={handleChange} placeholder="0" requerido />
-              {errors.cantidad && <p className="text-rojo text-[10px] mt-0.5 pl-1">{errors.cantidad}</p>}
-            </div>
           </div>
 
           <div className="space-y-4">
@@ -190,7 +185,8 @@ export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guar
 
             <div>
               <Input label="Notas" tipo="textarea" name="notas" value={form.notas}
-                onChange={handleChange} placeholder="Describe brevemente qué pasó…" requerido />
+                requerido={form.motivo === "Otro"}
+                onChange={handleChange} placeholder="Describe brevemente qué pasó…" />
               {errors.notas && <p className="text-rojo text-[10px] mt-0.5 pl-1">{errors.notas}</p>}
             </div>
 
