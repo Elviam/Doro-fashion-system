@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-const ESTADOS = ['BORRADOR', 'PENDIENTE', 'CONFIRMADA', 'CANCELADA']
+const ESTADOS = ['BORRADOR', 'ENVIADA', 'CONFIRMADA', 'CANCELADA']
 const ORIGENES = ['MANUAL', 'REABASTECIMIENTO']
 
 const recepcionItemSchema = z.object({
@@ -34,12 +34,18 @@ export const createRecepcionSchema = z.object({
 })
 
 export const updateRecepcionSchema = z.object({
-  supplierId: z.string().min(1, 'El supplierId no puede ser una cadena vacía').nullable().optional(),
-  facturaProveedor: z.string().nullable().optional(),
-  fecha: z.string().min(1, 'La fecha es obligatoria').optional(),
   folio: z.string().min(2, 'El folio debe tener al menos 2 caracteres').optional(),
-  comentarios: z.string().nullable().optional(),
-  items: z.array(recepcionItemSchema).min(1, 'Debes agregar al menos una partida').optional()
+  comentarios: z.string().nullable().optional()
 }).refine((data) => Object.keys(data).length > 0, {
   message: 'Debes enviar al menos un campo para actualizar'
+})
+
+export const confirmRecepcionSchema = z.object({
+  facturaProveedor: z.string().nullable().optional(),
+  facturaUrl: z.string().url('La URL de la factura no es válida').nullable().optional(),
+  items: z.array(z.object({
+    id: z.string().min(1, 'El id de la partida es obligatorio'),
+    cantidadRecibida: z.coerce.number().int().min(0, 'La cantidad recibida no puede ser negativa'),
+    costoUnitarioReal: z.coerce.number().min(0, 'El costo unitario real no puede ser negativo').nullable().optional()
+  })).min(1, 'Debes incluir las cantidades recibidas')
 })

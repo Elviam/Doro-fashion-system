@@ -2,26 +2,15 @@ import { auditService } from './audit.service.js'
 
 export class AuditController {
   async list(req, res) {
-    const result = await auditService.list(req.query)
-
-    return res.status(200).json(result)
+    return res.status(200).json(await auditService.list(req.query))
   }
 
   async getById(req, res) {
-    const item = await auditService.getById(req.params.id)
-
-    return res.status(200).json({
-      item
-    })
+    return res.status(200).json({ item: await auditService.getById(req.params.id) })
   }
 
-  async create(req, res) {
-    const item = await auditService.create(req.body)
-
-    return res.status(201).json({
-      message: 'Registro de auditoría creado correctamente',
-      item
-    })
+  async filters(req, res) {
+    return res.status(200).json(await auditService.getFilters())
   }
 }
 

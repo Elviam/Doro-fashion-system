@@ -21,14 +21,15 @@ export const inventoryProductIdParamSchema = z.object({
 })
 
 export const adjustInventorySchema = z.object({
-  tipo: z.enum(['ENTRADA', 'SALIDA', 'AJUSTE'], {
-    required_error: 'El tipo es obligatorio'
-  }),
-  cantidad: z.coerce.number().positive('La cantidad debe ser mayor a 0'),
+  ajustes: z.array(z.object({
+    talla: z.string().min(1, 'La talla es obligatoria'),
+    cantidadNueva: z.coerce.number().int().min(0, 'La cantidad debe ser igual o mayor a 0')
+  })).min(1, 'Debes ajustar al menos una talla'),
   motivo: z
     .string({ required_error: 'El motivo es obligatorio' })
     .min(3, 'El motivo debe tener al menos 3 caracteres'),
-  referencia: z.string().optional().nullable()
+  notas: z.string().optional().nullable(),
+  evidencia: z.array(z.string().url()).max(4).optional().default([])
 })
 
 export const listInventoryMovementsQuerySchema = z.object({

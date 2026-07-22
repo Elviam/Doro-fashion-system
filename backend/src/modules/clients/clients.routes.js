@@ -7,9 +7,7 @@ import { asyncHandler } from '../../utils/asyncHandler.js'
 import {
   clientIdParamSchema,
   createClientSchema,
-  listClientsQuerySchema,
-  toggleClientActiveSchema,
-  updateClientSchema
+  listClientsQuerySchema
 } from './clients.schema.js'
 
 const router = Router()
@@ -36,24 +34,6 @@ router.post(
   requirePermissions(['clients:create']),
   validate(createClientSchema),
   asyncHandler(clientsController.create.bind(clientsController))
-)
-
-router.patch(
-  '/:id',
-  authenticate,
-  requirePermissions(['clients:update']),
-  validate(clientIdParamSchema, 'params'),
-  validate(updateClientSchema),
-  asyncHandler(clientsController.update.bind(clientsController))
-)
-
-router.patch(
-  '/:id/toggle-active',
-  authenticate,
-  requirePermissions(['clients:update']),
-  validate(clientIdParamSchema, 'params'),
-  validate(toggleClientActiveSchema),
-  asyncHandler(clientsController.toggleActive.bind(clientsController))
 )
 
 router.delete(

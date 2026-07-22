@@ -5,6 +5,7 @@ import { requirePermissions } from '../../middlewares/requirePermissions.js'
 import { validate } from '../../middlewares/validate.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
 import {
+  confirmRecepcionSchema,
   createRecepcionSchema,
   listRecepcionesQuerySchema,
   recepcionIdParamSchema,
@@ -56,15 +57,16 @@ router.patch(
 router.patch(
   '/:id/confirm',
   authenticate,
-  requirePermissions(['recepciones:update']),
+  requirePermissions(['recepciones:confirm']),
   validate(recepcionIdParamSchema, 'params'),
+  validate(confirmRecepcionSchema),
   asyncHandler(recepcionesController.confirm.bind(recepcionesController))
 )
 
 router.patch(
   '/:id/enviar',
   authenticate,
-  requirePermissions(['recepciones:update']),
+  requirePermissions(['recepciones:enviar']),
   validate(recepcionIdParamSchema, 'params'),
   asyncHandler(recepcionesController.enviar.bind(recepcionesController))
 )
@@ -72,7 +74,7 @@ router.patch(
 router.patch(
   '/:id/cancel',
   authenticate,
-  requirePermissions(['recepciones:update']),
+  requirePermissions(['recepciones:cancel']),
   validate(recepcionIdParamSchema, 'params'),
   asyncHandler(recepcionesController.cancel.bind(recepcionesController))
 )

@@ -35,9 +35,9 @@ export const createUserSchema = z.object({
   password: z
     .string({ required_error: 'La contraseña es obligatoria' })
     .min(6, 'La contraseña debe tener al menos 6 caracteres'),
-  role: z.string().optional().nullable(),
-  roleId: z.string().optional().nullable(),
-  permissions: z.array(z.string()).optional().default([]),
+  roleId: z.string().min(1, 'El rol es obligatorio'),
+  revokedPermissions: z.array(z.string()).optional().default([]),
+  grantedPermissions: z.array(z.string()).optional().default([]),
   activo: z.boolean().optional().default(true)
 })
 
@@ -47,9 +47,9 @@ export const updateUserSchema = z.object({
   email: z.string().email('El email no es válido').optional(),
   usuario: z.string().min(3, 'El usuario debe tener al menos 3 caracteres').optional(),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').optional(),
-  role: z.string().nullable().optional(),
-  roleId: z.string().nullable().optional(),
-  permissions: z.array(z.string()).optional(),
+  roleId: z.string().min(1, 'El rol no es válido').optional(),
+  revokedPermissions: z.array(z.string()).optional(),
+  grantedPermissions: z.array(z.string()).optional(),
   activo: z.boolean().optional()
 }).refine((data) => Object.keys(data).length > 0, {
   message: 'Debes enviar al menos un campo para actualizar'

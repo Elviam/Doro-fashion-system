@@ -64,7 +64,7 @@ export const createProductSchema = z.object({
   precioCompra: z.coerce.number().min(0, 'El precio de compra no puede ser negativo').optional().default(0),
   precioVenta: z.coerce.number().min(0, 'El precio de venta no puede ser negativo').optional().default(0),
   stock: z.coerce.number().min(0, 'El stock no puede ser negativo').optional().default(0),
-  stockMinimo: z.coerce.number().min(0, 'El stock mínimo no puede ser negativo').optional().default(0),
+  stockMinimo: z.coerce.number().min(0, 'El stock mínimo no puede ser negativo'),
   stockIdeal: z.coerce.number({ required_error: 'El stock ideal es obligatorio' }).min(0, 'El stock ideal no puede ser negativo'),
   stockMaximo: z.coerce.number({ required_error: 'El stock máximo es obligatorio' }).min(0, 'El stock máximo no puede ser negativo'),
   activo: z.boolean().optional().default(true),

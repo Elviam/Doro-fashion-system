@@ -7,6 +7,10 @@ export async function logAuditEvent({
   details = {},
   currentUser = null
 }) {
+  // La auditoría del panel es para rendición de cuentas del personal. Las
+  // acciones del cliente pertenecen a los módulos de tienda/ventas, no aquí.
+  if (!['ADMIN', 'BODEGUERO'].includes(currentUser?.role)) return
+
   try {
     await auditRepository.create({
       action,

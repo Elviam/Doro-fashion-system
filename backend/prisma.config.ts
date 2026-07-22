@@ -3,12 +3,19 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+function getDirectDatabaseUrl() {
+  const url = new URL(process.env["DIRECT_URL"] || process.env["DATABASE_URL"] || "");
+  url.searchParams.delete("channel_binding");
+  return url.toString();
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Migrations must use the non-pooled PostgreSQL connection.
+    url: getDirectDatabaseUrl(),
   },
 });

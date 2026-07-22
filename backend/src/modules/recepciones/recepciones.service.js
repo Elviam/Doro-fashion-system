@@ -1,5 +1,6 @@
 import { recepcionesRepository } from './recepciones.repository.js'
 import { logAuditEvent } from '../../utils/audit.js'
+import { prisma } from '../../lib/prisma.js'
 
 function normalizeOptionalText(value) {
   if (value === undefined) return undefined
@@ -10,6 +11,11 @@ function normalizeOptionalText(value) {
 
 function round2(value) {
   return Math.round((Number(value) + Number.EPSILON) * 100) / 100
+}
+
+function formatUserName(user) {
+  if (!user) return ''
+  return [user.nombre, user.apellido].filter(Boolean).join(' ').trim() || user.usuario || ''
 }
 
 // Merges duplicate productId+talla rows into one, summing cantidad and
@@ -40,8 +46,14 @@ function dedupeItems(rawItems) {
 }
 
 export class RecepcionesService {
+  constructor({ repository = recepcionesRepository, prismaClient = prisma, auditLogger = logAuditEvent } = {}) {
+    this.repository = repository
+    this.prisma = prismaClient
+    this.auditLogger = auditLogger
+  }
+
   async getNextFolio() {
-    const all = await recepcionesRepository.findAll()
+    const all = await this.repository.findAll()
     const numeros = all
       .map((r) => {
         const match = String(r.folio || '').match(/^RCP-(\d+)$/)
@@ -54,12 +66,13 @@ export class RecepcionesService {
   }
 
   async list(query) {
-    const { q = '', status, fechaDesde, page = 1, limit = 10 } = query
+    const { q = '', status, origen, fechaDesde, page = 1, limit = 10 } = query
 
     const all = await recepcionesRepository.findAll()
     let filtered = all
 
     if (status) filtered = filtered.filter((r) => r.estado === status)
+    if (origen) filtered = filtered.filter((r) => r.origen === origen)
 
     if (q) {
       const term = q.trim().toLowerCase()
@@ -81,7 +94,8 @@ export class RecepcionesService {
 
     const total = filtered.length
     const start = (page - 1) * limit
-    const items = filtered.slice(start, start + limit).map((r) => this.sanitizeRecepcion(r))
+    const pageItems = filtered.slice(start, start + limit)
+    const items = (await this.attachAuditUsers(pageItems)).map((r) => this.sanitizeRecepcion(r))
 
     return { items, total, page, limit }
   }
@@ -93,31 +107,35 @@ export class RecepcionesService {
       error.statusCode = 404
       throw error
     }
-    return this.sanitizeRecepcion(recepcion)
+    const [recepcionWithUser] = await this.attachAuditUsers([recepcion])
+    return this.sanitizeRecepcion(recepcionWithUser)
   }
 
   async create(payload, currentUser = null) {
     const folio = payload.folio?.trim() || await this.getNextFolio()
 
-    const existingByFolio = await recepcionesRepository.findByFolio(folio)
+    const existingByFolio = await this.repository.findByFolio(folio)
     if (existingByFolio) {
       const error = new Error('El folio de la recepción ya existe')
       error.statusCode = 409
       throw error
     }
 
-    const supplier = await recepcionesRepository.findSupplierById(payload.supplierId)
-    if (!supplier) {
-      const error = new Error('Proveedor no encontrado')
-      error.statusCode = 404
-      throw error
+    let supplier = null
+    if (payload.supplierId) {
+      supplier = await this.repository.findSupplierById(payload.supplierId)
+      if (!supplier) {
+        const error = new Error('Proveedor no encontrado')
+        error.statusCode = 404
+        throw error
+      }
     }
 
     const dedupedItems = dedupeItems(payload.items)
     let total = 0
 
     for (const item of dedupedItems) {
-      const product = await recepcionesRepository.findProductById(item.productId)
+      const product = await this.repository.findProductById(item.productId)
       if (!product) {
         const error = new Error(`Producto no encontrado: ${item.productId}`)
         error.statusCode = 404
@@ -127,21 +145,22 @@ export class RecepcionesService {
     }
 
     const data = {
-      supplierId: supplier.id,
+      supplierId: supplier?.id || null,
       facturaProveedor: normalizeOptionalText(payload.facturaProveedor) || null,
       fecha: new Date(payload.fecha),
       folio,
       comentarios: normalizeOptionalText(payload.comentarios) || null,
       estado: 'BORRADOR',
+      origen: payload.origen,
       total: round2(total),
       createdBy: currentUser?.usuario || null,
       items: dedupedItems,
     }
 
-    const created = await recepcionesRepository.create(data)
+    const created = await this.repository.create(data)
     const sanitized = this.sanitizeRecepcion(created)
 
-    await logAuditEvent({
+    await this.auditLogger({
       action: 'CREATE',
       resource: 'recepciones',
       resourceId: created.id,
@@ -169,6 +188,12 @@ export class RecepcionesService {
 
     if (current.estado !== 'BORRADOR') {
       const error = new Error('Solo puedes editar recepciones en borrador')
+      error.statusCode = 400
+      throw error
+    }
+
+    if (Object.keys(payload).some((field) => !['folio', 'comentarios'].includes(field))) {
+      const error = new Error('Solo puedes editar el folio y los comentarios de una recepción en borrador')
       error.statusCode = 400
       throw error
     }
@@ -239,70 +264,201 @@ export class RecepcionesService {
     return sanitized
   }
 
-  async confirm(id, currentUser = null) {
-    const recepcion = await recepcionesRepository.findById(id)
+  async enviar(id, currentUser = null) {
+    const recepcion = await this.repository.findById(id)
     if (!recepcion) {
       const error = new Error('Recepción no encontrada')
       error.statusCode = 404
       throw error
     }
 
+    if (recepcion.origen !== 'REABASTECIMIENTO') {
+      const error = new Error('Solo los pedidos de reabastecimiento pueden enviarse al bodeguero')
+      error.statusCode = 400
+      throw error
+    }
+
     if (recepcion.estado !== 'BORRADOR') {
-      const error = new Error('Solo puedes confirmar recepciones en borrador')
+      const error = new Error('Solo puedes enviar pedidos en estado BORRADOR')
       error.statusCode = 400
       throw error
     }
 
-    if (!recepcion.items || recepcion.items.length === 0) {
-      const error = new Error('La recepción no tiene partidas')
-      error.statusCode = 400
-      throw error
-    }
-
-    const movements = []
-
-    for (const item of recepcion.items) {
-      const variant = await recepcionesRepository.findOrCreateVariant(item.productId, item.talla)
-      const stockAnterior = variant.stock
-      const stockNuevo = stockAnterior + item.cantidad
-
-      await recepcionesRepository.incrementVariantStock(variant.id, item.cantidad)
-      await recepcionesRepository.updateProductCosto(item.productId, item.costoUnitario)
-
-      const movement = await recepcionesRepository.createInventoryMovement({
-        productId: item.productId,
-        tipo: 'ENTRADA',
-        cantidad: item.cantidad,
-        motivo: `Recepción ${recepcion.folio}`,
-      })
-
-      movements.push({ ...this.sanitizeMovement(movement), talla: item.talla, stockAnterior, stockNuevo })
-    }
-
-    const updated = await recepcionesRepository.update(recepcion.id, {
-      estado: 'CONFIRMADA',
-      confirmedAt: new Date(),
-      confirmedBy: currentUser?.usuario || null,
+    const updated = await this.repository.update(id, {
+      estado: 'ENVIADA',
+      sentAt: new Date(),
+      sentBy: currentUser?.id ?? currentUser?.sub ?? null,
     })
 
-    await logAuditEvent({
-      action: 'CONFIRM',
+    await this.auditLogger({
+      action: 'SEND',
       resource: 'recepciones',
       resourceId: updated.id,
-      details: {
-        folio: updated.folio || '',
-        supplierNombre: updated.supplier?.nombre || '',
-        itemsCount: updated.items.length,
-        total: Number(updated.total || 0),
-      },
+      details: { folio: updated.folio || '', origen: updated.origen || '' },
       currentUser,
     })
 
-    return { message: 'Recepción confirmada correctamente', item: this.sanitizeRecepcion(updated), movements }
+    return { message: 'Pedido enviado al bodeguero', item: this.sanitizeRecepcion(updated) }
   }
 
-  // Reverses stock for a confirmed reception. History is preserved —
-  // the row stays, just flagged CANCELADA, never deleted.
+  async confirm(id, receivedItems, facturaProveedor, facturaUrl, currentUser = null) {
+    const recepcion = await this.repository.findById(id)
+    if (!recepcion) {
+      const error = new Error('Recepción no encontrada')
+      error.statusCode = 404
+      throw error
+    }
+
+    if (recepcion.estado !== 'ENVIADA') {
+      const error = new Error('Solo puedes confirmar recepciones en estado ENVIADA')
+      error.statusCode = 400
+      throw error
+    }
+
+    const expectedIds = new Set(recepcion.items.map((item) => item.id))
+    const receivedIds = new Set()
+
+    for (const item of receivedItems) {
+      if (!expectedIds.has(item.id)) {
+        const error = new Error('Todas las partidas deben pertenecer a la recepción')
+        error.statusCode = 400
+        throw error
+      }
+      if (receivedIds.has(item.id)) {
+        const error = new Error('No puedes enviar una partida más de una vez')
+        error.statusCode = 400
+        throw error
+      }
+      receivedIds.add(item.id)
+
+      const original = recepcion.items.find((receptionItem) => receptionItem.id === item.id)
+      if (item.cantidadRecibida > original.cantidad) {
+        const error = new Error('La cantidad recibida no puede exceder la cantidad pedida')
+        error.statusCode = 400
+        throw error
+      }
+      if (item.costoUnitarioReal !== undefined && item.costoUnitarioReal !== null && Number(item.costoUnitarioReal) < 0) {
+        const error = new Error('El costo unitario real no puede ser negativo')
+        error.statusCode = 400
+        throw error
+      }
+    }
+
+    if (receivedIds.size !== expectedIds.size) {
+      const error = new Error('Debes registrar la cantidad recibida de todas las partidas')
+      error.statusCode = 400
+      throw error
+    }
+
+    const quantitiesByItemId = new Map(receivedItems.map((item) => [item.id, item.cantidadRecibida]))
+    const realCostsByItemId = new Map(receivedItems.map((item) => [item.id, item.costoUnitarioReal]))
+    const result = await this.prisma.$transaction(async (tx) => {
+      const current = await tx.reception.findUnique({
+        where: { id },
+        include: { items: { include: { product: true } }, supplier: true }
+      })
+
+      if (!current) {
+        const error = new Error('Recepción no encontrada')
+        error.statusCode = 404
+        throw error
+      }
+      if (current.estado !== 'ENVIADA') {
+        const error = new Error('La recepción ya no está disponible para confirmar')
+        error.statusCode = 400
+        throw error
+      }
+
+      const movements = []
+      for (const item of current.items) {
+        const cantidadRecibida = quantitiesByItemId.get(item.id)
+        const costoUnitarioReal = realCostsByItemId.get(item.id)
+        await tx.receptionItem.update({
+          where: { id: item.id },
+          data: {
+            cantidadRecibida,
+            ...(costoUnitarioReal !== undefined && { costoUnitarioReal }),
+          }
+        })
+
+        if (cantidadRecibida === 0) continue
+
+        const talla = item.talla || 'Única'
+        const variantBefore = await tx.productVariant.findUnique({
+          where: { productId_talla: { productId: item.productId, talla } }
+        })
+        const variant = await tx.productVariant.upsert({
+          where: { productId_talla: { productId: item.productId, talla } },
+          create: { productId: item.productId, talla, stock: cantidadRecibida },
+          update: { stock: { increment: cantidadRecibida } }
+        })
+
+        const movement = await tx.inventoryMovement.create({
+          data: {
+            productId: item.productId,
+            tipo: 'ENTRADA',
+            cantidad: cantidadRecibida,
+            motivo: `Recepción de pedido ${current.folio}`,
+          }
+        })
+
+        movements.push({
+          ...this.sanitizeMovement(movement),
+          talla,
+          stockAnterior: Number(variantBefore?.stock || 0),
+          stockNuevo: Number(variant.stock || 0),
+        })
+      }
+
+      const updated = await tx.reception.update({
+        where: { id: current.id },
+        data: {
+          estado: 'CONFIRMADA',
+          confirmedAt: new Date(),
+          confirmedBy: currentUser?.id ?? currentUser?.sub ?? null,
+          ...(facturaProveedor !== undefined && {
+            facturaProveedor: normalizeOptionalText(facturaProveedor) || null,
+          }),
+          ...(facturaUrl !== undefined && {
+            facturaUrl: normalizeOptionalText(facturaUrl) || null,
+          }),
+        },
+        include: { items: { include: { product: true } }, supplier: true }
+      })
+
+      return { updated, movements }
+    })
+
+    const [updatedWithUsers] = await this.attachAuditUsers([result.updated])
+    const item = this.sanitizeRecepcion(updatedWithUsers)
+    const itemsFaltantes = item.items
+      .filter((item) => item.cantidadRecibida < item.cantidad)
+      .map((item) => ({
+        productId: item.productId,
+        nombre: item.productNombre,
+        talla: item.talla,
+        cantidadPedida: item.cantidad,
+        cantidadRecibida: item.cantidadRecibida,
+      }))
+    const diferenciasCosto = item.items
+      .filter((linea) => linea.costoUnitarioReal !== null && linea.costoUnitarioReal !== undefined && Number(linea.costoUnitarioReal) !== Number(linea.costoUnitario))
+      .map((linea) => ({
+        productId: linea.productId,
+        costoPedido: linea.costoUnitario,
+        costoReal: linea.costoUnitarioReal,
+      }))
+
+    await this.auditLogger({
+      action: 'CONFIRM',
+      resource: 'recepciones',
+      resourceId: result.updated.id,
+      details: { folio: result.updated.folio || '', itemsCount: item.items.length, itemsFaltantes: itemsFaltantes.length, diferenciasCosto: diferenciasCosto.length },
+      currentUser,
+    })
+
+    return { message: 'Recepción confirmada correctamente', item, movements: result.movements, itemsFaltantes, diferenciasCosto }
+  }
+
   async cancelar(id, currentUser = null) {
     const recepcion = await recepcionesRepository.findById(id)
     if (!recepcion) {
@@ -311,33 +467,19 @@ export class RecepcionesService {
       throw error
     }
 
-    if (recepcion.estado !== 'CONFIRMADA') {
-      const error = new Error('Solo puedes cancelar recepciones confirmadas')
+    if (!['BORRADOR', 'ENVIADA'].includes(recepcion.estado)) {
+      const error = new Error('Solo puedes cancelar recepciones en estado BORRADOR o ENVIADA')
       error.statusCode = 400
       throw error
-    }
-
-    for (const item of recepcion.items) {
-      const variant = await recepcionesRepository.findOrCreateVariant(item.productId, item.talla)
-      const stockAnterior = variant.stock
-      const stockNuevo = Math.max(0, stockAnterior - item.cantidad)
-
-      await recepcionesRepository.incrementVariantStock(variant.id, stockNuevo - stockAnterior)
-      await recepcionesRepository.createInventoryMovement({
-        productId: item.productId,
-        tipo: 'SALIDA',
-        cantidad: item.cantidad,
-        motivo: `Cancelación recepción ${recepcion.folio}`,
-      })
     }
 
     const updated = await recepcionesRepository.update(recepcion.id, {
       estado: 'CANCELADA',
       canceledAt: new Date(),
-      canceledBy: currentUser?.usuario || null,
+      canceledBy: currentUser?.id ?? currentUser?.sub ?? null,
     })
 
-    await logAuditEvent({
+    await this.auditLogger({
       action: 'CANCEL',
       resource: 'recepciones',
       resourceId: updated.id,
@@ -357,7 +499,7 @@ export class RecepcionesService {
     }
 
     if (recepcion.estado !== 'BORRADOR') {
-      const error = new Error('Solo puedes eliminar recepciones en borrador. Usa "Cancelar" para revertir una recepción confirmada.')
+      const error = new Error('Solo puedes eliminar recepciones en borrador.')
       error.statusCode = 400
       throw error
     }
@@ -377,36 +519,90 @@ export class RecepcionesService {
 
   sanitizeRecepcion(recepcion) {
     const piezasTotales = (recepcion.items || []).reduce((sum, i) => sum + Number(i.cantidad || 0), 0)
+    const confirmedByNombre = formatUserName(recepcion.confirmedByUser)
+    const sentByNombre = formatUserName(recepcion.sentByUser)
+    const canceledByNombre = formatUserName(recepcion.canceledByUser)
+    const createdByNombre = formatUserName(recepcion.createdByUser)
 
     return {
       id: recepcion.id,
       supplierId: recepcion.supplierId || '',
       supplierNombre: recepcion.supplier?.nombre || '',
       facturaProveedor: recepcion.facturaProveedor || '',
+      facturaUrl: recepcion.facturaUrl || '',
       fecha: recepcion.fecha || '',
       folio: recepcion.folio || '',
       comentarios: recepcion.comentarios || '',
       status: recepcion.estado || 'BORRADOR',
+      origen: recepcion.origen || 'MANUAL',
       items: (recepcion.items || []).map((item) => ({
+        id: item.id,
         productId: item.productId || '',
         sku: item.product?.sku || '',
         productNombre: item.product?.nombre || '',
-        imagen: item.product?.imagen || '',
+        imagen: item.product?.imagenes?.[0] || '',
         talla: item.talla || '',
         cantidad: Number(item.cantidad || 0),
+        cantidadRecibida: item.cantidadRecibida === null || item.cantidadRecibida === undefined
+          ? null
+          : Number(item.cantidadRecibida),
         costoUnitario: Number(item.costoUnitario || 0),
+        costoUnitarioReal: item.costoUnitarioReal === null || item.costoUnitarioReal === undefined
+          ? null
+          : Number(item.costoUnitarioReal),
         subtotal: round2(Number(item.cantidad || 0) * Number(item.costoUnitario || 0)),
       })),
       piezasTotales,
       total: Number(recepcion.total || 0),
+      sentAt: recepcion.sentAt || null,
+      sentBy: recepcion.sentBy || '',
+      sentByNombre,
       confirmedAt: recepcion.confirmedAt || null,
-      recibidoPor: recepcion.confirmedBy || '',
+      confirmedBy: recepcion.confirmedBy || '',
+      confirmedByNombre,
+      recibidoPor: confirmedByNombre,
       canceledAt: recepcion.canceledAt || null,
       canceledBy: recepcion.canceledBy || '',
+      canceledByNombre,
       createdBy: recepcion.createdBy || '',
+      createdByNombre,
       createdAt: recepcion.createdAt || null,
       updatedAt: recepcion.updatedAt || null,
     }
+  }
+
+  async attachAuditUsers(recepciones) {
+    const identifiers = [...new Set(
+      recepciones
+        .flatMap((recepcion) => [
+          recepcion.confirmedBy,
+          recepcion.sentBy,
+          recepcion.canceledBy,
+          recepcion.createdBy
+        ])
+        .filter(Boolean)
+    )]
+
+    if (identifiers.length === 0) return recepciones
+
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { id: { in: identifiers } },
+          { usuario: { in: identifiers } }
+        ]
+      },
+      select: { id: true, usuario: true, nombre: true, apellido: true }
+    })
+    const usersByIdentifier = new Map(users.flatMap((user) => [[user.id, user], [user.usuario, user]]))
+
+    return recepciones.map((recepcion) => ({
+      ...recepcion,
+      confirmedByUser: usersByIdentifier.get(recepcion.confirmedBy) || null,
+      sentByUser: usersByIdentifier.get(recepcion.sentBy) || null,
+      canceledByUser: usersByIdentifier.get(recepcion.canceledBy) || null,
+      createdByUser: usersByIdentifier.get(recepcion.createdBy) || null
+    }))
   }
 
   sanitizeMovement(movement) {

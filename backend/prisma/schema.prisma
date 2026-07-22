@@ -6,6 +6,7 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
 }
 
 // ── Auth / RBAC ──────────────────────────────────────────
@@ -25,6 +26,8 @@ model Permission {
   code        String           @unique
   description String?
   roles       RolePermission[]
+  revocations UserPermissionRevocation[]
+  grants      UserPermissionGrant[]
 
   @@map("permissions")
 }
@@ -48,6 +51,7 @@ model User {
   email        String   @unique
   roleId       String   @map("role_id")
   role         Role     @relation(fields: [roleId], references: [id])
+  clientProfile Client?
   activo       Boolean  @default(true)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
@@ -55,6 +59,8 @@ model User {
   sales         Sale[]
   auditLogs     AuditLog[]
   passwordReset PasswordReset?
+  revokedPermissions UserPermissionRevocation[]
+  grantedPermissions UserPermissionGrant[]
 
   @@map("users")
 }
@@ -114,6 +120,8 @@ model ProductVariant {
 
 model Client {
   id        String   @id @default(cuid())
+  userId    String?  @unique @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   nombre    String
   rfc       String?
   email     String   @unique
@@ -162,10 +170,31 @@ model Sale {
   envio        Decimal  @default(0) @db.Decimal(10, 2)
   total        Decimal  @db.Decimal(10, 2)
   estado       String   @default("PENDIENTE")
+  cancellationReason String? @map("cancellation_reason")
+  fulfillmentStatus String @default("PENDIENTE") @map("fulfillment_status")
+  preparedAt   DateTime? @map("prepared_at")
+  preparedBy   String?  @map("prepared_by")
+  shippingGuide String? @map("shipping_guide")
+  shippedAt    DateTime? @map("shipped_at")
+  shippedBy    String?  @map("shipped_by")
+  shippingStatus String @default("PENDIENTE") @map("shipping_status")
+  shippingCarrier String @default("D'ORO Envíos (simulado)") @map("shipping_carrier")
+  shippingCountry String? @map("shipping_country")
+  shippingState String? @map("shipping_state")
+  shippingCity String? @map("shipping_city")
+  shippingNeighborhood String? @map("shipping_neighborhood")
+  shippingPostalCode String? @map("shipping_postal_code")
+  shippingStreet String? @map("shipping_street")
+  shippingExteriorNumber String? @map("shipping_exterior_number")
+  shippingInteriorNumber String? @map("shipping_interior_number")
+  shippingReferences String? @map("shipping_references")
+  shippingPhone String? @map("shipping_phone")
+  deliveredAt  DateTime? @map("delivered_at")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   items SaleItem[]
+  shippingEvents ShippingEvent[]
 
   @@map("sales")
 }
@@ -190,6 +219,7 @@ model Reception {
   id               String    @id @default(cuid())
   folio            String    @unique
   facturaProveedor String?   @map("factura_proveedor")
+  facturaUrl       String?   @map("factura_url")
   supplierId       String?   @map("supplier_id")
   supplier         Supplier? @relation(fields: [supplierId], references: [id])
   fecha            DateTime
@@ -218,7 +248,9 @@ model ReceptionItem {
   product       Product   @relation(fields: [productId], references: [id])
   talla         String?
   cantidad      Int
+  cantidadRecibida Int? @map("cantidad_recibida")
   costoUnitario Decimal   @db.Decimal(10, 2) @map("costo_unitario")
+  costoUnitarioReal Decimal? @db.Decimal(10, 2) @map("costo_unitario_real")
 
   @@map("reception_items")
 }
@@ -246,5 +278,41 @@ model AuditLog {
   detalles  Json?
   createdAt DateTime @default(now()) @map("created_at")
 
+  @@index([createdAt])
+  @@index([entidad, accion, createdAt])
+  @@index([userId, createdAt])
+  @@index([entidadId])
   @@map("audit_logs")
+}
+
+model ShippingEvent {
+  id          String   @id @default(cuid())
+  saleId      String   @map("sale_id")
+  sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  estado      String
+  descripcion String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([saleId, createdAt])
+  @@map("shipping_events")
+}
+
+model UserPermissionRevocation {
+  userId       String     @map("user_id")
+  permissionId String     @map("permission_id")
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, permissionId])
+  @@map("user_permission_revocations")
+}
+
+model UserPermissionGrant {
+  userId       String     @map("user_id")
+  permissionId String     @map("permission_id")
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, permissionId])
+  @@map("user_permission_grants")
 }

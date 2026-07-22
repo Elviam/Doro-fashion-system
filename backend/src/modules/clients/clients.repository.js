@@ -2,7 +2,17 @@ import { prisma } from '../../lib/prisma.js'
 
 export class ClientsRepository {
   async findAll() {
-    return prisma.client.findMany({ orderBy: { nombre: 'asc' } })
+    return prisma.client.findMany({
+      orderBy: { nombre: 'asc' },
+      include: {
+        _count: { select: { sales: true } },
+        sales: {
+          select: { createdAt: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
+    })
   }
 
   async findById(id) {
@@ -11,6 +21,10 @@ export class ClientsRepository {
 
   async findByEmail(email) {
     return prisma.client.findUnique({ where: { email } })
+  }
+
+  async findByUserId(userId) {
+    return prisma.client.findUnique({ where: { userId } })
   }
 
   async findByRfc(rfc) {

@@ -4,7 +4,7 @@ import { validate } from '../../middlewares/validate.js'
 import { authenticate } from '../../middlewares/auth.js'
 import { requirePermissions } from '../../middlewares/requirePermissions.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
-import { clientLoginSchema, staffLoginSchema, registerSchema, passwordResetSchema, validateResetPasswordSchema, googleLoginSchema } from './auth.schema.js'
+import { changePasswordSchema, clientLoginSchema, staffLoginSchema, registerSchema, passwordResetSchema, validateResetPasswordSchema, googleLoginSchema } from './auth.schema.js'
 const router = Router()
 
 router.post(
@@ -21,6 +21,12 @@ router.get(
   '/me',
   authenticate,
   asyncHandler(authController.me.bind(authController))
+)
+router.patch(
+  '/change-password',
+  authenticate,
+  validate(changePasswordSchema),
+  asyncHandler(authController.changePassword.bind(authController))
 )
 router.post(
   '/register',

@@ -4,6 +4,7 @@ import { signAccessToken } from '../../config/jwt.js'
 import { authRepository } from './auth.repository.js'
 import { OAuth2Client } from 'google-auth-library'
 import crypto from 'crypto'
+import { logAuditEvent } from '../../utils/audit.js'
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
@@ -36,7 +37,7 @@ export class AuthService {
     let userPermissions = []
     if (user.roleId) {
       try {
-        userPermissions = await authRepository.findPermissionsByRoleId(user.roleId)
+        userPermissions = await authRepository.findPermissionsByRoleId(user.roleId, user.revokedPermissions, user.grantedPermissions)
       } catch (err) {
         console.error('Error obteniendo permisos del rol:', err)
       }
@@ -96,10 +97,12 @@ export class AuthService {
       throw error
     }
 
+    await authRepository.ensureClientProfile(user)
+
     let userPermissions = []
     if (user.roleId) {
       try {
-        userPermissions = await authRepository.findPermissionsByRoleId(user.roleId)
+        userPermissions = await authRepository.findPermissionsByRoleId(user.roleId, user.revokedPermissions, user.grantedPermissions)
       } catch (err) {
         console.error('Error obteniendo permisos del rol:', err)
       }
@@ -135,13 +138,48 @@ export class AuthService {
     let userPermissions = []
     if (user.roleId) {
       try {
-        userPermissions = await authRepository.findPermissionsByRoleId(user.roleId)
+        userPermissions = await authRepository.findPermissionsByRoleId(user.roleId, user.revokedPermissions, user.grantedPermissions)
       } catch (err) {
         console.error('Error obteniendo permisos del rol:', err)
       }
     }
 
     return this.sanitizeUser(user, userPermissions)
+  }
+
+  async changePassword(userId, payload, currentUser = null) {
+    const user = await authRepository.findById(userId)
+
+    if (!user || user.activo === false) {
+      const error = new Error('No fue posible cambiar la contraseña')
+      error.statusCode = 400
+      throw error
+    }
+
+    const currentPasswordIsValid = await bcrypt.compare(payload.currentPassword, user.passwordHash)
+    if (!currentPasswordIsValid) {
+      const error = new Error('La contraseña actual es incorrecta')
+      error.statusCode = 400
+      throw error
+    }
+
+    const isSamePassword = await bcrypt.compare(payload.newPassword, user.passwordHash)
+    if (isSamePassword) {
+      const error = new Error('La nueva contraseña debe ser diferente a la actual')
+      error.statusCode = 400
+      throw error
+    }
+
+    await authRepository.updatePassword(user.id, await bcrypt.hash(payload.newPassword, 10))
+    await logAuditEvent({
+      action: 'CHANGE_PASSWORD',
+      resource: 'auth',
+      resourceId: user.id,
+      details: { usuario: user.usuario },
+      currentUser
+    })
+
+    return { message: 'Contraseña actualizada correctamente' }
   }
 
   sanitizeUser(user, permissions = []) {
@@ -192,7 +230,7 @@ export class AuthService {
 
   const passwordHash = await bcrypt.hash(password, 10)
 
-  const newUser = await authRepository.createUser({
+  const { user: newUser } = await authRepository.createClientUserWithProfile({
     nombre,
     email,
     usuario,
@@ -264,7 +302,7 @@ export class AuthService {
       const randomPassword = crypto.randomBytes(32).toString('hex')
       const passwordHash = await bcrypt.hash(randomPassword, 10)
 
-      user = await authRepository.createUser({
+      const created = await authRepository.createClientUserWithProfile({
         nombre: name || baseUsuario,
         apellido: '',
         email,
@@ -273,12 +311,17 @@ export class AuthService {
         roleId: clienteRole.id,
         activo: true,
       })
+      user = created.user
+    }
+
+    if (user.role === 'CLIENTE') {
+      await authRepository.ensureClientProfile(user)
     }
 
     let userPermissions = []
     if (user.roleId) {
       try {
-        userPermissions = await authRepository.findPermissionsByRoleId(user.roleId)
+        userPermissions = await authRepository.findPermissionsByRoleId(user.roleId, user.revokedPermissions, user.grantedPermissions)
       } catch (err) {
         console.error('Error obteniendo permisos del rol:', err)
       }

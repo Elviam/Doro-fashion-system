@@ -1,95 +1,79 @@
-/*import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
+import 'dotenv/config'
+import { createPrismaClient } from '../src/lib/prisma.js'
 
-const prisma = new PrismaClient()
+// Seeding is an administrative task, so it uses Neon’s direct connection.
+const prisma = createPrismaClient(process.env.DIRECT_URL || process.env.DATABASE_URL)
 
-const PERMISOS = [
-  'dashboard:read',
-  'ventas:read', 'ventas:create', 'ventas:update', 'ventas:delete',
-  'products:read', 'products:create', 'products:update', 'products:delete',
-  'inventory:read', 'inventory:create', 'inventory:update', 'inventory:delete',
-  'recepciones:read', 'recepciones:create', 'recepciones:update', 'recepciones:delete',
-  'clients:read', 'clients:create', 'clients:update', 'clients:delete',
-  'suppliers:read', 'suppliers:create', 'suppliers:update', 'suppliers:delete',
-  'users:read', 'users:create', 'users:update', 'users:delete',
-  'roles:read', 'roles:create', 'roles:update', 'roles:delete',
-  'audit:read',
+const RECEPCION_PERMISSIONS = [
+  'recepciones:read',
+  'recepciones:create',
+  'recepciones:update',
+  'recepciones:enviar',
+  'recepciones:confirm',
+  'recepciones:cancel',
+  'recepciones:delete'
 ]
 
-const PERMISOS_POR_ROL = {
-  ADMIN: PERMISOS,
-  GERENTE: PERMISOS,
-  BODEGUERO: [
-    'dashboard:read',
-    'products:read', 'products:create', 'products:update',
-    'inventory:read', 'inventory:create', 'inventory:update',
-    'recepciones:read', 'recepciones:create', 'recepciones:update',
-    'clients:read',
-    'suppliers:read', 'suppliers:create', 'suppliers:update',
-    'ventas:read',
-  ],
-  VENDEDOR: [
-    'products:read',
-    'ventas:read', 'ventas:create', 'ventas:update',
-    'clients:read', 'clients:create',
-  ],
+const BODEGUERO_DEFAULT_PERMISSIONS = [
+  'inventory:read',
+  'inventory:update',
+  'recepciones:read',
+  'recepciones:confirm',
+  'fulfillment:read',
+  'fulfillment:update'
+]
+
+async function ensurePermissions() {
+  const permissions = []
+
+  for (const code of [...new Set([...RECEPCION_PERMISSIONS, ...BODEGUERO_DEFAULT_PERMISSIONS])]) {
+    const permission = await prisma.permission.upsert({
+      where: { code },
+      update: {},
+      create: { code, description: `Permiso ${code}` }
+    })
+    permissions.push(permission)
+  }
+
+  const allPermissions = await prisma.permission.findMany({ select: { id: true, code: true } })
+  return Object.fromEntries(allPermissions.map((permission) => [permission.code, permission.id]))
+}
+
+async function replaceRolePermissions(roleId, permissionsByCode, permissionCodes) {
+  await prisma.rolePermission.deleteMany({
+    where: { roleId }
+  })
+
+  await prisma.rolePermission.createMany({
+    data: permissionCodes.map((code) => ({
+      roleId,
+      permissionId: permissionsByCode[code]
+    }))
+  })
 }
 
 async function main() {
-  const perms = await Promise.all(
-    PERMISOS.map((code) =>
-      prisma.permission.upsert({ where: { code }, update: {}, create: { code } })
-    )
-  )
-  const permsByCode = Object.fromEntries(perms.map((p) => [p.code, p]))
+  const permissionsByCode = await ensurePermissions()
 
-  for (const [codigo, permisosDelRol] of Object.entries(PERMISOS_POR_ROL)) {
-    const nombre = {
-      ADMIN: 'Administrador',
-      GERENTE: 'Gerente',
-      BODEGUERO: 'Bodeguero',
-      VENDEDOR: 'Vendedor',
-    }[codigo]
-
-    const role = await prisma.role.upsert({
-      where: { codigo },
-      update: {},
-      create: { codigo, nombre },
-    })
-
-    await prisma.rolePermission.deleteMany({ where: { roleId: role.id } })
-    await prisma.rolePermission.createMany({
-      data: permisosDelRol.map((code) => ({
-        roleId: role.id,
-        permissionId: permsByCode[code].id,
-      })),
-    })
-  }
-
-  await prisma.role.upsert({
-    where: { codigo: 'CLIENTE' },
-    update: {},
-    create: { codigo: 'CLIENTE', nombre: 'Cliente' },
+  const admin = await prisma.role.upsert({
+    where: { codigo: 'ADMIN' },
+    update: { nombre: 'Administrador' },
+    create: { codigo: 'ADMIN', nombre: 'Administrador' }
   })
+  const allPermissions = await prisma.permission.findMany({ select: { code: true } })
+  await replaceRolePermissions(admin.id, permissionsByCode, allPermissions.map((permission) => permission.code))
 
-  const adminRole = await prisma.role.findUniqueOrThrow({ where: { codigo: 'ADMIN' } })
-  const passwordHash = await bcrypt.hash('CambiaEstaClave123!', 10)
-
-  await prisma.user.upsert({
-    where: { usuario: 'admin' },
-    update: {},
-    create: {
-      usuario: 'admin',
-      passwordHash,
-      nombre: 'Admin',
-      apellido: 'Sistema',
-      email: 'admin@doro.com',
-      roleId: adminRole.id,
-      activo: true,
-    },
+  const bodeguero = await prisma.role.upsert({
+    where: { codigo: 'BODEGUERO' },
+    update: { nombre: 'Bodeguero' },
+    create: { codigo: 'BODEGUERO', nombre: 'Bodeguero' }
   })
+  await replaceRolePermissions(bodeguero.id, permissionsByCode, BODEGUERO_DEFAULT_PERMISSIONS)
 }
 
 main()
-  .catch((e) => { console.error(e); process.exit(1) })
-  .finally(() => prisma.$disconnect())*/
+  .catch((error) => {
+    console.error(error)
+    process.exit(1)
+  })
+  .finally(() => prisma.$disconnect())

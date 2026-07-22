@@ -1,11 +1,13 @@
 import { prisma } from '../../lib/prisma.js'
 
-const roleInclude = {
+const userInclude = {
   role: {
     include: {
       permissions: { include: { permission: true } }
     }
-  }
+  },
+  revokedPermissions: { include: { permission: true } },
+  grantedPermissions: { include: { permission: true } }
 }
 
 // Esto es lo que resuelve el bug de useProtectedRoute: el service layer y el
@@ -16,24 +18,30 @@ const roleInclude = {
 // tal como los recibía el frontend desde Firestore.
 function mapUser(user) {
   if (!user) return null
-  const { role, ...rest } = user
+  const { role, revokedPermissions = [], grantedPermissions = [], ...rest } = user
+  const revokedCodes = revokedPermissions.map((item) => item.permission.code)
+  const grantedCodes = grantedPermissions.map((item) => item.permission.code)
+  const rolePermissions = role?.permissions?.map((item) => item.permission.code) ?? []
+
   return {
     ...rest,
     role: role?.codigo ?? null,
-    permissions: role?.permissions?.map((rp) => rp.permission.code) ?? []
+    permissions: [...new Set([...rolePermissions.filter((code) => !revokedCodes.includes(code)), ...grantedCodes])],
+    revokedPermissions: revokedCodes,
+    grantedPermissions: grantedCodes
   }
 }
 
 export class UsersRepository {
   async findAll() {
-    const users = await prisma.user.findMany({ include: roleInclude })
+    const users = await prisma.user.findMany({ include: userInclude })
     return users.map(mapUser)
   }
 
   async findById(id) {
     const user = await prisma.user.findUnique({
       where: { id },
-      include: roleInclude
+      include: userInclude
     })
     return mapUser(user)
   }
@@ -41,7 +49,7 @@ export class UsersRepository {
   async findByUsuario(usuario) {
     const user = await prisma.user.findUnique({
       where: { usuario },
-      include: roleInclude
+      include: userInclude
     })
     return mapUser(user)
   }
@@ -49,9 +57,32 @@ export class UsersRepository {
   async findByEmail(email) {
     const user = await prisma.user.findUnique({
       where: { email },
-      include: roleInclude
+      include: userInclude
     })
     return mapUser(user)
+  }
+
+  async findRoleById(id) {
+    const role = await prisma.role.findUnique({
+      where: { id },
+      include: { permissions: { include: { permission: true } } }
+    })
+
+    if (!role) return null
+
+    return {
+      id: role.id,
+      codigo: role.codigo,
+      permissions: role.permissions.map((item) => item.permission.code)
+    }
+  }
+
+  async findPermissionCodes(codes) {
+    const permissions = await prisma.permission.findMany({
+      where: { code: { in: codes } },
+      select: { code: true }
+    })
+    return permissions.map((permission) => permission.code)
   }
 
   // IMPORTANTE: `data.roleId` aquí DEBE ser el cuid real del Role, no el
@@ -63,20 +94,54 @@ export class UsersRepository {
   // Si te llega un campo `role` (string) en vez de roleId, lo descartamos
   // aquí para que Prisma no truene por columna inexistente.
   async create(data) {
-    const { role, permissions, ...userData } = data
+    const { role, revokedPermissions, grantedPermissions, ...userData } = data
     const user = await prisma.user.create({
-      data: userData,
-      include: roleInclude
+      data: {
+        ...userData,
+        ...(revokedPermissions !== undefined
+          ? {
+              revokedPermissions: {
+                create: revokedPermissions.map((code) => ({ permission: { connect: { code } } }))
+              }
+            }
+          : {}),
+        ...(grantedPermissions !== undefined
+          ? {
+              grantedPermissions: {
+                create: grantedPermissions.map((code) => ({ permission: { connect: { code } } }))
+              }
+            }
+          : {})
+      },
+      include: userInclude
     })
     return mapUser(user)
   }
 
   async update(id, data) {
-    const { role, permissions, ...userData } = data
+    const { role, revokedPermissions, grantedPermissions, ...userData } = data
     const user = await prisma.user.update({
       where: { id },
-      data: userData,
-      include: roleInclude
+      data: {
+        ...userData,
+        ...(revokedPermissions !== undefined
+          ? {
+              revokedPermissions: {
+                deleteMany: {},
+                create: revokedPermissions.map((code) => ({ permission: { connect: { code } } }))
+              }
+            }
+          : {}),
+        ...(grantedPermissions !== undefined
+          ? {
+              grantedPermissions: {
+                deleteMany: {},
+                create: grantedPermissions.map((code) => ({ permission: { connect: { code } } }))
+              }
+            }
+          : {})
+      },
+      include: userInclude
     })
     return mapUser(user)
   }

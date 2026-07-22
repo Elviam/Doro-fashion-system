@@ -1,5 +1,6 @@
 import { inventoryRepository } from './inventory.repository.js'
 import { logAuditEvent } from '../../utils/audit.js'
+import { prisma } from '../../lib/prisma.js'
 
 export class InventoryService {
   async list(query) {
@@ -36,9 +37,8 @@ export class InventoryService {
 
     if (typeof lowStock === 'boolean' && lowStock) {
       filtered = filtered.filter((product) => {
-        const stock = Number(product.stock || 0)
-        const stockMinimo = Number(product.stockMinimo || 0)
-        return stock <= stockMinimo
+        const stockMinimo = Number(product.stockMinimo ?? 0)
+        return (product.variants || []).some((variant) => Number(variant.stock || 0) <= stockMinimo)
       })
     }
 
@@ -75,50 +75,43 @@ export class InventoryService {
 
   async adjust(productId, payload, currentUser = null) {
     const product = await inventoryRepository.findProductById(productId)
-
     if (!product) {
       const error = new Error('Producto no encontrado')
       error.statusCode = 404
       throw error
     }
 
-    const currentStock = Number(product.stock || 0)
-    const cantidad = Number(payload.cantidad)
-    let newStock = currentStock
+    const ajustesAplicados = await prisma.$transaction(async (tx) => {
+      const existentes = new Map(product.variants.map((variant) => [variant.talla, variant.stock]))
+      const cambios = payload.ajustes
+        .map(({ talla, cantidadNueva }) => ({
+          talla,
+          cantidadAnterior: Number(existentes.get(talla) || 0),
+          cantidadNueva: Number(cantidadNueva)
+        }))
+        .filter((ajuste) => ajuste.cantidadAnterior !== ajuste.cantidadNueva)
 
-    if (payload.tipo === 'ENTRADA') {
-      newStock = currentStock + cantidad
-    } else if (payload.tipo === 'SALIDA') {
-      newStock = currentStock - cantidad
+      for (const ajuste of cambios) {
+        await tx.productVariant.upsert({
+          where: { productId_talla: { productId, talla: ajuste.talla } },
+          create: { productId, talla: ajuste.talla, stock: ajuste.cantidadNueva },
+          update: { stock: ajuste.cantidadNueva }
+        })
 
-      if (newStock < 0) {
-        const error = new Error('No hay stock suficiente para realizar la salida')
-        error.statusCode = 400
-        throw error
+        await tx.inventoryMovement.create({
+          data: {
+            productId,
+            tipo: ajuste.cantidadNueva > ajuste.cantidadAnterior ? 'ENTRADA' : 'SALIDA',
+            cantidad: Math.abs(ajuste.cantidadNueva - ajuste.cantidadAnterior),
+            motivo: `${payload.motivo}${payload.notas ? `: ${payload.notas}` : ''} (${ajuste.talla})`
+          }
+        })
       }
-    } else if (payload.tipo === 'AJUSTE') {
-      newStock = cantidad
-    }
 
-    const updatedProduct = await inventoryRepository.updateProductStock(productId, {
-      stock: newStock,
-      updatedAt: new Date().toISOString()
+      return cambios
     })
 
-    const movement = await inventoryRepository.createMovement({
-      productId: product.id,
-      sku: product.sku || '',
-      productNombre: product.nombre || '',
-      tipo: payload.tipo,
-      cantidad,
-      stockAnterior: currentStock,
-      stockNuevo: newStock,
-      motivo: payload.motivo,
-      referencia: payload.referencia || '',
-      userId: currentUser?.sub || '',
-      usuario: currentUser?.usuario || '',
-      createdAt: new Date().toISOString()
-    })
+    const updatedProduct = await inventoryRepository.findProductById(productId)
 
     await logAuditEvent({
       action: 'ADJUST',
@@ -127,12 +120,10 @@ export class InventoryService {
       details: {
         sku: product.sku || '',
         nombre: product.nombre || '',
-        tipo: payload.tipo,
-        cantidad,
-        stockAnterior: currentStock,
-        stockNuevo: newStock,
+        ajustes: ajustesAplicados,
         motivo: payload.motivo,
-        referencia: payload.referencia || ''
+        notas: payload.notas || '',
+        evidencia: payload.evidencia || []
       },
       currentUser
     })
@@ -140,7 +131,7 @@ export class InventoryService {
     return {
       message: 'Inventario ajustado correctamente',
       item: this.sanitizeInventoryItem(updatedProduct),
-      movement: this.sanitizeMovement(movement)
+      ajustes: ajustesAplicados
     }
   }
 
@@ -199,8 +190,12 @@ export class InventoryService {
   }
 
   sanitizeInventoryItem(product) {
-    const stock = Number(product.stock || 0)
-    const stockMinimo = Number(product.stockMinimo || 0)
+    const inventario = (product.variants || []).map((variant) => ({
+      talla: variant.talla,
+      stock: Number(variant.stock || 0)
+    }))
+    const stock = inventario.reduce((total, variant) => total + variant.stock, 0)
+    const stockMinimo = Number(product.stockMinimo ?? 0)
 
     return {
       id: product.id,
@@ -212,9 +207,13 @@ export class InventoryService {
       unidad: product.unidad || '',
       marca: product.marca || '',
       modelo: product.modelo || '',
+      imagenes: product.imagenes || [],
+      inventario,
+      stockIdeal: Number(product.stockIdeal || 0),
+      stockMaximo: Number(product.stockMaximo || 0),
       stock,
       stockMinimo,
-      lowStock: stock <= stockMinimo,
+      lowStock: inventario.some((variant) => variant.stock <= stockMinimo),
       activo: product.activo ?? true,
       updatedAt: product.updatedAt || null
     }

@@ -14,6 +14,7 @@ import dashboardRoutes from '../modules/dashboard/dashboard.routes.js'
 import searchRoutes from '../modules/search/search.routes.js'
 import ventasRoutes from '../modules/ventas/ventas.routes.js'
 import notificationsRoutes from '../modules/notifications/notifications.routes.js'
+import fulfillmentRoutes from '../modules/fulfillment/fulfillment.routes.js'
 
 const router = Router()
 
@@ -32,5 +33,6 @@ router.use('/dashboard', dashboardRoutes)
 router.use('/search', searchRoutes)
 router.use('/ventas', ventasRoutes)
 router.use('/notifications', notificationsRoutes)
+router.use('/fulfillment', fulfillmentRoutes)
 
 export default router

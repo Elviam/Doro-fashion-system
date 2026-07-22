@@ -83,6 +83,17 @@ export class UsersService {
       throw error
     }
 
+    const role = await this.getPersonnelRole(payload.roleId)
+    const revokedPermissions = await this.validateRevokedPermissions({
+      revokedPermissions: payload.revokedPermissions,
+      role,
+      currentUser
+    })
+    const grantedPermissions = await this.validateGrantedPermissions({
+      grantedPermissions: payload.grantedPermissions,
+      role,
+      currentUser
+    })
     const passwordHash = await bcrypt.hash(payload.password, 10)
 
     const data = {
@@ -91,9 +102,9 @@ export class UsersService {
       email: payload.email,
       usuario: payload.usuario,
       passwordHash,
-      role: payload.role || null,
-      roleId: payload.roleId || null,
-      permissions: Array.isArray(payload.permissions) ? payload.permissions : [],
+      roleId: role.id,
+      revokedPermissions: revokedPermissions.filter((code) => !grantedPermissions.includes(code)),
+      grantedPermissions,
       activo: payload.activo ?? true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -148,6 +159,32 @@ export class UsersService {
       }
     }
 
+    const selectedRoleId = payload.roleId ?? currentUserRecord.roleId
+    if (payload.roleId !== undefined && id === (currentUser?.id || currentUser?.sub) && payload.roleId !== currentUserRecord.roleId) {
+      const error = new Error('No puedes cambiar el rol de tu propia cuenta')
+      error.statusCode = 400
+      throw error
+    }
+    const selectedRole = payload.roleId !== undefined
+      ? await this.getPersonnelRole(selectedRoleId)
+      : null
+    const revokedPermissions = payload.revokedPermissions !== undefined
+      ? await this.validateRevokedPermissions({
+          targetUserId: id,
+          revokedPermissions: payload.revokedPermissions,
+          role: selectedRole || await usersRepository.findRoleById(selectedRoleId),
+          currentUser
+        })
+      : undefined
+    const grantedPermissions = payload.grantedPermissions !== undefined
+      ? await this.validateGrantedPermissions({
+          targetUserId: id,
+          grantedPermissions: payload.grantedPermissions,
+          role: selectedRole || await usersRepository.findRoleById(selectedRoleId),
+          currentUser
+        })
+      : undefined
+
     const data = {
       updatedAt: new Date().toISOString()
     }
@@ -156,9 +193,9 @@ export class UsersService {
     if (payload.apellido !== undefined) data.apellido = payload.apellido
     if (payload.email !== undefined) data.email = payload.email
     if (payload.usuario !== undefined) data.usuario = payload.usuario
-    if (payload.role !== undefined) data.role = payload.role
-    if (payload.roleId !== undefined) data.roleId = payload.roleId
-    if (payload.permissions !== undefined) data.permissions = payload.permissions
+    if (payload.roleId !== undefined) data.roleId = selectedRole.id
+    if (revokedPermissions !== undefined || payload.roleId !== undefined) data.revokedPermissions = (revokedPermissions || []).filter((code) => !(grantedPermissions || []).includes(code))
+    if (grantedPermissions !== undefined || payload.roleId !== undefined) data.grantedPermissions = grantedPermissions || []
     if (payload.activo !== undefined) data.activo = payload.activo
 
     if (payload.password) {
@@ -253,10 +290,81 @@ export class UsersService {
       role: user.role || null,
       roleId: user.roleId || null,
       permissions: Array.isArray(user.permissions) ? user.permissions : [],
+      revokedPermissions: Array.isArray(user.revokedPermissions) ? user.revokedPermissions : [],
+      grantedPermissions: Array.isArray(user.grantedPermissions) ? user.grantedPermissions : [],
       activo: user.activo ?? true,
       createdAt: user.createdAt || null,
       updatedAt: user.updatedAt || null
     }
+  }
+
+  async getPersonnelRole(roleId) {
+    const role = await usersRepository.findRoleById(roleId)
+
+    if (!role || !['ADMIN', 'BODEGUERO'].includes(role.codigo)) {
+      const error = new Error('Selecciona un rol válido para el personal')
+      error.statusCode = 400
+      throw error
+    }
+
+    return role
+  }
+
+  async validateRevokedPermissions({ targetUserId, revokedPermissions, role, currentUser }) {
+    if (currentUser?.role !== 'ADMIN') {
+      const error = new Error('Solo un administrador puede modificar permisos individuales')
+      error.statusCode = 403
+      throw error
+    }
+
+    if (targetUserId && targetUserId === (currentUser.id || currentUser.sub)) {
+      const error = new Error('No puedes modificar tus propios permisos')
+      error.statusCode = 400
+      throw error
+    }
+
+    if (!role) {
+      const error = new Error('No se encontró el rol del integrante')
+      error.statusCode = 400
+      throw error
+    }
+
+    const uniquePermissions = [...new Set(revokedPermissions || [])]
+    const invalidPermissions = uniquePermissions.filter((code) => !role.permissions.includes(code))
+
+    if (invalidPermissions.length > 0) {
+      const error = new Error('Solo puedes retirar permisos incluidos en el rol seleccionado')
+      error.statusCode = 400
+      throw error
+    }
+
+    return uniquePermissions
+  }
+
+  async validateGrantedPermissions({ targetUserId, grantedPermissions, role, currentUser }) {
+    if (currentUser?.role !== 'ADMIN') {
+      const error = new Error('Solo un administrador puede otorgar permisos individuales')
+      error.statusCode = 403
+      throw error
+    }
+
+    if (targetUserId && targetUserId === (currentUser.id || currentUser.sub)) {
+      const error = new Error('No puedes modificar tus propios permisos')
+      error.statusCode = 400
+      throw error
+    }
+
+    const uniquePermissions = [...new Set(grantedPermissions || [])]
+    const existingPermissions = await usersRepository.findPermissionCodes(uniquePermissions)
+    const invalidPermissions = uniquePermissions.filter((code) => !existingPermissions.includes(code))
+
+    if (invalidPermissions.length > 0) {
+      const error = new Error('Uno o más permisos no existen')
+      error.statusCode = 400
+      throw error
+    }
+
+    return uniquePermissions.filter((code) => !role?.permissions?.includes(code))
   }
 }
 

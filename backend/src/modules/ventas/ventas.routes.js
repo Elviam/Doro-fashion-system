@@ -42,6 +42,13 @@ router.post(
   asyncHandler(ventasController.create.bind(ventasController))
 )
 
+router.post(
+  '/:id/simulate-payment',
+  authenticate,
+  validate(ventaIdParamSchema, 'params'),
+  asyncHandler(ventasController.simulatePayment.bind(ventasController))
+)
+
 router.patch(
   '/:id/estado',
   authenticate,

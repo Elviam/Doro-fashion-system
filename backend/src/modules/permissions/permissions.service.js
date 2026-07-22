@@ -38,9 +38,15 @@ const DEFAULT_PERMISSIONS = [
   { code: 'inventory:read', nombre: 'Ver inventario', descripcion: 'Permite consultar inventario', modulo: 'inventory' },
   { code: 'inventory:update', nombre: 'Actualizar inventario', descripcion: 'Permite ajustar inventario', modulo: 'inventory' },
 
+  { code: 'fulfillment:read', nombre: 'Ver preparación de pedidos', descripcion: 'Permite consultar pedidos pagados por preparar', modulo: 'fulfillment' },
+  { code: 'fulfillment:update', nombre: 'Actualizar preparación de pedidos', descripcion: 'Permite actualizar el estado de preparación de pedidos', modulo: 'fulfillment' },
+
   { code: 'recepciones:read', nombre: 'Ver recepciones', descripcion: 'Permite listar y ver recepciones', modulo: 'recepciones' },
   { code: 'recepciones:create', nombre: 'Crear recepciones', descripcion: 'Permite registrar recepciones', modulo: 'recepciones' },
   { code: 'recepciones:update', nombre: 'Editar recepciones', descripcion: 'Permite actualizar recepciones', modulo: 'recepciones' },
+  { code: 'recepciones:enviar', nombre: 'Enviar pedidos', descripcion: 'Permite enviar pedidos al bodeguero', modulo: 'recepciones' },
+  { code: 'recepciones:confirm', nombre: 'Confirmar recepciones', descripcion: 'Permite registrar cantidades recibidas', modulo: 'recepciones' },
+  { code: 'recepciones:cancel', nombre: 'Cancelar recepciones', descripcion: 'Permite cancelar pedidos no confirmados', modulo: 'recepciones' },
   { code: 'recepciones:delete', nombre: 'Eliminar recepciones', descripcion: 'Permite eliminar recepciones', modulo: 'recepciones' },
 
   { code: 'audit:read', nombre: 'Ver auditoría', descripcion: 'Permite consultar la auditoría', modulo: 'audit' },

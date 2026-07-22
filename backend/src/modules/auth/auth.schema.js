@@ -56,3 +56,17 @@ export const validateResetPasswordSchema = z.object({
     .string({ required_error: 'La nueva contraseña es obligatoria' })
     .min(6, 'La contraseña debe tener al menos 6 caracteres')
 })
+
+export const changePasswordSchema = z.object({
+  currentPassword: z
+    .string({ required_error: 'La contraseña actual es obligatoria' })
+    .min(6, 'La contraseña actual debe tener al menos 6 caracteres'),
+  newPassword: z
+    .string({ required_error: 'La nueva contraseña es obligatoria' })
+    .min(8, 'La nueva contraseña debe tener al menos 8 caracteres'),
+  confirmPassword: z
+    .string({ required_error: 'Confirma la nueva contraseña' })
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: 'Las nuevas contraseñas no coinciden',
+  path: ['confirmPassword']
+})

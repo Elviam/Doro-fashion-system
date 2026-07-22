@@ -1,5 +1,6 @@
 import { productsRepository } from './products.repository.js'
 import { logAuditEvent } from '../../utils/audit.js'
+import { TALLAS_POR_CATEGORIA } from './products.constants.js'
 
 function normalizeOptionalText(value) {
   if (value === undefined) return undefined
@@ -40,7 +41,7 @@ function normalizeSku(value) {
 // tallas, se utiliza una única variante llamada "Única", usando el campo
 // `stock` de nivel superior heredado para mantener la compatibilidad con
 // versiones anteriores.
-function normalizeVariantes(inventario, fallbackStock = 0) {
+function normalizeVariantes(inventario, fallbackStock = 0, categoria) {
   if (Array.isArray(inventario) && inventario.length > 0) {
     const tallas = inventario.map((v) => v.talla)
     const duplicadas = tallas.filter((t, i) => tallas.indexOf(t) !== i)
@@ -54,11 +55,47 @@ function normalizeVariantes(inventario, fallbackStock = 0) {
     return inventario.map((v) => ({ talla: v.talla, stock: Number(v.stock ?? 0) }))
   }
 
-  return [{ talla: 'Única', stock: Number(fallbackStock ?? 0) }]
+  const tallaPredeterminada = TALLAS_POR_CATEGORIA[categoria]?.[0]
+  if (!tallaPredeterminada) {
+    const error = new Error('La categoría del producto debe tener al menos una talla válida')
+    error.statusCode = 400
+    throw error
+  }
+
+  return [{ talla: tallaPredeterminada, stock: Number(fallbackStock ?? 0) }]
 }
 
 function computeTotalStock(variants = []) {
   return variants.reduce((sum, v) => sum + Number(v.stock || 0), 0)
+}
+
+const CAMPOS_NUMERICOS_AUDITORIA = new Set([
+  'precioCompra', 'precioVenta', 'stockMinimo', 'stockIdeal', 'stockMaximo'
+])
+
+function normalizarValorAuditoria(campo, valor) {
+  if (valor === null || valor === undefined) return null
+  if (CAMPOS_NUMERICOS_AUDITORIA.has(campo)) return Number(valor)
+  if (Array.isArray(valor)) return valor.map((item) => normalizarValorAuditoria(campo, item))
+  if (typeof valor?.toNumber === 'function') return valor.toNumber()
+  return valor
+}
+
+function sonIgualesParaAuditoria(campo, anterior, nuevo) {
+  return JSON.stringify(normalizarValorAuditoria(campo, anterior)) === JSON.stringify(normalizarValorAuditoria(campo, nuevo))
+}
+
+function construirCambiosProducto(anterior, datosActualizados, inventarioNuevo) {
+  const campos = Object.keys(datosActualizados).filter((campo) => campo !== 'updatedAt' && campo !== 'unidad')
+  const cambios = campos
+    .map((campo) => ({ campo, antes: normalizarValorAuditoria(campo, anterior[campo]), despues: normalizarValorAuditoria(campo, datosActualizados[campo]) }))
+    .filter(({ campo, antes, despues }) => !sonIgualesParaAuditoria(campo, antes, despues))
+
+  if (inventarioNuevo !== undefined && !sonIgualesParaAuditoria('inventario', anterior.variants, inventarioNuevo)) {
+    cambios.push({ campo: 'inventario', antes: anterior.variants || [], despues: inventarioNuevo })
+  }
+
+  return cambios
 }
 
 export class ProductsService {
@@ -124,7 +161,7 @@ export class ProductsService {
       }
     }
 
-    const variantes = normalizeVariantes(payload.inventario, payload.stock)
+    const variantes = normalizeVariantes(payload.inventario, payload.stock, payload.categoria)
 
    const data = {
       sku: normalizedSku,
@@ -136,7 +173,7 @@ export class ProductsService {
       supplierId: payload.supplierId || null,
       precioCompra: Number(payload.precioCompra ?? 0),
       precioVenta: Number(payload.precioVenta ?? 0),
-      stockMinimo: Number(payload.stockMinimo ?? 0),
+      stockMinimo: Number(payload.stockMinimo),
       stockIdeal: Number(payload.stockIdeal ?? 0),
       stockMaximo: Number(payload.stockMaximo ?? 0),
       imagenes: Array.isArray(payload.imagenes) ? payload.imagenes : [],
@@ -152,14 +189,19 @@ export class ProductsService {
       resource: 'products',
       resourceId: created.id,
       details: {
-          sku: sanitized.sku,
-          nombre: sanitized.nombre,
-          stock: sanitized.stock,
-          stockMinimo: sanitized.stockMinimo,
-          stockIdeal: sanitized.stockIdeal,
-          stockMaximo: sanitized.stockMaximo,
-          activo: sanitized.activo
-        },
+        sku: sanitized.sku,
+        nombre: sanitized.nombre,
+        descripcion: sanitized.descripcion,
+        categoria: sanitized.categoria,
+        departamento: sanitized.departamento,
+        precioCompra: sanitized.precioCompra,
+        precioVenta: sanitized.precioVenta,
+        stockMinimo: sanitized.stockMinimo,
+        stockIdeal: sanitized.stockIdeal,
+        stockMaximo: sanitized.stockMaximo,
+        activo: sanitized.activo,
+        imagenes: sanitized.imagenes
+      },
       currentUser
     })
 
@@ -195,6 +237,24 @@ export class ProductsService {
       }
     }
 
+    const categoriaFinal = payload.categoria ?? currentProduct.categoria
+    const inventarioAValidar = payload.inventario ?? (
+      payload.categoria !== undefined ? currentProduct.variants : null
+    )
+
+    if (inventarioAValidar) {
+      const tallasValidas = TALLAS_POR_CATEGORIA[categoriaFinal] || []
+      const tallasInvalidas = inventarioAValidar
+        .map((variante) => variante.talla)
+        .filter((talla) => !tallasValidas.includes(talla))
+
+      if (tallasInvalidas.length > 0) {
+        const error = new Error(`Las tallas ${[...new Set(tallasInvalidas)].join(', ')} no son válidas para la categoría ${categoriaFinal}`)
+        error.statusCode = 400
+        throw error
+      }
+    }
+
     const data = { updatedAt: new Date() }
 
     if (payload.sku !== undefined) data.sku = normalizeSku(payload.sku)
@@ -213,10 +273,12 @@ export class ProductsService {
     if (payload.stockIdeal !== undefined) data.stockIdeal = Number(payload.stockIdeal)
     if (payload.stockMaximo !== undefined) data.stockMaximo = Number(payload.stockMaximo)
     if (payload.activo !== undefined) data.activo = payload.activo
+    const cambios = construirCambiosProducto(currentProduct, data, payload.inventario)
+    if (cambios.length === 0) return this.sanitizeProduct(currentProduct)
     await productsRepository.update(id, data)
 
     if (payload.inventario !== undefined) {
-      const variantes = normalizeVariantes(payload.inventario)
+      const variantes = normalizeVariantes(payload.inventario, 0, categoriaFinal)
       await productsRepository.replaceVariants(id, variantes)
     }
 
@@ -228,14 +290,13 @@ export class ProductsService {
       resource: 'products',
       resourceId: updated.id,
       details: {
-        changes: Object.keys(payload),
+        cambios,
         sku: sanitized.sku,
         nombre: sanitized.nombre,
-        stock: sanitized.stock,
-        stockMinimo: sanitized.stockMinimo,
-        stockIdeal: sanitized.stockIdeal,
-        stockMaximo: sanitized.stockMaximo,
-        activo: sanitized.activo
+        activo: sanitized.activo,
+        categoria: sanitized.categoria,
+        departamento: sanitized.departamento,
+        imagenes: sanitized.imagenes
       },
       currentUser
     })
@@ -273,13 +334,36 @@ export class ProductsService {
       throw error
     }
 
+    const productoEliminado = this.sanitizeProduct(currentProduct)
+    const dependencias = await productsRepository.getDeletionDependencies(id)
+    if (dependencias.ventas > 0 || dependencias.recepciones > 0) {
+      const error = new Error('No se puede eliminar un producto con ventas o recepciones registradas. Puedes desactivarlo para retirarlo del catálogo.')
+      error.statusCode = 409
+      throw error
+    }
+
     await productsRepository.remove(id)
 
     await logAuditEvent({
       action: 'DELETE',
       resource: 'products',
       resourceId: id,
-      details: { sku: currentProduct.sku || '', nombre: currentProduct.nombre || '' },
+      details: {
+        sku: productoEliminado.sku,
+        nombre: productoEliminado.nombre,
+        descripcion: productoEliminado.descripcion,
+        categoria: productoEliminado.categoria,
+        departamento: productoEliminado.departamento,
+        precioCompra: productoEliminado.precioCompra,
+        precioVenta: productoEliminado.precioVenta,
+        stock: productoEliminado.stock,
+        stockMinimo: productoEliminado.stockMinimo,
+        stockIdeal: productoEliminado.stockIdeal,
+        stockMaximo: productoEliminado.stockMaximo,
+        activo: productoEliminado.activo,
+        imagenes: productoEliminado.imagenes,
+        inventario: productoEliminado.inventario
+      },
       currentUser
     })
 
@@ -306,7 +390,7 @@ export class ProductsService {
       precioCompra: Number(product.precioCompra || 0),
       precioVenta: Number(product.precioVenta || 0),
       stock: computeTotalStock(product.variants || []),
-      stockMinimo: Number(product.stockMinimo || 0),
+      stockMinimo: Number(product.stockMinimo ?? 0),
       stockIdeal: Number(product.stockIdeal || 0),
       stockMaximo: Number(product.stockMaximo || 0),
       imagenes: product.imagenes || [],

@@ -57,8 +57,20 @@ export class ProductsRepository {
     return this.findById(productId)
   }
 
+  async getDeletionDependencies(productId) {
+    const [ventas, recepciones] = await prisma.$transaction([
+      prisma.saleItem.count({ where: { productId } }),
+      prisma.receptionItem.count({ where: { productId } })
+    ])
+    return { ventas, recepciones }
+  }
+
   async remove(id) {
-    await prisma.product.delete({ where: { id } })
+    await prisma.$transaction(async (tx) => {
+      await tx.inventoryMovement.deleteMany({ where: { productId: id } })
+      await tx.productVariant.deleteMany({ where: { productId: id } })
+      await tx.product.delete({ where: { id } })
+    })
     return true
   }
 }

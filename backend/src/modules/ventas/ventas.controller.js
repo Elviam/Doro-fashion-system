@@ -31,10 +31,18 @@ export class VentasController {
   }
 
   async updateEstado(req, res) {
-    const venta = await ventasService.updateEstado(req.params.id, req.body.estado, req.user)
+    const venta = await ventasService.updateEstado(req.params.id, req.body.estado, req.user, req.body.motivoCancelacion)
 
     return res.status(200).json({
       message: 'Estado de la venta actualizado correctamente',
+      item: venta
+    })
+  }
+
+  async simulatePayment(req, res) {
+    const venta = await ventasService.simulatePayment(req.params.id, req.user)
+    return res.status(200).json({
+      message: 'Pago simulado confirmado correctamente',
       item: venta
     })
   }

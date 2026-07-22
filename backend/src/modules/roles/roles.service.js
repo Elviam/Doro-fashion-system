@@ -163,6 +163,7 @@ export class RolesService {
   sanitizeRole(role) {
     return {
       id: role.id,
+      codigo: role.codigo || '',
       nombre: role.nombre || '',
       descripcion: role.descripcion || '',
       permissions: Array.isArray(role.permissions) ? role.permissions : [],

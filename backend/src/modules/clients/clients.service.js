@@ -19,6 +19,15 @@ export class ClientsService {
     } = query
 
     const allClients = await clientsRepository.findAll()
+    const haceUnaSemana = new Date()
+    haceUnaSemana.setDate(haceUnaSemana.getDate() - 7)
+
+    const stats = {
+      total: allClients.length,
+      registradosUltimaSemana: allClients.filter((client) => {
+        return client.createdAt && new Date(client.createdAt) >= haceUnaSemana
+      }).length
+    }
 
     let filtered = allClients
 
@@ -56,7 +65,8 @@ export class ClientsService {
       items,
       total,
       page,
-      limit
+      limit,
+      stats
     }
   }
 
@@ -257,7 +267,10 @@ export class ClientsService {
   sanitizeClient(client) {
     return {
       id: client.id,
+      userId: client.userId || null,
       nombre: client.nombre || '',
+      totalCompras: client._count?.sales || 0,
+      ultimaCompra: client.sales?.[0]?.createdAt || null,
       rfc: client.rfc || '',
       email: client.email || '',
       telefono: client.telefono || '',

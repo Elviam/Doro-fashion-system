@@ -39,7 +39,13 @@ export class RecepcionesController {
   }
 
   async confirm(req, res) {
-    const result = await recepcionesService.confirm(req.params.id, req.user)
+    const result = await recepcionesService.confirm(
+      req.params.id,
+      req.body.items,
+      req.body.facturaProveedor,
+      req.body.facturaUrl,
+      req.user
+    )
 
     return res.status(200).json(result)
   }
