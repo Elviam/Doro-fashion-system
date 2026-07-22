@@ -4,12 +4,13 @@ export const PERMISSION_TO_PAGE_MAP = {
   'dashboard:read': 'dashboard',
   'products:read': 'productos',
   'recepciones:read': 'recepciones',
+  'recepciones:create': 'reabastecimiento',
   'clients:read': 'clientes',
   'suppliers:read': 'proveedores',
   'users:read': 'usuarios',
   'audit:read': 'auditoria',
-  'roles:read': 'roles',
   'inventory:read': 'inventario', 
+  'fulfillment:read': 'preparacion',
   'tienda:read': 'tienda',
   'ventas:read': 'ventas'
 };

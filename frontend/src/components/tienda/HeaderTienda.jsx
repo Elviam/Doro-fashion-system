@@ -32,6 +32,9 @@ export default function HeaderTienda({
   onLogout,
   usuario,
   onIrAlDashboard,
+  onIrInicio,
+  mostrarVolver = false,
+  onVolver,
 }) {
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -51,6 +54,8 @@ export default function HeaderTienda({
   const abrirWishlist = onAbrirWishlist || (() => navigate("/tienda?panel=wishlist"));
   const cerrarSesion = onLogout || (() => navigate("/login"));
   const irDashboard = onIrAlDashboard || (() => navigate("/dashboard"));
+  const irInicio = onIrInicio || (() => navigate("/tienda"));
+  const volver = onVolver || (() => navigate(-1));
 
   // Si hay sesión pero es de staff (admin/gerente/bodeguero/vendedor), la
   // tienda lo trata como invitado en todo lo que ve el cliente — sin tocar
@@ -112,11 +117,13 @@ export default function HeaderTienda({
 
         <div className="w-full flex flex-row md:contents items-center justify-between gap-4">
 
+          <div className="flex items-center gap-2 shrink-0 select-none">
+            {mostrarVolver && <button type="button" onClick={volver} aria-label="Volver" title="Volver" className="font-display -mr-1 flex h-9 w-9 items-center justify-center bg-transparent p-0 text-2xl leading-none text-[var(--gold)] transition hover:text-[var(--gold-light)] sm:text-3xl">←</button>}
           {/* Logo */}
-          <div className="flex items-baseline gap-1.5 shrink-0 select-none">
+          <div className="flex items-baseline gap-1.5">
             <button
               type="button"
-              onClick={() => navigate("/tienda")}
+              onClick={irInicio}
               aria-label="Ir al inicio de la tienda D'ORO Boutique"
               className="flex items-baseline gap-1.5 shrink-0 select-none bg-transparent border-0 p-0 cursor-pointer"
             >
@@ -133,6 +140,7 @@ export default function HeaderTienda({
           </div>
 
           {/* Acciones — móvil (mismo estilo que desktop) */}
+          </div>
           <div className="flex items-center gap-1 md:hidden shrink-0">
             <div className="relative">
               <button

@@ -1,7 +1,7 @@
+import { useState } from "react";
 import Etiquetas from "./Etiquetas";
 import Boton from "./Boton";
 import Modal from "./Modal";
-import { generarTicket } from "../utils/generarTicket";
 
 const formatFecha = (iso) => {
   if (!iso) return "—";
@@ -11,8 +11,17 @@ const formatFecha = (iso) => {
 };
 
 const formatMoney = (n) => `$${Number(n).toLocaleString("es-MX")}`;
+const estadoLegible = (value = "PENDIENTE") => value.replaceAll("_", " ").toLowerCase().replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
+const estadoVisual = (value = "PENDIENTE") => {
+  const estado = value.toUpperCase();
+  if (estado === "CANCELADO" || estado === "INCIDENCIA") return { icon: "bi-x-circle-fill", color: "text-rojo" };
+  if (["PAGADO", "ENVIADO", "ENTREGADO", "PREPARADO", "COMPLETADO"].includes(estado)) return { icon: "bi-check-circle-fill", color: "text-verde-dark dark:text-verde" };
+  if (estado === "EN_TRANSITO") return { icon: "bi-truck", color: "text-azul-dark dark:text-azul" };
+  return { icon: "bi-hourglass-split", color: "text-amarillo-dark dark:text-amarillo" };
+};
 
-export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onCambiarEstado, onCancelar, isOpen = true }) {
+export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onCancelar, isOpen = true }) {
+  const [mostrarMotivo, setMostrarMotivo] = useState(false);
   if (!venta) return null;
 
   // Header
@@ -38,18 +47,10 @@ export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onC
 
   // Footer
   const footerContenido = (
-    <div className="flex justify-between items-center gap-3 w-full">
-      <button
-        onClick={() => generarTicket(venta)}
-        className={`
-          rounded-[2px] px-4 py-2 text-sm lg:text-base font-tag font-bold transition-colors cursor-pointer border
-          text-[var(--gold-dark)] border-[var(--border-gold-40)] bg-[var(--gold-08)] hover:bg-[var(--gold)] hover:text-[var(--snow)]
-          dark:text-[var(--gold-light)] dark:border-[var(--border-gold-20)] dark:bg-[var(--gold-08)] dark:hover:bg-[var(--gold)] dark:hover:text-[var(--noir)]
-        `}
-      >
-        <i className="bi bi-download mr-1" />Descargar ticket
-      </button>
-
+    <div className="flex w-full justify-end gap-3">
+      {puedeActualizar && !["CANCELADO", "ENVIADO"].includes(venta.estado) && (
+        <button onClick={() => onCancelar(venta)} className="font-tag rounded-[2px] px-4 py-2 text-sm lg:text-base font-bold transition-colors cursor-pointer border text-red-700 dark:text-rojo border-red-700/30 dark:border-rojo/30 bg-red-700/10 dark:bg-rojo/10 hover:bg-red-700 dark:hover:bg-rojo hover:text-[var(--snow)] hover:border-red-700 dark:hover:border-rojo"><i className="bi bi-slash-circle mr-1" />Cancelar venta</button>
+      )}
     </div>
   );
 
@@ -63,6 +64,22 @@ export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onC
     >
       <div className="font-body pt-2 flex flex-col gap-6">
 
+        {/* Estados del pedido */}
+        <div className="rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--gold-08)] p-4">
+          <p className="font-tag text-[11px] uppercase tracking-[2px] font-bold text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Seguimiento del pedido</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            {[['Estado del pedido', venta.estado], ['Estado de preparación', venta.estadoPreparacion], ['Estado del envío', venta.estadoEnvio]].map(([label, value]) => { const visual = estadoVisual(value); return <div key={label}><p className="text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">{label}</p><p className="flex items-center gap-1.5 font-semibold text-[var(--noir)] dark:text-[var(--snow)]"><i className={`bi ${visual.icon} ${visual.color}`} aria-hidden="true" />{estadoLegible(value)}</p></div>; })}
+          </div>
+          {venta.estado === "CANCELADO" && venta.motivoCancelacion && (
+            <div className="mt-4 border-t border-[var(--border-gold-25)] pt-3">
+              <button type="button" onClick={() => setMostrarMotivo((visible) => !visible)} className="text-sm font-semibold text-[var(--gold-dark)] underline-offset-2 hover:underline dark:text-[var(--gold-light)]">
+                {mostrarMotivo ? "Ocultar motivo" : "Ver motivo"}
+              </button>
+              {mostrarMotivo && <p className="mt-2 rounded-[2px] border border-[var(--border-gold-20)] bg-[var(--snow)] p-3 text-sm text-[var(--noir)] dark:bg-[var(--noir)] dark:text-[var(--snow)]">{venta.motivoCancelacion}</p>}
+            </div>
+          )}
+        </div>
+
         {/* Cliente */}
         <div>
           <p className="font-tag text-[11px] lg:text-xs tracking-[2px] uppercase font-bold mb-3 transition-colors text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
@@ -72,9 +89,9 @@ export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onC
             {[
               { label: "Nombre", value: venta.cliente?.nombre },
               { label: "Email",  value: venta.cliente?.email },
-              { label: "Ciudad", value: venta.cliente?.ciudad },
-              { label: "Calle",  value: venta.cliente?.calle },
-              { label: "C.P.",   value: venta.cliente?.cp },
+              { label: "Ciudad", value: venta.direccionEntrega?.ciudad },
+              { label: "Calle",  value: [venta.direccionEntrega?.calle, venta.direccionEntrega?.numeroExterior].filter(Boolean).join(" ") },
+              { label: "C.P.",   value: venta.direccionEntrega?.cp },
               { label: "Fecha",  value: formatFecha(venta.createdAt) },
             ].map(({ label, value }) => (
               <div key={label} className={`
@@ -178,25 +195,37 @@ export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onC
         </div>
 
         {/* Acciones de estado */}
-        {puedeActualizar && !["CANCELADO", "ENVIADO"].includes(venta.estado) && (
-          <div className="flex flex-wrap gap-2 mb-2">
-            {venta.estado === "PENDIENTE" && (
-              <Boton
-                variante="claro"
-                onClick={() => onCambiarEstado(venta.id, "PAGADO")}
-                tipo="button"
-              >
-                <i className="bi bi-check-circle mr-1" /> Marcar como pagado
-              </Boton>
+        {venta.estado === "ENVIADO" && (
+          <div className="rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--gold-08)] p-4">
+            <p className="font-tag text-xs font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Envío simulado</p>
+            <p className="mt-1 text-sm text-[var(--noir)] dark:text-[var(--snow)]">{venta.paqueteria || "D'ORO Envíos (simulado)"} · Guía {venta.guiaEnvio || "—"}</p>
+            <p className="mt-1 text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">Estado: {(venta.estadoEnvio || "ENVIADO_PAQUETERIA").replaceAll("_", " ")}</p>
+            {false && venta.estadoEnvio !== "ENTREGADO" && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {venta.estadoEnvio !== "EN_TRANSITO" && <Boton variante="claro" disabled={actualizandoEnvio} onClick={() => onActualizarEnvio(venta.id, "EN_TRANSITO")}>{actualizandoEnvio && <i className="bi bi-arrow-repeat mr-1 animate-spin" />}{actualizandoEnvio ? "Actualizando..." : "En tránsito"}</Boton>}
+                <Boton variante="oscuro" disabled={actualizandoEnvio} onClick={() => onActualizarEnvio(venta.id, "ENTREGADO")}>{actualizandoEnvio && <i className="bi bi-arrow-repeat mr-1 animate-spin" />}{actualizandoEnvio ? "Actualizando..." : "Marcar entregado"}</Boton>
+              </div>
             )}
-            {venta.estado === "PAGADO" && (
-              <Boton
-                variante="claro"
-                onClick={() => onCambiarEstado(venta.id, "ENVIADO")}
-                tipo="button"
-              >
-                <i className="bi bi-truck mr-1" /> Marcar como enviado
-              </Boton>
+            <p className="mt-3 flex items-start gap-2 text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]"><i className="bi bi-info-circle mt-0.5 text-[var(--gold-dark)] dark:text-[var(--gold-light)]" />{venta.estadoEnvio === "ENTREGADO" ? "Entrega registrada automáticamente por el simulador de paquetería del portafolio." : "El seguimiento es una simulación. La entrega se actualizará automáticamente después de un minuto en tránsito."}</p>
+          </div>
+        )}
+
+        {false && puedeActualizar && !["CANCELADO", "ENVIADO"].includes(venta.estado) && (
+          <div className="flex flex-wrap gap-2 mb-2">
+            {false && venta.estado === "PAGADO" && (
+              venta.estadoPreparacion === "PREPARADO" ? (
+                <Boton
+                  variante="claro"
+                  onClick={() => {}}
+                  tipo="button"
+                >
+                  <i className="bi bi-truck mr-1" /> Marcar como enviado
+                </Boton>
+              ) : (
+                <p className="self-center text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">
+                  <i className="bi bi-box-seam mr-1" /> Esperando preparación de bodega.
+                </p>
+              )
             )}
             <button
               onClick={() => onCancelar(venta)}

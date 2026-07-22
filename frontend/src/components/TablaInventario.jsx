@@ -35,9 +35,11 @@ export default function TablaInventario({ productosDB, busqueda, filtroEstado, c
     )
     .filter((p) => {
       if (!filtroEstado) return true;
-      const stock = calcularStockTotal(p.inventario);
-      const minimo = Number(p.stockMinimo) || 5;
-      return getEstadoStock(stock, minimo) === filtroEstado;
+      const minimo = Number(p.stockMinimo ?? 0);
+      const existencias = (p.inventario || []).map((variante) => Number(variante.stock || 0));
+      if (filtroEstado === "critico") return existencias.some((stock) => stock <= minimo);
+      if (filtroEstado === "bajo") return !existencias.some((stock) => stock <= minimo) && existencias.some((stock) => stock <= minimo * 2);
+      return existencias.every((stock) => stock > minimo * 2);
     });
 
   useEffect(() => { setPaginaActual(1); }, [busqueda, filtroEstado]);
@@ -52,7 +54,7 @@ export default function TablaInventario({ productosDB, busqueda, filtroEstado, c
     else setPaginaActual(Number(page));
   };
 
-  const encabezados = ["Imagen", "SKU", "Producto", "Categoría", "Stock Total", "Stock Mínimo", "Acciones"];
+  const encabezados = ["Imagen", "SKU", "Producto", "Categoría", "Stock Total", "Mínimo por talla", "Acciones"];
   const COLSPAN = encabezados.length;
 
   return (
@@ -67,7 +69,7 @@ export default function TablaInventario({ productosDB, busqueda, filtroEstado, c
         ) : (
           productosPaginados.map((p) => {
             const stockTotal  = calcularStockTotal(p.inventario);
-            const stockMinimo = Number(p.stockMinimo) || 5;
+            const stockMinimo = Number(p.stockMinimo ?? 0);
             const tallasCategoria = TALLAS_POR_CATEGORIA[p.categoria] || ["Unitalla"];
             const iluminada = hoveredId === p.id;
 
@@ -159,7 +161,7 @@ export default function TablaInventario({ productosDB, busqueda, filtroEstado, c
         ]}
         exportFilas={productosFiltrados.map((p) => {
           const stockTotal  = calcularStockTotal(p.inventario);
-          const stockMinimo = Number(p.stockMinimo) || 5;
+          const stockMinimo = Number(p.stockMinimo ?? 0);
           const tallasCategoria = TALLAS_POR_CATEGORIA[p.categoria] || ["Unitalla"];
           const tallasTexto = tallasCategoria
             .map((t) => `${t}:${p.inventario?.find((i) => i.talla === t)?.stock || 0}`)

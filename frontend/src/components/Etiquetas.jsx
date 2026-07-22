@@ -11,6 +11,16 @@ export default function Etiquetas({ contenido }) {
       bg-green-600/15 text-green-700 border-green-600/60
       dark:bg-verde/20 dark:text-verde dark:border-verde/30
     `,
+
+    Enviado: `
+      bg-green-600/15 text-green-700 border-green-600/60
+      dark:bg-verde/20 dark:text-verde dark:border-verde/30
+    `,
+
+    Enviada: `
+      bg-green-600/15 text-green-700 border-green-600/60
+      dark:bg-verde/20 dark:text-verde dark:border-verde/30
+    `,
     
     Inactivo: `
       bg-red-600/15 text-red-700 border-red-600/60
@@ -54,13 +64,11 @@ export default function Etiquetas({ contenido }) {
     `,
 
     enviado: `
-      bg-azul/30 text-azul border-azul/50 
-      dark:bg-azul/20 dark:border-azul/30
+      bg-azul/10 text-azul-dark border-azul/30
     `,
 
     ENVIADO: `
-      bg-azul/30 text-azul border-azul/50
-      dark:bg-azul/20 dark:border-azul/30
+      bg-azul/10 text-azul-dark border-azul/30
     `,
 
     entregado: `

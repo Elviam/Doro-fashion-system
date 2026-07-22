@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-export default function Toast({ message, type = 'exito', onClose }) {
+export default function Toast({ message, type = 'exito', icon, onClose }) {
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => {
@@ -36,7 +36,7 @@ export default function Toast({ message, type = 'exito', onClose }) {
             : 'bg-gold/15 text-gold'
           }
         `}>
-          <i className={`text-lg bi ${isError ? 'bi-exclamation-triangle-fill' : 'bi-stars'}`}></i>
+          <i className={`text-lg bi ${icon || (isError ? 'bi-exclamation-triangle-fill' : 'bi-stars')}`}></i>
         </div>
         
         {/* Texto informativo */}

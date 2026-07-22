@@ -7,7 +7,7 @@ import Boton from "./Boton";
 import ModalConfirmacion from "./ModalConfirmacion";
 import { CATEGORIAS_PERMITIDAS, DEPARTAMENTOS_PERMITIDOS } from "../constants/categorias";
 
-export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
+export default function FormProductos({ data, onGuardar, onCancelar, isOpen, guardando = false }) {
   const [formData, setFormData] = useState({
     sku: "", nombre: "", departamento: "", categoria: "",
     descripcion: "", pVenta: "", pCompra: "", estado: "Activo",
@@ -216,17 +216,19 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
     onGuardar(formData, { irARegistrarInventario: true });
   };
 
+  const hayCambios = !data || tomarSnapshot(formData) !== estadoOriginal;
+
   const footerAcciones = (
   <div className="flex flex-col sm:flex-row sm:justify-between gap-3 w-full">
-    <Boton variante="oscuro" onClick={handleGuardarYRegistrarClick} tipo="button" className="w-full sm:w-auto">
-      <i className="bi bi-box-seam"></i> Agregar Inventario
+    <Boton variante="oscuro" onClick={handleGuardarYRegistrarClick} tipo="button" className="w-full sm:w-auto" disabled={guardando}>
+      {guardando ? <><i className="bi bi-arrow-repeat animate-spin"></i> Guardando...</> : <><i className="bi bi-box-seam"></i> Agregar Inventario</>}
     </Boton>
     <div className="flex flex-row justify-end gap-3 w-full sm:w-auto">
-      <Boton variante="secundario" onClick={handleIntentarCerrar} tipo="button">
+      <Boton variante="secundario" onClick={handleIntentarCerrar} tipo="button" disabled={guardando}>
         <i className="bi bi-x-lg"></i> Cancelar
       </Boton>
-      <Boton variante="claro" onClick={handleGuardarClick} tipo="button">
-        <i className="bi bi-save"></i> Guardar
+      <Boton variante="claro" onClick={handleGuardarClick} tipo="button" disabled={!hayCambios || guardando}>
+        {guardando ? <><i className="bi bi-arrow-repeat animate-spin"></i> Guardando...</> : <><i className="bi bi-save"></i> Guardar</>}
       </Boton>
     </div>
   </div>
@@ -333,11 +335,18 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
                 deshabilitado={true} 
               />
               
-              <Input 
-                label="Estado" name="estado" tipo="select" 
-                opciones={["Activo", "Inactivo"]} 
-                value={formData.estado} onChange={handleChange} 
-              />
+              <div>
+                <Input 
+                  label="Estado" name="estado" tipo="select" 
+                  opciones={["Activo", "Inactivo"]} 
+                  value={formData.estado} onChange={handleChange} 
+                />
+                {!data && (
+                  <p className="mt-1.5 text-xs leading-relaxed text-[var(--noir-soft)] dark:text-[var(--ash)]">
+                    <strong className="text-[var(--noir)] dark:text-[var(--snow)]">Activo:</strong> se publica y aparece en la tienda. <strong className="text-[var(--noir)] dark:text-[var(--snow)]">Inactivo:</strong> queda guardado, pero no se muestra en la tienda.
+                  </p>
+                )}
+              </div>
               
               <div>
                 <Input 
@@ -423,7 +432,7 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Input 
-                  label="Stock Mínimo" 
+                  label="Stock mínimo por talla" 
                   tipo="number" 
                   name="stockMinimo" 
                   min="0"
@@ -436,7 +445,7 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
 
               <div>
                 <Input 
-                  label="Stock Ideal" 
+                  label="Stock ideal por talla" 
                   tipo="number" 
                   name="stockIdeal" 
                   min="0"
@@ -449,7 +458,7 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen }) {
 
               <div>
                 <Input 
-                  label="Stock Máximo" 
+                  label="Stock máximo por talla" 
                   tipo="number" 
                   name="stockMaximo" 
                   min="0"

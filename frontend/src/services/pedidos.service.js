@@ -28,8 +28,8 @@ async function handleResponse(res) {
 
 export const ESTADO_PEDIDO_LABELS = {
   BORRADOR: "En borrador",
-  PENDIENTE: "Pendiente",
-  CONFIRMADA: "Concluido",
+  ENVIADA: "Enviado",
+  CONFIRMADA: "Recibido",
   CANCELADA: "Cancelado",
 };
 

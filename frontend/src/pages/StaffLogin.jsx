@@ -228,6 +228,32 @@ const staffLoginSchema = z.object({
   password: z.string().min(1, 'La contraseña es obligatoria'),
 });
 
+const LOGIN_TIMEOUT_MS = 12_000;
+
+function getHttpLoginErrorMessage(status, result) {
+  if (status === 503) {
+    return 'El servicio no está disponible temporalmente. Intenta de nuevo en unos minutos.';
+  }
+
+  if (status >= 500) {
+    return 'El servidor no está disponible temporalmente. Intenta de nuevo en unos minutos.';
+  }
+
+  return result?.message || 'No se pudo iniciar sesión. Verifica tus credenciales e inténtalo de nuevo.';
+}
+
+function getConnectionErrorMessage(error) {
+  if (error?.name === 'AbortError') {
+    return 'La conexión tardó demasiado. Intenta nuevamente.';
+  }
+
+  if (navigator.onLine === false || error instanceof TypeError) {
+    return 'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.';
+  }
+
+  return 'No fue posible completar el inicio de sesión. Intenta nuevamente.';
+}
+
 export default function StaffLogin() {
   useTitulo("Acceso Administrativo — D'oro");
 
@@ -248,20 +274,46 @@ export default function StaffLogin() {
   // reemplaza cuando las credenciales de staff son válidas.
 
   const onSubmit = async (data) => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), LOGIN_TIMEOUT_MS);
+
     try {
       setLoading(true);
       const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/staff-login`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ usuario: data.usuario, password: data.password }),
+        signal: controller.signal,
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message || 'Credenciales incorrectas.');
+
+      const result = await response.json().catch(() => null);
+      if (!response.ok) {
+        setToast({ message: getHttpLoginErrorMessage(response.status, result), type: 'error' });
+        return;
+      }
+
+      if (!result?.token) {
+        setToast({
+          message: 'El servidor devolvió una respuesta inválida. Intenta nuevamente.',
+          type: 'error',
+        });
+        return;
+      }
+
       login(result.token, result.user ?? {});
-      navigate('/dashboard');
+      const permissions = result.user?.permissions || [];
+      const destination = permissions.includes('dashboard:read')
+        ? '/dashboard'
+        : permissions.includes('recepciones:read')
+          ? '/recepciones'
+          : permissions.includes('fulfillment:read')
+            ? '/preparar-pedidos'
+            : '/perfil';
+      navigate(destination);
     } catch (err) {
-      setToast({ message: err.message, type: 'error' });
+      setToast({ message: getConnectionErrorMessage(err), type: 'error' });
     } finally {
+      window.clearTimeout(timeoutId);
       setLoading(false);
     }
   };
@@ -301,9 +353,7 @@ export default function StaffLogin() {
           </div>
           <span className="staff-login-gold-line" />
 
-          <p className="staff-login-tag">Panel Administrativo</p>
-          <h1 className="staff-login-title">Acceso de Personal</h1>
-
+          <h1 className="staff-login-tag">Panel Administrativo</h1>
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             <div className="staff-login-form-grid">
 

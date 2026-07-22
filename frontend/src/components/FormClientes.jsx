@@ -4,15 +4,13 @@ import Input from "./Input";
 import Boton from "./Boton";
 import ModalConfirmacion from "./ModalConfirmacion";
 
-export default function FormClientes({ cliente, esNuevo, onClose, onGuardar, isOpen = true }) {
+export default function FormClientes({ cliente, onClose, onGuardar, isOpen = true }) {
   const [form, setForm] = useState({
-    nombre: "",
     rfc: "",
-    email: "",
     telefono: "",
     direccion: "",
+    contacto: "",
     notas: "",
-    activo: true, 
   });
 
   const [confirmarDescartar, setConfirmarDescartar] = useState(false);
@@ -20,18 +18,16 @@ export default function FormClientes({ cliente, esNuevo, onClose, onGuardar, isO
 
   useEffect(() => {
     const inicial = {
-      nombre: cliente?.nombre || "",
       rfc: cliente?.rfc || "",
-      email: cliente?.email || "",
       telefono: cliente?.telefono || "",
       direccion: cliente?.direccion || "",
+      contacto: cliente?.contacto || "",
       notas: cliente?.notas || "",
-      activo: cliente ? cliente.activo !== false : true, 
     };
     
     setForm(inicial);
     setEstadoOriginal(JSON.stringify(inicial));
-  }, [cliente, esNuevo]);
+  }, [cliente]);
 
   const handleIntentarCerrar = () => {
     const estadoActual = JSON.stringify(form);
@@ -53,20 +49,20 @@ export default function FormClientes({ cliente, esNuevo, onClose, onGuardar, isO
   }, [isOpen, confirmarDescartar, form, estadoOriginal, onClose]);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setForm((prev) => ({ 
       ...prev, 
-      [name]: type === "checkbox" ? checked : value 
+      [name]: value
     }));
   };
 
   const handleGuardarClick = (e) => {
     e.preventDefault();
-    onGuardar(esNuevo ? form : { ...cliente, ...form });
+    onGuardar({ ...cliente, ...form });
   };
 
   // Header
-  const tituloPersonalizado = esNuevo ? "Nuevo Cliente" : "Editar Cliente";
+  const tituloPersonalizado = "Editar datos de contacto";
 
   // Footer
   const footerAcciones = (
@@ -75,7 +71,7 @@ export default function FormClientes({ cliente, esNuevo, onClose, onGuardar, isO
         <i className="bi bi-x-lg"></i> Cancelar
       </Boton>
       <Boton variante="claro" onClick={handleGuardarClick} tipo="button">
-        <i className="bi bi-save"></i> {esNuevo ? "Crear cliente" : "Guardar cambios"}
+        <i className="bi bi-save"></i> Guardar cambios
       </Boton>
     </div>
   );
@@ -92,32 +88,6 @@ export default function FormClientes({ cliente, esNuevo, onClose, onGuardar, isO
         <div className="font-body pt-2 pb-4">
           <form className="flex flex-col gap-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              
-              <div className="sm:col-span-2">
-                <Input
-                  label="Nombre Completo o Empresa"
-                  tipo="text"
-                  name="nombre"
-                  value={form.nombre}
-                  onChange={handleChange}
-                  placeholder="Ej. Ana Morales / Empresa S.A."
-                  requerido
-                />
-              </div>
-              
-              <div className="sm:col-span-2">
-                <Input
-                  label="Estado"
-                  tipo="select"
-                  name="activo"
-                  value={form.activo ? "Activo" : "Inactivo"}
-                  onChange={(e) => setForm(prev => ({ 
-                    ...prev, 
-                    activo: e.target.value === "Activo" 
-                  }))}
-                  opciones={["Activo", "Inactivo"]}
-                />
-              </div>
               
               <Input
                 label="RFC"
@@ -137,16 +107,14 @@ export default function FormClientes({ cliente, esNuevo, onClose, onGuardar, isO
                 placeholder="Ej. 555 123 4567"
               />
               
-              <div className="sm:col-span-2">
-                <Input
-                  label="Correo Electrónico"
-                  tipo="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="correo@ejemplo.com"
-                />
-              </div>
+              <Input
+                label="Contacto"
+                tipo="text"
+                name="contacto"
+                value={form.contacto}
+                onChange={handleChange}
+                placeholder="Persona de contacto, si aplica"
+              />
 
               <div className="sm:col-span-2">
                 <Input

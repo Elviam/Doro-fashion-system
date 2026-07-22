@@ -11,10 +11,11 @@ import Encabezado from "../components/Encabezado";
 import { api } from "../services/api";
 import ModalVentas from "../components/ModalVentas";
 
-const LIMIT = 10;
+const LIMIT = 7;
 
 // Se conserva exportada: el Dashboard (Dashboard.jsx) la sigue usando
 // para su propia gráfica de tendencia de 30 días.
+/* Legacy chart helper removed: sales analytics now live in the Dashboard API. */
 export function generarDatos30Dias(ventas) {
   const hoy = new Date();
   const dias = Array.from({ length: 30 }, (_, i) => {
@@ -43,6 +44,12 @@ const OPCIONES_ESTADO = [
   { value: "ENVIADO",   label: "Enviados" },
   { value: "CANCELADO", label: "Cancelados" },
 ];
+const OPCIONES_PAGO = [
+  { value: "", label: "Todos los pagos" },
+  { value: "tarjeta", label: "Tarjeta" },
+  { value: "oxxo", label: "OXXO" },
+  { value: "spei", label: "SPEI" },
+];
 
 const formatFecha = (iso) => {
   if (!iso) return "—";
@@ -67,47 +74,55 @@ export default function Ventas() {
   const [ventas, setVentas]               = useState([]);
   const [cargando, setCargando]           = useState(true);
   const [filtroEstado, setFiltroEstado]   = useState("");
+  const [filtroPago, setFiltroPago]       = useState("");
   const [busqueda, setBusqueda]           = useState("");
+  const [desde, setDesde]                 = useState("");
+  const [hasta, setHasta]                 = useState("");
+  const [resumen, setResumen]             = useState({ total: 0, estados: {} });
+  const [error, setError]                 = useState("");
   const [paginaActiva, setPaginaActiva]   = useState(1);
   const [ventaDetalle, setVentaDetalle]   = useState(null);
   const [ventaCancelando, setVentaCancelando] = useState(null);
+  const [motivoCancelacion, setMotivoCancelacion] = useState("");
+  const [cancelando, setCancelando] = useState(false);
   const [modalExito, setModalExito]       = useState("");
   const [refresh, setRefresh]             = useState(0);
 
   useEffect(() => {
     setCargando(true);
-    api.get("/ventas?limit=100")
-      .then((data) => setVentas(data.items ?? []))
-      .catch(() => setVentas([]))
+    const params = new URLSearchParams({ page: paginaActiva, limit: LIMIT, q: busqueda, estado: filtroEstado, metodoPago: filtroPago, desde, hasta });
+    api.get(`/ventas?${params}`)
+      .then((pagina) => {
+        const items = pagina.items ?? [];
+        setVentas(items);
+        setVentaDetalle((actual) => actual ? items.find((venta) => venta.id === actual.id) || actual : actual);
+        setResumen({ total: pagina.total ?? 0, estados: pagina.estados ?? {} });
+        setError("");
+      })
+      .catch(() => { setVentas([]); setResumen({ total: 0, estados: {} }); setError("No se pudieron cargar las ventas."); })
       .finally(() => setCargando(false));
-  }, [refresh]);
+  }, [refresh, paginaActiva, filtroEstado, filtroPago, busqueda, desde, hasta]);
 
-  useEffect(() => { setPaginaActiva(1); }, [filtroEstado, busqueda]);
+  useEffect(() => { setPaginaActiva(1); }, [filtroEstado, filtroPago, busqueda, desde, hasta]);
 
-  const ventasFiltradas = ventas
-    .filter((v) => !filtroEstado || v.estado === filtroEstado)
-    .filter((v) => {
-      if (!busqueda.trim()) return true;
-      const q = busqueda.toLowerCase();
-      return (
-        v.id.toLowerCase().includes(q) ||
-        v.cliente?.nombre?.toLowerCase().includes(q) ||
-        v.cliente?.email?.toLowerCase().includes(q)
-      );
-    });
+  useEffect(() => {
+    if (ventaDetalle?.estadoEnvio !== "EN_TRANSITO") return undefined;
+    const intervalo = window.setInterval(() => setRefresh((actual) => actual + 1), 3_000);
+    return () => window.clearInterval(intervalo);
+  }, [ventaDetalle?.estadoEnvio]);
 
-  const totalRegistros = ventasFiltradas.length;
+  const totalRegistros = resumen.total;
   const inicio = (paginaActiva - 1) * LIMIT;
-  const rows = ventasFiltradas.slice(inicio, inicio + LIMIT);
+  const rows = ventas;
 
-  const ventasPagadas = ventas.filter((v) => v.estado === "PAGADO");
-  const totalIngresos = ventasPagadas.reduce((acc, v) => acc + v.total, 0);
+  const ventasConfirmadas = ventas.filter((v) => ["PAGADO", "ENVIADO"].includes(v.estado));
+  const totalIngresos = ventasConfirmadas.reduce((acc, v) => acc + v.total, 0);
 
   // ── Indicadores operativos (reemplazan la gráfica; el análisis vive en el Dashboard) ──
   const ventasHoy      = ventas.filter((v) => esHoy(v.createdAt)).length;
-  const ingresosHoy     = ventas.filter((v) => esHoy(v.createdAt) && v.estado === "PAGADO").reduce((a, v) => a + v.total, 0);
-  const ticketPromedio  = ventasPagadas.length > 0 ? totalIngresos / ventasPagadas.length : 0;
-  const productosVendidos = ventas.reduce((a, v) => a + (v.items?.reduce((s, i) => s + i.cantidad, 0) ?? 0), 0);
+  const ingresosHoy     = ventas.filter((v) => esHoy(v.createdAt) && ["PAGADO", "ENVIADO"].includes(v.estado)).reduce((a, v) => a + v.total, 0);
+  const ticketPromedio  = ventasConfirmadas.length > 0 ? totalIngresos / ventasConfirmadas.length : 0;
+  const productosVendidos = ventasConfirmadas.reduce((a, v) => a + (v.items?.reduce((s, i) => s + i.cantidad, 0) ?? 0), 0);
 
   const cambiarPagina = (p) => {
     const totalPaginas = Math.max(1, Math.ceil(totalRegistros / LIMIT));
@@ -117,26 +132,18 @@ export default function Ventas() {
   };
 
   const cancelarVenta = async () => {
-    if (!ventaCancelando) return;
+    if (!ventaCancelando || cancelando) return;
+    setCancelando(true);
     try {
-      await api.patch(`/ventas/${ventaCancelando.id}/estado`, { estado: "CANCELADO" });
+      await api.patch(`/ventas/${ventaCancelando.id}/estado`, { estado: "CANCELADO", motivoCancelacion: motivoCancelacion.trim() });
       setRefresh((r) => r + 1);
       setModalExito("Venta cancelada correctamente");
     } catch {
       window.alert("No se pudo cancelar la venta.");
     } finally {
+      setCancelando(false);
       setVentaCancelando(null);
-    }
-  };
-
-  const cambiarEstado = async (id, estado) => {
-    try {
-      await api.patch(`/ventas/${id}/estado`, { estado });
-      setRefresh((r) => r + 1);
-      setModalExito("Estado actualizado correctamente");
-      setVentaDetalle(null);
-    } catch {
-      window.alert("No se pudo actualizar el estado.");
+      setMotivoCancelacion("");
     }
   };
 
@@ -149,10 +156,10 @@ export default function Ventas() {
           onActualizar={() => setRefresh((r) => r + 1)}
         />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 w-full mb-2">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 w-full mb-2">
           <Tarjetas
             label="Total pedidos"
-            value={ventas.length}
+            value={resumen.total}
             sub="Todos los estados"
             icon="bi bi-bag"
             onClick={() => setFiltroEstado("")}
@@ -160,7 +167,7 @@ export default function Ventas() {
           />
           <Tarjetas
             label="Pagados"
-            value={ventas.filter((v) => v.estado === "PAGADO").length}
+            value={resumen.estados.PAGADO || 0}
             sub="Confirmados"
             accent="#64a838"
             icon="bi bi-check-circle"
@@ -169,7 +176,7 @@ export default function Ventas() {
           />
           <Tarjetas
             label="Pendientes"
-            value={ventas.filter((v) => v.estado === "PENDIENTE").length}
+            value={resumen.estados.PENDIENTE || 0}
             sub="Por procesar"
             accent="#F7CB57"
             icon="bi bi-hourglass-split"
@@ -178,7 +185,7 @@ export default function Ventas() {
           />
           <Tarjetas
             label="Cancelados"
-            value={ventas.filter((v) => v.estado === "CANCELADO").length}
+            value={resumen.estados.CANCELADO || 0}
             sub="Ventas anuladas"
             accent="#E05C5C"
             icon="bi bi-x-circle"
@@ -187,24 +194,17 @@ export default function Ventas() {
           />
           <Tarjetas
             label="Enviados"
-            value={ventas.filter((v) => v.estado === "ENVIADO").length}
+            value={resumen.estados.ENVIADO || 0}
             sub="En camino al cliente"
             accent="#3a86bc"
             icon="bi bi-truck"
             onClick={() => setFiltroEstado("ENVIADO")}
             isActive={filtroEstado === "ENVIADO"}
           />
-          <Tarjetas
-            label="Ingresos"
-            value={formatMoney(totalIngresos)}
-            sub="Solo pagados"
-            accent="#3a86bc"
-            icon="bi bi-cash-coin"
-          />
         </div>
 
         {/* Resumen operativo del día — reemplaza la gráfica, que ahora vive solo en el Dashboard */}
-        <div className="flex flex-wrap gap-x-8 gap-y-3 px-5 py-4 rounded-[2px] border border-[var(--border-gold-20)] bg-[var(--snow)] dark:bg-[var(--noir-soft)]">
+        <div className="hidden">
           <div>
             <p className="text-[10px] uppercase tracking-[2px] font-tag font-semibold text-[var(--noir-soft)]/70 dark:text-[var(--ash)] mb-0.5">
               Ventas de hoy
@@ -225,7 +225,7 @@ export default function Ventas() {
           <div className="w-px bg-[var(--border-gold-20)] hidden sm:block" />
           <div>
             <p className="text-[10px] uppercase tracking-[2px] font-tag font-semibold text-[var(--noir-soft)]/70 dark:text-[var(--ash)] mb-0.5">
-              Ticket promedio
+              Compra promedio
             </p>
             <p className="text-lg font-bold tabular-nums text-[var(--noir)] dark:text-[var(--snow)] m-0">
               {formatMoney(ticketPromedio)}
@@ -242,10 +242,19 @@ export default function Ventas() {
           </div>
         </div>
 
+        {error && <p className="rounded-[2px] border border-rojo/30 bg-rojo/10 px-4 py-3 text-sm text-rojo">{error}</p>}
+        <div className="flex flex-wrap items-end gap-3 rounded-[2px] border border-[var(--border-gold-20)] bg-[var(--snow)] p-3 dark:bg-[var(--noir-soft)]">
+          <label className="text-xs font-semibold text-[var(--noir-soft)] dark:text-[var(--ash)]">Desde<input type="date" value={desde} onChange={(event) => setDesde(event.target.value)} className="mt-1 block h-9 rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] px-2 text-sm text-[var(--noir)] dark:border-[var(--border-gold-20)] dark:bg-[var(--noir)] dark:text-[var(--snow)]" /></label>
+          <label className="text-xs font-semibold text-[var(--noir-soft)] dark:text-[var(--ash)]">Hasta<input type="date" value={hasta} min={desde || undefined} onChange={(event) => setHasta(event.target.value)} className="mt-1 block h-9 rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] px-2 text-sm text-[var(--noir)] dark:border-[var(--border-gold-20)] dark:bg-[var(--noir)] dark:text-[var(--snow)]" /></label>
+          {(desde || hasta) && <button type="button" onClick={() => { setDesde(""); setHasta(""); }} className="h-9 rounded-[2px] border border-[var(--border-gold-40)] px-3 text-xs font-semibold text-[var(--gold-dark)] dark:border-[var(--border-gold-20)] dark:text-[var(--gold-light)]">Limpiar fechas</button>}
+        </div>
         <ToolBar
           filtro={filtroEstado}
           setFiltro={setFiltroEstado}
           opcionesFiltro={OPCIONES_ESTADO}
+          filtro2={filtroPago}
+          setFiltro2={setFiltroPago}
+          opcionesFiltro2={OPCIONES_PAGO}
           busqueda={busqueda}
           setBusqueda={setBusqueda}
           placeholderBuscar="Buscar por ID, cliente o email..."
@@ -254,8 +263,8 @@ export default function Ventas() {
         <Tabla encabezados={["N° Pedido", "Fecha", "Cliente", "Método pago", "Artículos", "Total", "Estado", "Acciones"]}>
           {cargando ? (
             <tr>
-              <td colSpan={8} className={`text-center py-10 text-sm opacity-50 transition-colors text-[var(--noir-soft)] dark:text-[var(--snow)]`}>
-                Cargando ventas...
+              <td colSpan={8} className={`text-center py-10 text-sm transition-colors text-[var(--noir-soft)] dark:text-[var(--ash)]`}>
+                <i className="bi bi-arrow-repeat spinner-cargando mr-2 text-[var(--noir-soft)] dark:text-[var(--ash)]" />Cargando ventas...
               </td>
             </tr>
           ) : rows.length === 0 ? (
@@ -265,9 +274,9 @@ export default function Ventas() {
               </td>
             </tr>
           ) : rows.map((v) => (
-            <tr key={v.id} className={`
+            <tr key={v.id} onClick={() => setVentaDetalle(v)} className={`
               border-b transition-colors
-              border-[var(--border-gold-20)] hover:bg-[var(--gold-08)]
+              cursor-pointer border-[var(--border-gold-20)] hover:bg-[var(--gold-08)]
               dark:border-[var(--border-gold-20)] dark:hover:bg-[var(--gold-08)]
             `}>
               <td className="p-4 text-center text-sm font-poppins font-bold whitespace-nowrap transition-colors text-[var(--gold-dark)] dark:text-[var(--gold)]">
@@ -298,12 +307,12 @@ export default function Ventas() {
               <td className="p-4 text-center whitespace-nowrap">
                 <Etiquetas contenido={v.estado} />
               </td>
-              <td className="p-4 align-middle whitespace-nowrap">
+              <td onClick={(event) => event.stopPropagation()} className="p-4 align-middle whitespace-nowrap">
                 <AccionesTabla
                   onVer={() => setVentaDetalle(v)}
                   onCancelar={
                     puedeActualizar && v.estado !== "CANCELADO"
-                      ? () => setVentaCancelando(v)
+                      ? () => { setVentaCancelando(v); setMotivoCancelacion(""); }
                       : null
                   }
                 />
@@ -321,15 +330,21 @@ export default function Ventas() {
           exportTitulo="Ventas"
           exportColumnas={[
             { header: "ID",      key: "id",      width: 12 },
+            { header: "Pedido",  key: "pedido",  width: 18 },
             { header: "Fecha",   key: "fecha",   width: 14 },
             { header: "Cliente", key: "cliente", width: 28 },
+            { header: "Método pago", key: "metodo", width: 16 },
+            { header: "Artículos", key: "articulos", width: 12 },
             { header: "Total",   key: "total",   width: 14 },
             { header: "Estado",  key: "estado",  width: 14 },
           ]}
-          exportFilas={ventasFiltradas.map((v) => ({
+          exportFilas={ventas.map((v) => ({
             id:      `#${v.id.slice(0, 8).toUpperCase()}`,
+            pedido:  v.numeroPedido,
             fecha:   formatFecha(v.createdAt),
             cliente: v.cliente?.nombre ?? "",
+            metodo:  v.metodoPago,
+            articulos: v.items?.reduce((total, item) => total + item.cantidad, 0) ?? 0,
             total:   formatMoney(v.total),
             estado:  v.estado,
           }))}
@@ -340,8 +355,7 @@ export default function Ventas() {
             venta={ventaDetalle}
             puedeActualizar={puedeActualizar}
             onClose={() => setVentaDetalle(null)}
-            onCambiarEstado={cambiarEstado}
-            onCancelar={(v) => { setVentaDetalle(null); setVentaCancelando(v); }}
+            onCancelar={(v) => { setVentaDetalle(null); setVentaCancelando(v); setMotivoCancelacion(""); }}
           />
         )}
 
@@ -353,8 +367,16 @@ export default function Ventas() {
             mensaje={`La venta de ${ventaCancelando.cliente?.nombre} por ${formatMoney(ventaCancelando.total)} será marcada como cancelada.`}
             textoConfirmar="Cancelar venta"
             onConfirmar={cancelarVenta}
-            onCancelar={() => setVentaCancelando(null)}
-          />
+            onCancelar={() => { if (cancelando) return; setVentaCancelando(null); setMotivoCancelacion(""); }}
+            cargando={cancelando}
+            deshabilitarConfirmar={motivoCancelacion.trim().length < 5}
+          >
+            <label className="mt-2 block">
+              <span className="font-tag text-xs font-bold uppercase tracking-wide text-[var(--noir-soft)] dark:text-[var(--ash)]">Motivo de cancelación</span>
+              <textarea value={motivoCancelacion} onChange={(event) => setMotivoCancelacion(event.target.value)} maxLength={300} rows={3} placeholder="Ej. Solicitud del cliente" className="mt-2 w-full resize-none rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] p-3 font-body text-sm text-[var(--noir)] outline-none focus:border-[var(--gold-dark)] dark:bg-[var(--noir-soft)] dark:text-[var(--snow)]" />
+              <span className="mt-1 block text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">Uso interno. El cliente solo verá que el pedido fue cancelado.</span>
+            </label>
+          </ModalConfirmacion>
         )}
 
         {modalExito && (

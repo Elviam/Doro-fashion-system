@@ -27,7 +27,7 @@ export default function ModalDetalleProducto({ isOpen, onClose, producto, onEdit
   useEffect(() => {
     if (!isOpen || !producto?.id || !token) { setUltimoMovimiento(null); return; }
     setCargandoLog(true);
-    obtenerUltimoLog({ token, resource: "products", resourceId: producto.id, action: "UPDATE" })
+    obtenerUltimoLog({ token, resource: "inventory", resourceId: producto.id, action: "ADJUST" })
       .then(setUltimoMovimiento)
       .finally(() => setCargandoLog(false));
   }, [isOpen, producto?.id, token]);
@@ -35,18 +35,18 @@ export default function ModalDetalleProducto({ isOpen, onClose, producto, onEdit
   if (!isOpen || !producto) return null;
 
   const stockTotal  = calcularStockTotal(producto.inventario);
-  const stockMinimo = Number(producto.stockMinimo) || 5;
+  const stockMinimo = Number(producto.stockMinimo ?? 0);
   const tallasCategoria = TALLAS_POR_CATEGORIA[producto.categoria] || ["Unitalla"];
-  const ajuste = ultimoMovimiento?.details?._ajusteManual;
+  const ajuste = ultimoMovimiento?.details;
 
   const footerAcciones = (
     <div className="w-full flex flex-wrap items-center justify-end gap-3">
       <Boton variante="secundario" onClick={onClose} className="min-w-[110px]">
         Cerrar
       </Boton>
-      <Boton variante="oscuro" onClick={() => { onClose(); onEditar(producto); }} className="min-w-[168px]">
-        <i className="bi bi-pencil-square"></i> Editar Producto
-      </Boton>
+      {onEditar && <Boton variante="oscuro" onClick={() => { onClose(); onEditar(producto); }} className="min-w-[168px]">
+        <i className="bi bi-pencil-square"></i> Ajustar inventario
+      </Boton>}
     </div>
   );
 
@@ -127,7 +127,10 @@ export default function ModalDetalleProducto({ isOpen, onClose, producto, onEdit
                 {ajuste ? (
                   <>
                     <p className="text-noir-soft dark:text-ash">
-                      Talla <strong>{ajuste.talla}</strong>: {ajuste.cantidadAnterior} → {ajuste.cantidadNueva} · Motivo: <strong>{ajuste.motivo}</strong>
+                      {Array.isArray(ajuste.ajustes) && ajuste.ajustes.length > 0
+                        ? ajuste.ajustes.map((item) => <span key={item.talla} className="mr-2">Talla <strong>{item.talla}</strong>: {item.cantidadAnterior} → {item.cantidadNueva}</span>)
+                        : "Ajuste de inventario"}
+                      {" · "}Motivo: <strong>{ajuste.motivo}</strong>
                     </p>
                     {ajuste.notas && <p className="text-noir-soft dark:text-ash">"{ajuste.notas}"</p>}
                     {ajuste.evidencia?.length > 0 && (

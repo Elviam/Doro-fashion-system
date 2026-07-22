@@ -10,6 +10,8 @@ import Toast from "../components/Toast";
 import TablaInventario from "../components/TablaInventario";
 import ModalDetalleProducto from "../components/ModalDetalleProducto";
 import ModalAjusteInventario from "../components/ModalAjusteInventario";
+import { useAuth } from "../hooks/useAuth";
+import { canPerformAction } from "../utils/permissionMapper";
 
 const OPCIONES_ESTADO_STOCK = [
   { label: "Todos",   value: "" },
@@ -25,7 +27,10 @@ function calcularStockTotal(inventario) {
 
 export default function Inventario() {
   useTitulo("Inventario");
+  const { usuario } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const puedeAjustar = canPerformAction(usuario?.permissions, "inventory", "update");
+  const puedeVerValores = canPerformAction(usuario?.permissions, "products", "read");
 
   const [productosDB, setProductosDB] = useState([]);
   const [refreshKey,  setRefreshKey]  = useState(0);
@@ -49,7 +54,7 @@ export default function Inventario() {
 
   useEffect(() => {
     setCargando(true);
-    api.get("/products")
+    api.get("/inventory?limit=100")
       .then((result) => {
         const items = result.items || result.data?.items || (Array.isArray(result) ? result : []);
         setProductosDB(items);
@@ -69,16 +74,29 @@ export default function Inventario() {
     }
   }, [searchParams, productosDB]);
 
-  const valorCosto = productosDB.reduce((acc, p) =>
-    acc + calcularStockTotal(p.inventario) * (Number(p.precioCompra) || 0), 0);
-  const valorVenta = productosDB.reduce((acc, p) =>
-    acc + calcularStockTotal(p.inventario) * (Number(p.precioVenta || p.pVenta) || 0), 0);
+  const [valoresInventario, setValoresInventario] = useState({ costo: 0, venta: 0 });
+
+  useEffect(() => {
+    if (!puedeVerValores) {
+      setValoresInventario({ costo: 0, venta: 0 });
+      return;
+    }
+
+    api.get("/products")
+      .then((result) => {
+        const productos = result.items || result.data?.items || (Array.isArray(result) ? result : []);
+        setValoresInventario({
+          costo: productos.reduce((acc, p) => acc + calcularStockTotal(p.inventario) * (Number(p.precioCompra) || 0), 0),
+          venta: productos.reduce((acc, p) => acc + calcularStockTotal(p.inventario) * (Number(p.precioVenta || p.pVenta) || 0), 0),
+        });
+      })
+      .catch(() => setValoresInventario({ costo: 0, venta: 0 }));
+  }, [puedeVerValores, refreshKey]);
   const articulosTotales = productosDB.reduce(
     (acc, p) => acc + calcularStockTotal(p.inventario), 0);
   const alertasCriticas = productosDB.filter((p) => {
-    const stock  = calcularStockTotal(p.inventario);
-    const minimo = Number(p.stockMinimo) || 5;
-    return stock <= minimo && p.activo !== false;
+    const minimo = Number(p.stockMinimo ?? 0);
+    return (p.inventario || []).some((variante) => Number(variante.stock || 0) <= minimo) && p.activo !== false;
   }).length;
 
   const handleGuardarAjuste = async (datos) => {
@@ -87,44 +105,20 @@ export default function Inventario() {
       const producto = productosDB.find((p) => p.id === datos.productoId);
       if (!producto) throw new Error("No se encontró el producto.");
 
-      const inventarioActual = Array.isArray(producto.inventario) ? [...producto.inventario] : [];
-      const nuevoInventario = inventarioActual.map((item) => ({ ...item }));
-
       const tallas = Array.isArray(datos.tallas) ? datos.tallas : [datos.talla].filter(Boolean);
-      const resumen = tallas.map((talla) => {
-        const idx = nuevoInventario.findIndex((i) => i.talla === talla);
-        const cantidadAnterior = idx >= 0 ? Number(nuevoInventario[idx].stock || 0) : 0;
-        const cantidadNueva = datos.valoresPorTalla
-          ? Number(datos.valoresPorTalla[talla])
-          : Number(datos.cantidad);
-
-        if (idx >= 0) {
-          nuevoInventario[idx] = { ...nuevoInventario[idx], stock: cantidadNueva };
-        } else {
-          nuevoInventario.push({ talla, stock: cantidadNueva });
-        }
-
-        return { talla, cantidadAnterior, cantidadNueva };
-      });
-
-      const stockTotalNuevo = nuevoInventario.reduce((acc, it) => acc + Number(it.stock || 0), 0);
-
-      await api.patch(`/products/${producto.id}`, {
-        inventario: nuevoInventario,
-        stock: stockTotalNuevo,
-        _ajusteManual: {
-          tallas: resumen.map(({ talla, cantidadAnterior, cantidadNueva }) => ({ talla, cantidadAnterior, cantidadNueva })),
-          tipo: datos.tipo,
-          cantidad: Number(datos.cantidad),
-          motivo: datos.motivo,
-          notas: datos.notas,
-          evidencia: datos.evidencia,
-        },
+      const resultado = await api.patch(`/inventory/${producto.id}/adjust`, {
+        ajustes: tallas.map((talla) => ({
+          talla,
+          cantidadNueva: Number(datos.valoresPorTalla?.[talla] ?? datos.cantidad),
+        })),
+        motivo: datos.motivo,
+        notas: datos.notas,
+        evidencia: datos.evidencia || [],
       });
 
       setIsEditarOpen(false);
       setRefreshKey((k) => k + 1);
-      const detalle = resumen.map(({ talla, cantidadAnterior, cantidadNueva }) => `${talla}: ${cantidadAnterior} → ${cantidadNueva}`).join(", ");
+      const detalle = (resultado.ajustes || []).map(({ talla, cantidadAnterior, cantidadNueva }) => `${talla}: ${cantidadAnterior} → ${cantidadNueva}`).join(", ");
       showToast(`Stock de "${producto.nombre}" actualizado: ${detalle}`, "success");
     } catch (err) {
       setModalConf({
@@ -146,13 +140,15 @@ export default function Inventario() {
 
       <Encabezado titulo="Inventario" onActualizar={() => setRefreshKey((k) => k + 1)} />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Tarjetas label="Valor Inventario (Costo)"
-          value={`$${valorCosto.toLocaleString("es-MX", { maximumFractionDigits: 0 })}`}
-          sub="Capital invertido" accent="#C9A84C" icon="bi bi-currency-dollar" />
-        <Tarjetas label="Valor Inventario (Venta)"
-          value={`$${valorVenta.toLocaleString("es-MX", { maximumFractionDigits: 0 })}`}
-          sub="Ganancia potencial" accent="#84B140" icon="bi bi-graph-up-arrow" />
+      <div className={`grid grid-cols-2 ${puedeVerValores ? "lg:grid-cols-4" : "lg:grid-cols-2"} gap-4`}>
+        {puedeVerValores && <>
+          <Tarjetas label="Valor Inventario (Costo)"
+            value={`$${valoresInventario.costo.toLocaleString("es-MX", { maximumFractionDigits: 0 })}`}
+            sub="Capital invertido" accent="#C9A84C" icon="bi bi-currency-dollar" />
+          <Tarjetas label="Valor Inventario (Venta)"
+            value={`$${valoresInventario.venta.toLocaleString("es-MX", { maximumFractionDigits: 0 })}`}
+            sub="Ganancia potencial" accent="#84B140" icon="bi bi-graph-up-arrow" />
+        </>}
         <Tarjetas label="Artículos Totales"
           value={articulosTotales.toLocaleString("es-MX")}
           sub="Unidades físicas bajo techo" accent="#538f96" icon="bi bi-boxes" />
@@ -175,23 +171,23 @@ export default function Inventario() {
         filtroEstado={filtroEstado}
         cargando={cargando}
         onVer={abrirVer}
-        onEditar={abrirEditar}
+        onEditar={puedeAjustar ? abrirEditar : undefined}
       />
 
       <ModalDetalleProducto
         isOpen={isVerOpen}
         onClose={() => setIsVerOpen(false)}
         producto={productoSeleccionado}
-        onEditar={abrirEditar}
+        onEditar={puedeAjustar ? abrirEditar : undefined}
       />
 
-      <ModalAjusteInventario
-        isOpen={isEditarOpen}
-        onClose={() => setIsEditarOpen(false)}
-        onGuardar={handleGuardarAjuste}
-        guardando={guardando}
-        producto={productoSeleccionado}
-      />
+      {puedeAjustar && <ModalAjusteInventario
+          isOpen={isEditarOpen}
+          onClose={() => setIsEditarOpen(false)}
+          onGuardar={handleGuardarAjuste}
+          guardando={guardando}
+          producto={productoSeleccionado}
+        />}
 
       <ModalConfirmacion
         isOpen={modalConf.isOpen} tipo={modalConf.tipo}

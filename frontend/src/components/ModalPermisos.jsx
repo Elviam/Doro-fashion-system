@@ -138,6 +138,7 @@ export default function ModalPermisos({ isOpen = true, onClose, rol, permisos, o
               value={busqueda} 
               onChange={(e) => setBusqueda(e.target.value)} 
               placeholder="Buscar por nombre o código..." 
+              icono="bi-search"
             />
             <Input 
               label="Filtrar por Módulo" 

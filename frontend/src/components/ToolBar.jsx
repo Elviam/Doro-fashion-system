@@ -53,8 +53,22 @@ export default function ToolBar({
   textoBoton = "+ Nuevo", accionBoton,
   filtro2, setFiltro2, opcionesFiltro2, placeholderFiltro2,
   filtro3, setFiltro3, opcionesFiltro3, placeholderFiltro3,
-  textoBoton2, accionBoton2
+  textoBoton2, accionBoton2,
+  layoutCompacto = false
 }) {
+  const buscador = <div className="relative min-w-0 flex-1">
+    <i className="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--gold-dark)] dark:text-[var(--gold-light)]" />
+    <input type="text" placeholder={placeholderBuscar} value={busqueda} onChange={(e) => setBusqueda(e.target.value)} className="bg-[var(--snow)] text-[var(--noir)] border border-[var(--border-gold-40)] rounded-[2px] py-2 pl-9 pr-3.5 text-sm lg:text-sm font-body w-full h-10 outline-none hover:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)] transition-all shadow-sm placeholder:text-[var(--noir-soft)] dark:bg-[var(--noir-soft)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)] dark:hover:border-[var(--gold)] dark:focus:ring-[var(--gold)] dark:placeholder-[var(--ash)]" />
+  </div>;
+
+  if (layoutCompacto) return <div className="mb-4 w-full space-y-2.5">
+    <div className="grid grid-cols-3 gap-2">
+      {opcionesFiltro && <DropdownFiltro valor={filtro} setValor={setFiltro} opciones={opcionesFiltro} placeholder={placeholderFiltro} />}
+      {opcionesFiltro2 && <DropdownFiltro valor={filtro2} setValor={setFiltro2} opciones={opcionesFiltro2} placeholder={placeholderFiltro2} />}
+      {opcionesFiltro3 && <DropdownFiltro valor={filtro3} setValor={setFiltro3} opciones={opcionesFiltro3} placeholder={placeholderFiltro3} />}
+    </div>
+    <div className="flex items-center gap-2">{buscador}{textoBoton && accionBoton && <button onClick={accionBoton} className="h-10 shrink-0 whitespace-nowrap rounded-[2px] bg-[var(--gold)] px-3 text-sm font-bold text-[var(--noir)] shadow-sm transition-all hover:bg-[var(--gold-dark)] hover:text-[var(--snow)]">{textoBoton}</button>}</div>
+  </div>;
   
   return (
     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 mb-4 w-full">
@@ -88,13 +102,7 @@ export default function ToolBar({
           />
         )}
 
-        <input
-          type="text"
-          placeholder={placeholderBuscar}
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          className="bg-[var(--snow)] text-[var(--noir)] border border-[var(--border-gold-40)] rounded-[2px] px-3.5 py-2 text-sm lg:text-sm font-body w-full sm:flex-1 sm:min-w-0 max-w-md h-10 outline-none hover:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)] transition-all shadow-sm placeholder:text-[var(--noir-soft)] dark:bg-[var(--noir-soft)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)] dark:hover:border-[var(--gold)] dark:focus:ring-[var(--gold)] dark:placeholder-[var(--ash)]"
-        />
+        <div className="w-full sm:flex-1 sm:min-w-0 max-w-md">{buscador}</div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2.5 w-full lg:w-auto shrink-0">

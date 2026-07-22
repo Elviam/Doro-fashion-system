@@ -1,8 +1,45 @@
+import { useEffect, useState } from "react";
 import Modal from "./Modal";
-import Etiquetas from "./Etiquetas";
-import Boton from "./Boton";
+import { api } from "../services/api";
 
-export default function ModalClientes({ cliente, onClose, onEditar, onEliminar, isOpen = true }) {
+const formatearFecha = (fecha) => fecha
+  ? new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" }).format(new Date(fecha))
+  : "—";
+
+const formatearMonto = (monto) => new Intl.NumberFormat("es-MX", {
+  style: "currency",
+  currency: "MXN",
+}).format(Number(monto || 0));
+
+export default function ModalClientes({ cliente, onClose, isOpen = true }) {
+  const [compras, setCompras] = useState([]);
+  const [cargandoCompras, setCargandoCompras] = useState(false);
+
+  useEffect(() => {
+    if (!cliente?.id) {
+      setCompras([]);
+      return undefined;
+    }
+
+    let vigente = true;
+
+    const cargarCompras = async () => {
+      setCargandoCompras(true);
+      try {
+        const data = await api.get(`/ventas?clienteId=${encodeURIComponent(cliente.id)}&limit=50`);
+        if (vigente) setCompras(data.items || []);
+      } catch (error) {
+        console.error("Error cargando historial del cliente:", error);
+        if (vigente) setCompras([]);
+      } finally {
+        if (vigente) setCargandoCompras(false);
+      }
+    };
+
+    cargarCompras();
+    return () => { vigente = false; };
+  }, [cliente?.id]);
+
   if (!cliente) return null;
 
   // Extraemos las iniciales para el avatar
@@ -20,26 +57,8 @@ export default function ModalClientes({ cliente, onClose, onEditar, onEliminar, 
         Detalle de cliente
       </h2>
       <p className="text-xs sm:text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)] transition-colors font-body font-normal tracking-normal normal-case">
-        Información completa del perfil y acciones disponibles.
+        Datos de contacto e historial de pedidos.
       </p>
-    </div>
-  );
-
-  // Footer
-  const footerAcciones = (
-    <div className="flex justify-end gap-3 w-full">
-      <Boton 
-        variante="secundario" 
-        onClick={() => onEliminar(cliente)}
-      >
-        <i className="bi bi-trash"></i> Eliminar
-      </Boton>
-      <Boton 
-        variante="claro" 
-        onClick={() => onEditar(cliente)}
-      >
-        <i className="bi bi-pencil-square"></i> Editar
-      </Boton>
     </div>
   );
 
@@ -49,7 +68,6 @@ export default function ModalClientes({ cliente, onClose, onEditar, onEliminar, 
       onClose={onClose} 
       ancho="max-w-4xl"
       titulo={tituloPersonalizado}
-      footer={footerAcciones}
     >
       <div className="font-body pt-2 pb-2">
         
@@ -65,7 +83,9 @@ export default function ModalClientes({ cliente, onClose, onEditar, onEliminar, 
             <p className="text-xs lg:text-sm font-tag uppercase tracking-widest text-[var(--noir-soft)] dark:text-[var(--ash)] mb-4">
               Cliente
             </p>
-            <Etiquetas contenido={cliente.estado || (cliente.activo !== false ? "Activo" : "Inactivo")} />
+            <p className="text-xs font-body text-[var(--noir-soft)] dark:text-[var(--ash)]">
+              Registrado el {formatearFecha(cliente.createdAt)}
+            </p>
           </div>
 
           {/* Columna Derecha: Datos */}
@@ -100,6 +120,34 @@ export default function ModalClientes({ cliente, onClose, onEditar, onEliminar, 
 
           </div>
         </div>
+
+        <section className="mt-6 rounded-[2px] p-4 sm:p-5 border transition-colors bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)]">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div>
+              <p className="text-[10px] lg:text-[11px] font-tag uppercase tracking-[0.2em] text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Historial de pedidos</p>
+              <p className="text-sm text-[var(--noir-soft)] dark:text-[var(--ash)] mt-1">{cliente.totalCompras ?? 0} compra(s) registrada(s)</p>
+            </div>
+            <span className="text-xs sm:text-sm font-semibold text-[var(--noir-soft)] dark:text-[var(--ash)]">Última: {formatearFecha(cliente.ultimaCompra)}</span>
+          </div>
+
+          {cargandoCompras ? (
+            <p className="py-5 text-center text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">Cargando historial...</p>
+          ) : compras.length === 0 ? (
+            <p className="py-5 text-center text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">Este cliente aún no registra compras.</p>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              {compras.map((compra) => (
+                <div key={compra.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[2px] px-3 py-3 bg-[var(--gold-08)]">
+                  <div>
+                    <p className="font-semibold text-sm text-[var(--noir)] dark:text-[var(--snow)]">{compra.numeroPedido}</p>
+                    <p className="text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">{formatearFecha(compra.createdAt)} · {compra.items?.length || 0} producto(s)</p>
+                  </div>
+                  <p className="font-semibold text-sm text-[var(--noir)] dark:text-[var(--snow)]">{formatearMonto(compra.total)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
 
       </div>
     </Modal>

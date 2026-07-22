@@ -365,7 +365,7 @@ export default function SeccionCarrito({
             </div>
 
             <button
-               onClick={() => navigate('/tienda/checkout')}
+               onClick={onCheckout}
               className="w-full mt-4 rounded-[2px] flex items-center justify-center gap-2 transition"
               style={{
                 fontFamily:    "var(--font-tag)",

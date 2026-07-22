@@ -23,6 +23,8 @@ export default function ModalConfirmacion({
   onConfirmar,
   onCancelar,
   cargando = false,
+  deshabilitarConfirmar = false,
+  children,
 }) {
   useEffect(() => {
     if (!isOpen) return;
@@ -82,11 +84,11 @@ export default function ModalConfirmacion({
   return (
     <div
       className="fixed inset-0 z-[120] flex items-center justify-center p-4 backdrop-blur-sm transition-colors duration-300 bg-[var(--noir)]/40 dark:bg-black/60"
-      onClick={onCancelar}
+      onClick={() => { if (!cargando) onCancelar?.(); }}
     >
       <div
         className={`relative w-full max-w-sm border shadow-2xl p-8 sm:p-10 transition-colors duration-300 rounded-[2px] bg-[var(--snow)]/95 dark:bg-[var(--noir)]/90 ${config.borderColor}`}
-        onClick={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onCancelar}
@@ -114,11 +116,14 @@ export default function ModalConfirmacion({
           </p>
         )}
 
+        {children}
+
         {!esExito && (
           <div className="flex gap-3 mt-8">
             <Boton
               variante="secundario"
               onClick={onCancelar}
+              disabled={cargando}
               className="flex-1 font-tag h-11 uppercase tracking-widest text-xs lg:text-sm transition-colors"
             >
               {textoCancelar}
@@ -127,14 +132,16 @@ export default function ModalConfirmacion({
             {tipo === "eliminar" ? (
               <button
                 onClick={onConfirmar}
+                disabled={cargando || deshabilitarConfirmar}
                 className="flex-1 h-11 bg-transparent font-tag text-xs lg:text-sm tracking-widest uppercase transition-colors rounded-[2px] cursor-pointer border border-rojo-dark/60 text-rojo-dark hover:bg-rojo-dark hover:text-[var(--snow)] dark:border-rojo/60 dark:text-rojo dark:hover:bg-rojo"
               >
-                {textoConfirmar}
+                {cargando ? <><i className="bi bi-arrow-repeat mr-2 inline-block animate-spin" />Eliminando...</> : textoConfirmar}
               </button>
             ) : (
               <Boton
                 variante="claro"
                 onClick={onConfirmar}
+                disabled={cargando || deshabilitarConfirmar}
                 className="flex-1 font-tag h-11 uppercase tracking-widest text-xs lg:text-sm"
               >
                 {textoConfirmar}

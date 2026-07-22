@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "../services/api";
+import Toast from "./Toast";
 
 const ACTION_CFG = {
   CREATE:        { label: "CREATE",  clases: "bg-verde/12 border-verde/35 text-green-700 dark:text-verde" },
@@ -46,6 +47,10 @@ function formatDetails(details) {
 export default function PerfilUsuario({ usuario }) {
   const [auditoria, setAuditoria] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [passwordData, setPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [passwordVisible, setPasswordVisible] = useState({ currentPassword: false, newPassword: false, confirmPassword: false });
+  const [guardandoPassword, setGuardandoPassword] = useState(false);
+  const [toast, setToast] = useState({ message: "", type: "exito" });
 
   useEffect(() => {
     const cargarAuditoria = async () => {
@@ -67,9 +72,60 @@ export default function PerfilUsuario({ usuario }) {
     }
   }, [usuario?.usuario]);
 
+  const handlePasswordChange = (event) => {
+    const { name, value } = event.target;
+    setPasswordData((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleCambiarPassword = async (event) => {
+    event.preventDefault();
+    if (passwordData.newPassword.length < 8) {
+      setToast({ message: "La nueva contraseña debe tener al menos 8 caracteres.", type: "error" });
+      return;
+    }
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setToast({ message: "Las nuevas contraseñas no coinciden.", type: "error" });
+      return;
+    }
+
+    try {
+      setGuardandoPassword(true);
+      const result = await api.patch("/auth/change-password", passwordData);
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setToast({ message: result.message || "Contraseña actualizada correctamente.", type: "exito" });
+    } catch (error) {
+      setToast({ message: error.message || "No fue posible cambiar la contraseña.", type: "error" });
+    } finally {
+      setGuardandoPassword(false);
+    }
+  };
+
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto px-4 box-border">
+      <Toast message={toast.message} type={toast.type} onClose={() => setToast((current) => ({ ...current, message: "" }))} />
       
+      <div className="rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] p-5 shadow-lg dark:border-[var(--border-gold-20)] dark:bg-[var(--noir-soft)] sm:p-6">
+        <div className="mb-5 flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[2px] bg-[var(--gold-08)] text-[var(--gold-dark)] dark:text-[var(--gold-light)]"><i className="bi bi-shield-lock text-lg" /></div>
+          <div>
+            <h3 className="font-display text-base font-bold text-[var(--noir)] dark:text-[var(--snow)] lg:text-lg">Seguridad</h3>
+            <p className="mt-1 font-body text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">Cambia tu contraseña conociendo la actual. Nadie puede verla después de guardarla.</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleCambiarPassword} className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <PasswordField label="Contraseña actual" name="currentPassword" value={passwordData.currentPassword} onChange={handlePasswordChange} visible={passwordVisible.currentPassword} onToggle={() => setPasswordVisible((current) => ({ ...current, currentPassword: !current.currentPassword }))} placeholder="Tu contraseña actual" />
+          <PasswordField label="Nueva contraseña" name="newPassword" value={passwordData.newPassword} onChange={handlePasswordChange} visible={passwordVisible.newPassword} onToggle={() => setPasswordVisible((current) => ({ ...current, newPassword: !current.newPassword }))} placeholder="Mínimo 8 caracteres" />
+          <PasswordField label="Confirmar nueva contraseña" name="confirmPassword" value={passwordData.confirmPassword} onChange={handlePasswordChange} visible={passwordVisible.confirmPassword} onToggle={() => setPasswordVisible((current) => ({ ...current, confirmPassword: !current.confirmPassword }))} placeholder="Repite la nueva contraseña" />
+          <div className="flex justify-end pt-1 lg:col-span-3">
+            <button type="submit" disabled={guardandoPassword} className="flex items-center gap-2 rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] px-5 py-2.5 font-tag text-xs font-semibold uppercase tracking-wider text-[var(--gold-dark)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--noir)] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[var(--gold)] dark:text-[var(--noir)]">
+              <i className={`bi ${guardandoPassword ? "bi-arrow-repeat animate-spin" : "bi-key"}`} />
+              {guardandoPassword ? "Guardando" : "Actualizar contraseña"}
+            </button>
+          </div>
+        </form>
+      </div>
+
       <div className="rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] shadow-lg p-5 sm:p-6 w-full bg-[var(--snow)] dark:bg-[var(--noir-soft)] backdrop-blur-sm box-border">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-6 text-center sm:text-left">
           
@@ -91,7 +147,7 @@ export default function PerfilUsuario({ usuario }) {
                 <span className="font-semibold text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Email:</span> {usuario?.email}
               </p>
               <p className="text-[var(--noir-soft)] dark:text-[var(--ash)]">
-                <span className="font-semibold text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Rol:</span> {usuario?.role?.nombre || "N/A"}
+                <span className="font-semibold text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Rol:</span> {usuario?.role || "N/A"}
               </p>
               <div className="text-[var(--noir-soft)] dark:text-[var(--ash)] flex items-center justify-center sm:justify-start gap-2 pt-0.5">
                 <span className="font-semibold text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Estado:</span>
@@ -156,6 +212,28 @@ export default function PerfilUsuario({ usuario }) {
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function PasswordField({ label, name, value, onChange, visible, onToggle, placeholder }) {
+  return (
+    <div>
+      <label className="mb-1.5 block pl-1 font-tag text-[11px] uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{label}</label>
+      <div className="relative">
+        <input
+          type={visible ? "text" : "password"}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          required
+          className="w-full rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] px-4 py-2.5 pr-11 text-sm text-[var(--noir)] transition-colors focus:border-[var(--gold-dark)] focus:outline-none dark:border-[var(--border-gold-20)] dark:bg-[var(--noir)] dark:text-[var(--snow)]"
+        />
+        <button type="button" onClick={onToggle} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[var(--gold-dark)] hover:text-[var(--noir)] dark:text-[var(--gold-light)]" aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}>
+          <i className={`bi ${visible ? "bi-eye-slash" : "bi-eye"}`} />
+        </button>
       </div>
     </div>
   );

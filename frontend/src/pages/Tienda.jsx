@@ -10,10 +10,14 @@ import BarraOrdenamiento from "../components/tienda/BarraOrdenamiento";
 import TarjetaProductoTienda from "../components/tienda/TarjetaProductoTienda";
 import VistaRapida from "../components/tienda/VistaRapida";
 import SeccionCarrito from "../components/tienda/SeccionCarrito";
-import ModalCheckout from "../components/tienda/ModalCheckout";
 import Wishlist from "../components/tienda/Wishlist";
 import ToastTienda from "../components/tienda/ToastTienda";
-import { api } from "../services/api";
+import {
+  cargarCatalogoTienda,
+  catalogoEstaVigente,
+  obtenerCatalogoEnCache,
+  precargarProductoTienda,
+} from "../services/tiendaCache";
 import useTitulo from "../hooks/useTitulo";
 import { useRequireAuth, esClienteTienda } from "../context/LoginRequeridoContext";
 import { useCarrito } from "../context/CarritoContext";
@@ -55,11 +59,10 @@ export default function Tienda() {
   const [busqueda, setBusqueda]               = useState("");
   const [categoriaActiva, setCategoriaActiva] = useState("todas");
   const [ordenamiento, setOrdenamiento]       = useState("relevancia");
-  const [vista, setVista]                     = useState("grid");
   const [filtros, setFiltros]                 = useState(filtrosIniciales);
-  const [productos, setProductos]             = useState([]);
-  const [cargando, setCargando]               = useState(true);
-  const [checkoutAbierto, setCheckoutAbierto]   = useState(false);
+  const [productos, setProductos]             = useState(() => obtenerCatalogoEnCache() || []);
+  const [cargando, setCargando]               = useState(() => !obtenerCatalogoEnCache());
+  const [errorCarga, setErrorCarga]           = useState(false);
   const [filtrosAbiertos, setFiltrosAbiertos]   = useState(false);
   const [toast]                       = useState(null);
 
@@ -83,17 +86,32 @@ export default function Tienda() {
   }, [searchParams, setCarritoAbierto, setSearchParams]);
 
   useEffect(() => {
-    api.get("/products?activo=true&limit=100")
-      .then((data) => {
-        const datosReales = (data.items || data.data?.items || (Array.isArray(data) ? data : []))
-          .filter((producto) => producto.activo !== false);
-        setProductos(datosReales);
+    let activo = true;
+    const datosEnCache = obtenerCatalogoEnCache();
+
+    if (datosEnCache) {
+      setProductos(datosEnCache);
+      setCargando(false);
+      setErrorCarga(false);
+      if (catalogoEstaVigente()) return undefined;
+    } else {
+      setCargando(true);
+    }
+
+    cargarCatalogoTienda()
+      .then((datos) => {
+        if (!activo) return;
+        setProductos(datos);
+        setErrorCarga(false);
       })
       .catch((error) => {
+        if (!activo) return;
         console.error("Error al cargar productos de la tienda:", error);
-        setProductos([]);
+        setErrorCarga(true);
       })
-      .finally(() => setCargando(false));
+      .finally(() => { if (activo) setCargando(false); });
+
+    return () => { activo = false; };
   }, []);
 
   // Recibe (productoId, "agregado" | "quitado") desde TarjetaProductoTienda
@@ -176,10 +194,7 @@ export default function Tienda() {
     return lista;
   }, [productos, categoriaActiva, busqueda, filtros, ordenamiento]);
 
-  const clasesGrid =
-    vista === "lista"
-      ? "grid-cols-1"
-      : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4";
+  const clasesGrid = "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4";
 
   return (
     
@@ -193,6 +208,7 @@ export default function Tienda() {
         cantidadWishlist={favoritos.length}
         onAbrirCarrito={() => setCarritoAbierto(true)}
         onAbrirWishlist={() => setWishlistAbierto(true)}
+        onIrInicio={() => { setCarritoAbierto(false); setWishlistAbierto(false); navigate("/tienda"); }}
         categoriaActiva={categoriaActiva}
         onSeleccionarCategoria={seleccionarCategoria}
         onLogout={handleLogout}
@@ -211,8 +227,6 @@ export default function Tienda() {
               total={productosFiltrados.length}
               ordenamiento={ordenamiento}
               setOrdenamiento={setOrdenamiento}
-              vista={vista}
-              setVista={setVista}
               onAbrirFiltros={() => setFiltrosAbiertos(true)}
               filtrosActivos={filtrosActivos}
             />
@@ -222,9 +236,8 @@ export default function Tienda() {
                 className="rounded-[2px] py-24 text-center"
                 style={{ background: "var(--snow)", border: "1px solid var(--border-gold-20)" }}
               >
-                <i className="bi bi-arrow-repeat text-3xl animate-spin" style={{ color: "var(--gold-dark)" }} />
                 <p
-                  className="mt-4"
+                  className="mt-4 flex items-center justify-center gap-2"
                   style={{
                     fontFamily: "var(--font-body)",
                     fontStyle: "italic",
@@ -232,7 +245,23 @@ export default function Tienda() {
                     color: "var(--ash)",
                   }}
                 >
+                  <i className="bi bi-arrow-repeat animate-spin" style={{ color: "var(--gold-dark)" }} />
                   Cargando productos…
+                </p>
+              </div>
+            ) : errorCarga ? (
+              <div
+                className="rounded-[2px] py-24 text-center"
+                style={{ background: "var(--snow)", border: "1px solid var(--border-gold-20)" }}
+              >
+                <div className="w-16 h-16 rounded-full mx-auto flex items-center justify-center mb-4" style={{ background: "rgba(244,63,94,0.08)" }}>
+                  <i className="bi bi-cloud-slash text-3xl" style={{ color: "#F43F5E" }} />
+                </div>
+                <p className="font-display text-2xl italic font-light" style={{ color: "var(--noir)" }}>
+                  No se pudieron cargar los productos
+                </p>
+                <p className="mt-2 font-body text-sm" style={{ color: "var(--ash)" }}>
+                  Inténtalo más tarde.
                 </p>
               </div>
             ) : productosFiltrados.length === 0 ? (
@@ -294,8 +323,9 @@ export default function Tienda() {
                   <TarjetaProductoTienda
                     key={producto.id}
                     producto={producto}
-                    vista={vista}
+                    vista="grid"
                     onVistaRapida={(producto) => navigate(`/tienda/producto/${producto.id}`)}
+                    onPrecargarDetalle={(producto) => precargarProductoTienda(producto.id)}
                     onFavoritoChange={handleFavoritoChange}
                     favoritos={favoritos}
                   />
@@ -314,7 +344,7 @@ export default function Tienda() {
         carrito={carrito}
         onCambiarCantidad={cambiarCantidad}
         onEliminar={eliminarDelCarrito}
-        onCheckout={() => { setCarritoAbierto(false); setCheckoutAbierto(true); }}
+        onCheckout={() => { setCarritoAbierto(false); navigate("/tienda/checkout"); }}
         onVerDetalle={(producto) => { setCarritoAbierto(false); navigate(`/tienda/producto/${producto.id}`); }}
       />
 

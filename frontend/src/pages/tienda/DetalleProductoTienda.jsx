@@ -1,10 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { api } from "../../services/api";
+import {
+  cargarProductoTienda,
+  obtenerProductoEnCache,
+  productoEstaVigente,
+} from "../../services/tiendaCache";
 import HeaderTienda from "../../components/tienda/HeaderTienda";
 import FooterTienda from "../../components/tienda/FooterTienda";
 import useTitulo from "../../hooks/useTitulo";
 import { useCarrito } from "../../context/CarritoContext";
+import { obtenerTallasValidasTienda } from "../../components/tienda/ordenarTallas";
 
 const beneficios = [
   { icono: "bi-truck",        texto: "Envío 24h CDMX" },
@@ -54,7 +59,7 @@ function GaleriaImagenes({ producto, imagenActiva, setImagenActiva }) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col items-center gap-3 md:items-stretch">
       <style>{`
         @keyframes shimmerGris {
           0%, 100% { background-color: #d4d4d4; }
@@ -68,7 +73,7 @@ function GaleriaImagenes({ producto, imagenActiva, setImagenActiva }) {
       >
         {!cargada && (
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 pointer-events-none"
             style={{ animation: "shimmerGris 1.4s ease-in-out infinite" }}
           />
         )}
@@ -82,28 +87,55 @@ function GaleriaImagenes({ producto, imagenActiva, setImagenActiva }) {
           }}
           loading="eager"
           decoding="async"
-          className={`w-full h-full object-cover transition-opacity duration-300 ${cargada ? "opacity-100" : "opacity-0"}`}
+          fetchPriority="high"
+          className="relative z-[1] w-full h-full object-cover"
         />
       </div>
 
       {imagenes.length > 1 && (
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex w-full justify-center gap-2 flex-wrap md:justify-start">
           {imagenes.map((url, idx) => (
-            <button
+            <MiniaturaImagen
               key={idx}
+              src={url}
+              alt={`${producto.nombre} ${idx + 1}`}
+              activa={idx === imagenActiva}
               onClick={() => setImagenActiva(idx)}
-              className="w-16 h-16 rounded-[2px] overflow-hidden border-2 transition-all shrink-0"
-              style={{
-                borderColor: idx === imagenActiva ? "var(--gold-dark)" : "var(--border-gold-25)",
-                opacity: idx === imagenActiva ? 1 : 0.55,
-              }}
-            >
-              <img src={url} alt={`${producto.nombre} ${idx + 1}`} className="w-full h-full object-cover" />
-            </button>
+            />
           ))}
         </div>
       )}
     </div>
+  );
+}
+
+function MiniaturaImagen({ src, alt, activa, onClick }) {
+  const [cargada, setCargada] = useState(false);
+
+  return (
+    <button
+      onClick={onClick}
+      className="relative w-16 h-16 rounded-[2px] overflow-hidden border-2 transition-all shrink-0"
+      style={{
+        borderColor: activa ? "var(--gold-dark)" : "var(--border-gold-25)",
+        opacity: activa ? 1 : 0.55,
+      }}
+    >
+      {!cargada && (
+        <span className="absolute inset-0 z-[2] flex items-center justify-center bg-black/10 pointer-events-none">
+          <i className="bi bi-arrow-repeat animate-spin text-lg text-[var(--gold-dark)]" aria-label="Cargando imagen" />
+        </span>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        onLoad={() => setCargada(true)}
+        onError={() => setCargada(true)}
+        loading="eager"
+        decoding="async"
+        className="w-full h-full object-cover"
+      />
+    </button>
   );
 }
 
@@ -112,8 +144,8 @@ export default function DetalleProductoTienda() {
   const navigate = useNavigate();
   const { agregarAlCarrito } = useCarrito();
 
-  const [producto, setProducto] = useState(null);
-  const [cargando, setCargando] = useState(true);
+  const [producto, setProducto] = useState(() => obtenerProductoEnCache(id));
+  const [cargando, setCargando] = useState(() => !obtenerProductoEnCache(id));
   const [error, setError] = useState(false);
   const [imagenActiva, setImagenActiva] = useState(0);
   const [tallaSeleccionada, setTallaSeleccionada] = useState("");
@@ -127,22 +159,34 @@ export default function DetalleProductoTienda() {
 
   useEffect(() => {
     let activo = true;
-    setCargando(true);
     setError(false);
+    const productoEnCache = obtenerProductoEnCache(id);
 
-    api.get(`/products/${id}`)
-      .then((res) => {
+    const aplicarProducto = (data) => {
+      if (data.activo === false) {
+        setProducto(null);
+        setError(true);
+        return;
+      }
+      setProducto(data);
+      setImagenActiva(0);
+      const disponibles = obtenerTallasValidasTienda(data).filter((i) => i.stock > 0);
+      setTallaSeleccionada(disponibles[0]?.talla || "");
+    };
+
+    if (productoEnCache) {
+      aplicarProducto(productoEnCache);
+      setCargando(false);
+      if (productoEstaVigente(id)) return undefined;
+    } else {
+      setProducto(null);
+      setCargando(true);
+    }
+
+    cargarProductoTienda(id)
+      .then((data) => {
         if (!activo) return;
-        const data = res.item || res.data?.item || res;
-        if (data.activo === false) {
-          setProducto(null);
-          setError(true);
-          return;
-        }
-        setProducto(data);
-        setImagenActiva(0);
-        const disponibles = (data.inventario || []).filter((i) => i.stock > 0);
-        setTallaSeleccionada(disponibles[0]?.talla || "");
+        aplicarProducto(data);
       })
       .catch(() => { if (activo) setError(true); })
       .finally(() => { if (activo) setCargando(false); });
@@ -153,9 +197,12 @@ export default function DetalleProductoTienda() {
   if (cargando) {
     return (
       <>
-        <HeaderTienda />
+        <HeaderTienda mostrarVolver onVolver={() => navigate("/tienda")} />
         <main className="bg-[var(--ivory)] min-h-[70vh] flex items-center justify-center">
-          <i className="bi bi-arrow-repeat animate-spin text-3xl text-[var(--gold-dark)]"></i>
+          <p className="flex items-center gap-2 font-body text-sm text-[var(--noir-soft)]">
+            <i className="bi bi-arrow-repeat animate-spin text-xl text-[var(--gold-dark)]"></i>
+            Cargando producto…
+          </p>
         </main>
         <FooterTienda />
       </>
@@ -165,24 +212,18 @@ export default function DetalleProductoTienda() {
   if (error || !producto) {
     return (
       <>
-        <HeaderTienda />
+        <HeaderTienda mostrarVolver onVolver={() => navigate("/tienda")} />
         <main className="bg-[var(--ivory)] min-h-[70vh] flex flex-col items-center justify-center gap-4 text-center px-4">
           <i className="bi bi-exclamation-triangle text-4xl text-[var(--gold-dark)]"></i>
           <p className="font-body text-[var(--noir)]">No se pudo cargar este producto.</p>
-          <button
-            onClick={() => navigate("/tienda")}
-            className="bg-[var(--gold)] text-[var(--noir)] font-tag uppercase tracking-[0.12em] font-bold text-[12px] px-6 py-3 rounded-[2px] hover:bg-[var(--gold-dark)] transition"
-          >
-            Volver a la tienda
-          </button>
         </main>
         <FooterTienda />
       </>
     );
   }
 
-  const todasLasTallas = producto.inventario ?? [];
-  const agotado = producto.stock === 0;
+  const todasLasTallas = obtenerTallasValidasTienda(producto);
+  const agotado = todasLasTallas.every((i) => i.stock <= 0);
   const stockTallaActual = todasLasTallas.find((i) => i.talla === tallaSeleccionada)?.stock ?? 0;
 
   const handleSeleccionarTalla = (talla) => {
@@ -196,7 +237,7 @@ export default function DetalleProductoTienda() {
 
   return (
     <>
-      <HeaderTienda />
+      <HeaderTienda mostrarVolver onVolver={() => navigate("/tienda")} />
 
       <main className="bg-[var(--ivory)] pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-6 lg:pt-8">
@@ -291,7 +332,7 @@ export default function DetalleProductoTienda() {
                 className="mt-6 w-full bg-[var(--gold)] text-[var(--noir)] font-tag uppercase tracking-[0.12em] font-bold text-[12px] py-3.5 rounded-[2px] hover:bg-[var(--gold-dark)] transition flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <i className="bi bi-bag-plus"></i>
-                {agotado ? "Agotado" : "Agregar al carrito"}
+                {agotado ? "Agotado" : "Agregar a la bolsa"}
               </button>
 
               {/* Beneficios */}

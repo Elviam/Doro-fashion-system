@@ -12,7 +12,6 @@ import Proveedores from "./pages/Proveedores";
 import Dashboard from "./pages/Dashboard";
 import Reabastecimiento from "./pages/Reabastecimiento";
 import Tienda from "./pages/Tienda";
-import Roles from "./pages/Roles";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Register from "./pages/Register";
 import Envios          from "./pages/tienda/Envios";
@@ -32,6 +31,7 @@ import TiendaProviders from "./components/tienda/TiendaProviders";
 import TiendaComoInvitado from "./components/tienda/TiendaComoInvitado";
 import MisPedidos from "./pages/MisPedidos";
 import GenerarPedido from "./pages/GenerarPedido";
+import PrepararPedidos from "./pages/PrepararPedidos";
 
 import "./App.css";
 
@@ -154,18 +154,6 @@ function App() {
           }
         />
 
-        {/* Roles */}
-        <Route
-          path="/roles"
-          element={
-            <ProtectedRoute requiredPage="roles">
-              <Layout>
-                <Roles />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
-
         {/* Ventas */}
         <Route
           path="/ventas"
@@ -184,6 +172,16 @@ function App() {
             <ProtectedRoute requiredPage="inventario">
               <Layout>
                 <Inventario/>
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/preparar-pedidos"
+          element={
+            <ProtectedRoute requiredPage="preparacion">
+              <Layout>
+                <PrepararPedidos />
               </Layout>
             </ProtectedRoute>
           }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, ClipboardList, Users, Truck, UserCog, ShieldCheck, Shield, ShoppingCart, ChevronLeft, ChevronRight, ChevronDown, Book, RefreshCw } from "lucide-react";
+import { LayoutDashboard, Package, ClipboardList, Users, Truck, UserCog, ShieldCheck, ShoppingCart, ChevronLeft, ChevronRight, ChevronDown, Book, RefreshCw, PackageCheck } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 
 const navItems = [
@@ -17,8 +17,9 @@ const navItems = [
     { label: "Ventas",           ruta: "/ventas",           icon: ShoppingCart, permiso: "ventas:read" },
     { label: "Productos",        ruta: "/productos",        icon: Package,      permiso: "products:read" },
     { label: "Inventario",       ruta: "/inventario",        icon: Book,         permiso: "inventory:read" },
+    { label: "Preparar pedidos", ruta: "/preparar-pedidos",  icon: PackageCheck, permiso: "fulfillment:read" },
     {
-      label: "Reabastecimiento", ruta: "/reabastecimiento", icon: RefreshCw, permiso: "reabastecimiento:read",
+      label: "Reabastecimiento", ruta: "/reabastecimiento", icon: RefreshCw, permiso: "recepciones:create",
       subitems: [
         { label: "Resumen", ruta: "/reabastecimiento" },
         { label: "Generar pedido", ruta: "/reabastecimiento/generar-pedido" },
@@ -33,8 +34,7 @@ const navItems = [
   {
     section: "CONTROL",
     items: [
-      { label: "Usuarios",    ruta: "/usuarios",    icon: UserCog,         permiso: "users:read" },
-      { label: "Roles",       ruta: "/roles",       icon: Shield,          permiso: "roles:read" },
+      { label: "Personal",    ruta: "/usuarios",    icon: UserCog,         permiso: "users:read" },
       { label: "Auditoría",   ruta: "/auditoria",   icon: ShieldCheck,     permiso: "audit:read" },
       
 
@@ -90,13 +90,8 @@ export default function Sidebar({ onCerrar }) {
       if (!permisoRequerido) return true;
 
       // Permitir a admins y gerentes directamente
-      if (usuario?.role === "ADMIN" || usuario?.role === "GERENTE") {
-        return true;
-      }
-
       // Para otros roles, verificar permisos dinámicos del JWT
-      if (!usuario?.permissions) return false;
-      return usuario.permissions.includes(permisoRequerido);
+      return Array.isArray(usuario?.permissions) && usuario.permissions.includes(permisoRequerido);
     };
 
     return (

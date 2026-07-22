@@ -3,15 +3,31 @@
 // Usado por: Auditoria.jsx e Inventario.jsx (vista Kardex).
 
 export const ACTION_CFG = {
-  CREATE:        { label: "CREATE",  colorClass: "bg-verde/10 border-verde/35 text-verde-dark dark:text-verde"       },
-  UPDATE:        { label: "UPDATE",  colorClass: "bg-amarillo/10 border-amarillo/35 text-amarillo-dark dark:text-amarillo" },
-  DELETE:        { label: "DELETE",  colorClass: "bg-rojo/10 border-rojo/35 text-rojo-dark dark:text-rojo"           },
-  TOGGLE_ACTIVE: { label: "TOGGLE",  colorClass: "bg-azul/10 border-azul/35 text-azul-dark dark:text-azul"           },
+  CREATE:        { label: "Creación",       colorClass: "bg-verde/10 border-verde/35 text-verde-dark dark:text-verde"       },
+  UPDATE:        { label: "Actualización",  colorClass: "bg-amarillo/10 border-amarillo/35 text-amarillo-dark dark:text-amarillo" },
+  DELETE:        { label: "Eliminación",    colorClass: "bg-rojo/10 border-rojo/35 text-rojo-dark dark:text-rojo"           },
+  TOGGLE_ACTIVE: { label: "Cambio de estado", colorClass: "bg-azul/10 border-azul/35 text-azul-dark dark:text-azul"         },
+  ADJUST:        { label: "Ajuste",         colorClass: "bg-azul/10 border-azul/35 text-azul-dark dark:text-azul"           },
+  SEND:          { label: "Envío",          colorClass: "bg-azul/10 border-azul/35 text-azul-dark dark:text-azul"           },
+  CONFIRM:       { label: "Confirmación",   colorClass: "bg-verde/10 border-verde/35 text-verde-dark dark:text-verde"       },
+  CANCEL:        { label: "Cancelación",    colorClass: "bg-rojo/10 border-rojo/35 text-rojo-dark dark:text-rojo"           },
+  CHANGE_PASSWORD: { label: "Cambio de contraseña", colorClass: "bg-amarillo/10 border-amarillo/35 text-amarillo-dark dark:text-amarillo" },
+  SEED:          { label: "Inicialización", colorClass: "bg-gold/10 border-gold/35 text-gold-dark dark:text-gold-light" },
 };
 
 const DEFAULT_CFG = {
   colorClass: "bg-gold/10 border-gold/35 text-gold-dark dark:text-gold-light",
 };
+
+export const RESOURCE_LABELS = {
+  users: "Usuarios", clients: "Clientes", suppliers: "Proveedores", products: "Productos",
+  recepciones: "Recepciones", inventory: "Inventario", roles: "Roles", permissions: "Permisos",
+  ventas: "Ventas", fulfillment: "Preparaci\u00f3n de pedidos", auth: "Autenticaci\u00f3n",
+};
+
+export function getResourceLabel(resource) {
+  return RESOURCE_LABELS[resource] || resource || "Sin m\u00f3dulo";
+}
 
 // Términos de negocio para contextos de inventario (Kardex)
 export const ACTION_TO_TEXT = {
@@ -32,9 +48,10 @@ export function ActionBadge({ action, className = "" }) {
 }
 
 export function ResourceBadge({ resource }) {
+  const labels = { users: "Usuarios", clients: "Clientes", suppliers: "Proveedores", products: "Productos", recepciones: "Recepciones", inventory: "Inventario", roles: "Roles", permissions: "Permisos", ventas: "Ventas", fulfillment: "Preparación", auth: "Autenticación" };
   return (
     <span className="inline-block px-2 py-0.5 rounded-[2px] border text-xs font-tag font-medium bg-gold/10 border-gold/30 text-gold-dark dark:text-gold-light">
-      {resource}
+      {getResourceLabel(resource)}
     </span>
   );
 }

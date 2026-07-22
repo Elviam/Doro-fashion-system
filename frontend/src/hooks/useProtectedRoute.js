@@ -2,30 +2,7 @@ import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { hasPageAccess } from "../utils/permissionMapper";
 
-// Páginas disponibles para todos los roles
 const GLOBAL_PAGES = ["tienda", "perfil"];
-
-const ROLE_PERMISSIONS = {
-  "role_admin": [
-    "dashboard", "productos", "recepciones", "ventas",
-    "clientes", "proveedores", "usuarios", "auditoria", "inventario", "reabastecimiento", "tienda"
-  ],
-  "ADMIN": [
-    "dashboard", "productos", "recepciones", "ventas",
-    "clientes", "proveedores", "usuarios", "auditoria", "roles", "inventario", "reabastecimiento", "tienda"
-  ],
-  "GERENTE": [
-    "dashboard", "productos", "recepciones", "ventas",
-    "clientes", "proveedores", "usuarios", "auditoria", "roles", "inventario", "reabastecimiento", "tienda"
-  ],
-  "BODEGUERO": [
-    "productos", "recepciones", "ventas", "clientes", "proveedores", "inventario", "tienda"
-  ],
-  "VENDEDOR": [
-    "productos", "ventas", "clientes", "tienda"
-  ],
-  "CLIENTE": []
-};
 
 export function useProtectedRoute(requiredPage) {
   const { token, usuario } = useContext(AuthContext);
@@ -34,34 +11,16 @@ export function useProtectedRoute(requiredPage) {
     return { isAuthorized: false, reason: "no-session" };
   }
 
-  // Páginas globales disponibles para todos los roles
-  if (GLOBAL_PAGES.includes(requiredPage)) {
-    return { isAuthorized: true, userRole: usuario?.role || usuario?.roleId };
-  }
-
   const userRole = usuario?.role || usuario?.roleId;
 
-  if (!userRole) {
-    console.log("userRole:", JSON.stringify(userRole), "allowedPages:", allowedPages);
-    return { isAuthorized: false, reason: "no-role" };
-  }
-
-  // ✅ Estático PRIMERO — cubre páginas nuevas como inventario
-  const allowedPages = ROLE_PERMISSIONS[userRole] || [];
-  console.log("userRole:", JSON.stringify(userRole), "allowedPages:", allowedPages);
-  if (allowedPages.includes(requiredPage)) {
+  if (GLOBAL_PAGES.includes(requiredPage)) {
     return { isAuthorized: true, userRole };
   }
 
-  // Dinámico como segunda opción
-  if (Array.isArray(usuario?.permissions) && usuario.permissions.length > 0) {
-    const hasAccess = hasPageAccess(usuario.permissions, requiredPage);
-    if (hasAccess) {
-      return { isAuthorized: true, userRole };
-    }
-  }
-
-  return { isAuthorized: false, reason: "insufficient-permissions", userRole };
+  const isAuthorized = hasPageAccess(usuario?.permissions, requiredPage);
+  return {
+    isAuthorized,
+    reason: isAuthorized ? undefined : "insufficient-permissions",
+    userRole,
+  };
 }
-
-export const ROLE_PERMISSIONS_EXPORT = ROLE_PERMISSIONS;

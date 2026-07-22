@@ -5,7 +5,7 @@ import { api } from "../services/api";
 import { fetchNotifications } from "../services/notifications.service";
 import { createPortal } from "react-dom";
 
-export default function Header({ onMenuClick }) {
+export default function Header({ onMenuClick, onActualizar, actualizando = false }) {
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -50,7 +50,7 @@ export default function Header({ onMenuClick }) {
   const toggleTheme = () => setIsDark((v) => !v);
 
   useEffect(() => {
-    if (query.trim().length < 2) {
+    if (query.trim().length < 1) {
       setResultados(null);
       setMostrarModal(false);
       return;
@@ -71,7 +71,7 @@ export default function Header({ onMenuClick }) {
       } finally {
         setBuscando(false);
       }
-    }, 500);
+    }, 250);
 
     return () => clearTimeout(delayDebounce);
   }, [query]);
@@ -149,6 +149,8 @@ export default function Header({ onMenuClick }) {
     switch (tipo) {
       case "productos":
         return { titulo: item.nombre, sub: `SKU: ${item.sku || "N/A"}`, ruta: "/productos", tag: "Productos", icon: "bi-box-seam text-blue-500" };
+      case "inventario":
+        return { titulo: item.nombre, sub: `SKU: ${item.sku || "N/A"}`, ruta: "/inventario", tag: "Inventario", icon: "bi-boxes text-cyan-600" };
       case "clientes":
         return { titulo: item.nombre, sub: item.email || "", ruta: "/clientes", tag: "Clientes", icon: "bi-people text-pink-500" };
       case "proveedores":
@@ -159,6 +161,10 @@ export default function Header({ onMenuClick }) {
         return { titulo: `Recepción: ${item.proveedor}`, sub: item.comentarios || "", ruta: "/recepciones", tag: "Recepciones", icon: "bi-file-earmark-arrow-down text-purple-500" };
       case "auditoria":
         return { titulo: `Acción: ${item.action}`, sub: item.usuario || "Sistema", ruta: "/auditoria", tag: "Auditoría", icon: "bi-shield-check text-red-500" };
+      case "ventas":
+        return { titulo: `Pedido ${item.numeroPedido}`, sub: item.clienteNombre || "", ruta: "/ventas", tag: "Ventas", icon: "bi-cart-check text-emerald-600" };
+      case "preparacion":
+        return { titulo: `Pedido ${item.numeroPedido}`, sub: item.clienteNombre || "", ruta: "/preparar-pedidos", tag: "Preparar pedidos", icon: "bi-box2-heart text-emerald-600" };
       default:
         return { titulo: "Registro", sub: "", ruta: "/dashboard", tag: "Sistema", icon: "bi-gear text-gris" };
     }
@@ -178,7 +184,7 @@ export default function Header({ onMenuClick }) {
   const manejarClickBuscador = () => {
     if (mostrarModal) {
       setMostrarModal(false);
-    } else if (query.trim().length >= 2) {
+    } else if (query.trim().length >= 1) {
       setMostrarModal(true);
     }
   };
@@ -282,6 +288,18 @@ export default function Header({ onMenuClick }) {
           )}
         </div>
       </div>
+
+      {onActualizar && (
+        <button
+          onClick={onActualizar}
+          disabled={actualizando}
+          aria-label="Actualizar esta sección"
+          className="hidden sm:flex h-10 w-10 items-center justify-center rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--gold-08)] text-[var(--gold-dark)] transition hover:bg-[var(--gold)] hover:text-[var(--noir)] disabled:cursor-wait disabled:opacity-70 dark:border-[var(--border-gold-20)] dark:text-[var(--gold-light)]"
+          title="Actualizar esta sección"
+        >
+          <i className={`bi bi-arrow-clockwise text-base ${actualizando ? "animate-spin" : ""}`} />
+        </button>
+      )}
 
       <div className="relative shrink-0">
           <div

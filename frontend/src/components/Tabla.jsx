@@ -8,6 +8,7 @@ export default function Tabla({
   sortableFields = [],
   cargando = false,
   entidad = "elementos",
+  mostrarSpinnerCarga = true,
   children
 }) {
   const [sortField, setSortField] = useState(null);
@@ -212,7 +213,8 @@ export default function Tabla({
                 colSpan={encabezadosProcesados.length}
                 className="text-center py-10 text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)]"
               >
-                <i className="bi bi-arrow-repeat animate-spin mr-2" />Cargando {entidad}...
+                {mostrarSpinnerCarga && <i className="bi bi-arrow-repeat spinner-cargando mr-2 text-[var(--noir-soft)] dark:text-[var(--ash)]" />}
+                Cargando {entidad}...
               </td>
             </tr>
           ) : usandoNuevoSistema ? (

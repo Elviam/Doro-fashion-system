@@ -1,289 +1,83 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Tabla from "../components/Tabla";
-import Tarjetas from "../components/Tarjetas";
 import Paginacion from "../components/Paginacion";
 import ModalAuditoria from "../components/ModalAuditoria";
-import ToolBar from "../components/ToolBar";
 import Encabezado from "../components/Encabezado";
 import { ActionBadge, ResourceBadge } from "../components/ActionBadge";
 import { useAuth } from "../hooks/useAuth";
 import useTitulo from "../hooks/useTitulo";
 
-const LIMIT = 7;
+const LIMIT = 10;
 const API_URL = import.meta.env.VITE_API_URL;
-
-const OPCIONES_ACCION = [
-  { label: "Todas las acciones",  value: ""             },
-  { label: "CREATE",              value: "CREATE"       },
-  { label: "UPDATE",              value: "UPDATE"       },
-  { label: "DELETE",              value: "DELETE"       },
-  { label: "TOGGLE_ACTIVE",       value: "TOGGLE_ACTIVE"},
+const ACCIONES = [
+  ["", "Todas las acciones"], ["CREATE", "Creaciones"], ["UPDATE", "Actualizaciones"], ["DELETE", "Eliminaciones"],
+  ["TOGGLE_ACTIVE", "Cambios de estado"], ["ADJUST", "Ajustes"], ["SEND", "Envíos"], ["CONFIRM", "Confirmaciones"], ["CANCEL", "Cancelaciones"], ["CHANGE_PASSWORD", "Cambios de contraseña"],
 ];
-
-const OPCIONES_RECURSO = [
-  { label: "Todos los recursos",  value: ""            },
-  { label: "users",               value: "users"       },
-  { label: "clients",             value: "clients"     },
-  { label: "suppliers",           value: "suppliers"   },
-  { label: "products",            value: "products"    },
-  { label: "recepciones",         value: "recepciones" },
+const RECURSOS = [
+  ["", "Todos los módulos"], ["users", "Usuarios"], ["clients", "Clientes"], ["suppliers", "Proveedores"], ["products", "Productos"], ["inventory", "Inventario"], ["recepciones", "Recepciones"], ["ventas", "Ventas"], ["fulfillment", "Preparación de pedidos"], ["roles", "Roles"], ["permissions", "Permisos"], ["auth", "Autenticación"],
 ];
-
-function fmtDateShort(iso) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  return (
-    d.toLocaleDateString("es-MX", { day: "2-digit", month: "short" }) +
-    " " +
-    d.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })
-  );
+function fechaCorta(value) {
+  if (!value) return "—";
+  return new Date(value).toLocaleString("es-MX", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 export default function Auditoria() {
-  const { token } = useAuth();
   useTitulo("Auditoría");
-
-  const [logs,     setLogs]     = useState([]);
-  const [total,    setTotal]    = useState(0);
+  const { token } = useAuth();
+  const [logs, setLogs] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [usuarios, setUsuarios] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [error,    setError]    = useState(null);
-
-  const [kpis, setKpis] = useState({ total: 0, crear: 0, actualizar: 0, eliminar: 0 });
-
+  const [error, setError] = useState("");
+  const [pagina, setPagina] = useState(1);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [filtros, setFiltros] = useState({ q: "", action: "", resource: "", userId: "", from: "", to: "" });
+  const [seleccionado, setSeleccionado] = useState(null);
 
-  const [busqueda,      setBusqueda]      = useState("");
-  const [filtroAccion,  setFiltroAccion]  = useState("");
-  const [filtroRecurso, setFiltroRecurso] = useState("");
-  const [modoKPI,       setModoKPI]       = useState("all");
-  const [paginaActual,  setPaginaActual]  = useState(1);
+  const actualizarFiltro = (campo, value) => { setFiltros((actual) => ({ ...actual, [campo]: value })); setPagina(1); };
+  const limpiarFiltros = () => { setFiltros({ q: "", action: "", resource: "", userId: "", from: "", to: "" }); setPagina(1); };
 
-  const [logSeleccionado,    setLogSeleccionado]    = useState(null);
-  const [isDetalleModalOpen, setIsDetalleModalOpen] = useState(false);
+  const cargar = useCallback(async () => {
+    if (!token) return;
+    setCargando(true); setError("");
+    try {
+      const params = new URLSearchParams({ page: String(pagina), limit: String(LIMIT) });
+      Object.entries(filtros).forEach(([key, value]) => { if (value) params.set(key, value); });
+      const response = await fetch(`${API_URL}/audit?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!response.ok) throw new Error("No se pudieron consultar los registros de auditoría.");
+      const data = await response.json();
+      setLogs(data.items || []); setTotal(data.total || 0);
+    } catch (err) { setError(err.message); } finally { setCargando(false); }
+  }, [token, pagina, filtros, refreshKey]);
 
-  const handleVerDetalle = (log) => {
-    setLogSeleccionado(log);
-    setIsDetalleModalOpen(true);
-  };
-
-  const fetchAuth = useCallback(
-    (url) =>
-      fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }),
-    [token]
-  );
-
+  useEffect(() => { cargar(); }, [cargar]);
   useEffect(() => {
     if (!token) return;
-    const fetchKpis = async () => {
-      try {
-        const res  = await fetchAuth(`${API_URL}/audit?page=1&limit=50`);
-        if (!res.ok) return;
-        const data = await res.json();
-        const todos      = data.items || [];
-        const crear      = todos.filter((l) => l.action === "CREATE").length;
-        const actualizar = todos.filter((l) => l.action === "UPDATE" || l.action === "TOGGLE_ACTIVE").length;
-        const eliminar   = todos.filter((l) => l.action === "DELETE").length;
-        setKpis({ total: data.total ?? todos.length, crear, actualizar, eliminar });
-      } catch { /* silencioso */ }
-    };
-    fetchKpis();
-  }, [token, refreshKey, fetchAuth]);
+    fetch(`${API_URL}/audit/filters`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((response) => response.ok ? response.json() : { users: [] })
+      .then((data) => setUsuarios(data.users || []))
+      .catch(() => setUsuarios([]));
+  }, [token]);
 
-  useEffect(() => {
-    if (!token) return;
-    const fetchLogs = async () => {
-      try {
-        setCargando(true);
-        setError(null);
-        const params = new URLSearchParams({
-          page:  String(paginaActual),
-          limit: String(LIMIT),
-          ...(busqueda      && { q:        busqueda      }),
-          ...(filtroAccion  && { action:   filtroAccion  }),
-          ...(filtroRecurso && { resource: filtroRecurso }),
-        });
-        const res = await fetchAuth(`${API_URL}/audit?${params}`);
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.message || `Error ${res.status}`);
-        }
-        const data = await res.json();
-        setLogs((data.items || []).slice(0, LIMIT));
-        setTotal(data.total || 0);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setCargando(false);
-      }
-    };
-    fetchLogs();
-  }, [token, busqueda, filtroAccion, filtroRecurso, paginaActual, refreshKey, fetchAuth]);
-
-  useEffect(() => { setPaginaActual(1); }, [busqueda, filtroAccion, filtroRecurso]);
-
-  const textoRango = total === 0
-    ? "0"
-    : `${(paginaActual - 1) * LIMIT + 1} – ${Math.min(paginaActual * LIMIT, total)}`;
-
-  const handleCambiarPagina = (page) => {
-    const totalPaginas = Math.max(1, Math.ceil(total / LIMIT));
-    if (page === "‹") setPaginaActual((c) => Math.max(1, c - 1));
-    else if (page === "›") setPaginaActual((c) => Math.min(totalPaginas, c + 1));
-    else setPaginaActual(Number(page));
-  };
-
-  const handleSetFiltroAccion = (v) => {
-    setFiltroAccion(v);
-    setModoKPI("all");
-  };
-
-  const handleKPI = (modo) => {
-    setModoKPI(modo);
-    setFiltroAccion(modo === "all" ? "" : modo);
-  };
-
-  const encabezados = ["Acción", "Recurso", "Resource ID", "Usuario", "Detalles", "Fecha"];
-
-  return (
-    <div className="w-full p-4 md:p-6 flex flex-col gap-5 box-border overflow-x-hidden">
-
-      <Encabezado
-        titulo="Auditoría"
-        onActualizar={() => setRefreshKey((k) => k + 1)}
-      />
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 w-full">
-        {[
-          { id: "all",    label: "Total registros",  value: kpis.total,      sub: "Todos los eventos",                                                                                   accent: "#C9A84C", icon: "bi bi-file-earmark-text" },
-          { id: "CREATE", label: "Creaciones",        value: kpis.crear,      sub: kpis.total ? `${Math.round((kpis.crear      / kpis.total) * 100)}% del total` : "—", accent: "#84B140", icon: "bi bi-plus-circle"       },
-          { id: "UPDATE", label: "Actualizaciones",   value: kpis.actualizar, sub: kpis.total ? `${Math.round((kpis.actualizar / kpis.total) * 100)}% del total` : "—", accent: "#E0DA66", icon: "bi bi-pencil-square"     },
-          { id: "DELETE", label: "Eliminaciones",     value: kpis.eliminar,   sub: kpis.total ? `${Math.round((kpis.eliminar   / kpis.total) * 100)}% del total` : "—", accent: "#D04E37", icon: "bi bi-trash"             },
-        ].map((k) => (
-          <div
-            key={k.id}
-            style={{
-              opacity:      modoKPI === k.id || modoKPI === "all" ? 1 : 0.55,
-              outline:      modoKPI === k.id ? `1.5px solid ${k.accent}40` : "none",
-              borderRadius: 2,
-              transition:   "opacity 0.2s, outline 0.2s",
-            }}
-            className="w-full min-w-0"
-          >
-            <Tarjetas
-              label={k.label}
-              value={k.value}
-              sub={k.sub}
-              accent={k.accent}
-              icon={k.icon}
-              onClick={() => handleKPI(k.id)}
-              isActive={modoKPI === k.id}
-            />
-          </div>
-        ))}
+  const totalPaginas = Math.max(1, Math.ceil(total / LIMIT));
+  const cambiarPagina = (valor) => setPagina((actual) => valor === "‹" ? Math.max(1, actual - 1) : valor === "›" ? Math.min(totalPaginas, actual + 1) : Number(valor));
+  return <div className="w-full space-y-5 p-4 md:p-6">
+    <Encabezado titulo="Auditoría" onActualizar={() => setRefreshKey((valor) => valor + 1)} />
+    <section className="rounded-[2px] border border-[var(--border-gold-25)] bg-[var(--snow)] p-3 shadow-sm dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)]">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <div className="relative"><i className="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--gold-dark)] dark:text-[var(--gold-light)]" /><input value={filtros.q} onChange={(event) => actualizarFiltro("q", event.target.value)} placeholder="Buscar acción, módulo o usuario" className="h-10 w-full rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] py-2 pl-9 pr-3 text-sm outline-none focus:border-[var(--gold)] dark:bg-[var(--noir)] dark:text-[var(--snow)]" /></div>
+        <select value={filtros.action} onChange={(event) => actualizarFiltro("action", event.target.value)} className="h-10 rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] px-3 text-sm dark:bg-[var(--noir)] dark:text-[var(--snow)]">{ACCIONES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+        <select value={filtros.resource} onChange={(event) => actualizarFiltro("resource", event.target.value)} className="h-10 rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] px-3 text-sm dark:bg-[var(--noir)] dark:text-[var(--snow)]">{RECURSOS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+        <select value={filtros.userId} onChange={(event) => actualizarFiltro("userId", event.target.value)} aria-label="Filtrar por personal administrativo" className="h-10 rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] px-3 text-sm dark:bg-[var(--noir)] dark:text-[var(--snow)]"><option value="">Todo el personal</option>{usuarios.map((usuario) => <option key={usuario.id} value={usuario.id}>{usuario.nombre}{usuario.usuario ? ` (@${usuario.usuario})` : ""}</option>)}</select>
+        <label className="text-xs font-semibold text-[var(--noir-soft)] dark:text-[var(--ash)]">Desde<input type="date" value={filtros.from} onChange={(event) => actualizarFiltro("from", event.target.value)} className="mt-1 block h-8 w-full rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] px-2 text-sm dark:bg-[var(--noir)] dark:text-[var(--snow)]" /></label>
+        <label className="text-xs font-semibold text-[var(--noir-soft)] dark:text-[var(--ash)]">Hasta<input type="date" value={filtros.to} min={filtros.from || undefined} onChange={(event) => actualizarFiltro("to", event.target.value)} className="mt-1 block h-8 w-full rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] px-2 text-sm dark:bg-[var(--noir)] dark:text-[var(--snow)]" /></label>
+        <button type="button" onClick={limpiarFiltros} className="self-end h-8 w-fit rounded-[2px] border border-[var(--gold)] bg-[var(--gold)] px-3 text-xs font-semibold text-[var(--noir)] transition-colors hover:bg-[var(--gold-light)]">Limpiar filtros</button>
       </div>
+    </section>
 
-      <ToolBar
-        busqueda={busqueda}
-        setBusqueda={setBusqueda}
-        placeholderBuscar="Buscar usuario, recurso, ID..."
-        filtro={filtroAccion}
-        setFiltro={handleSetFiltroAccion}
-        opcionesFiltro={OPCIONES_ACCION}
-        placeholderFiltro="Todas las acciones"
-        filtro2={filtroRecurso}
-        setFiltro2={setFiltroRecurso}
-        opcionesFiltro2={OPCIONES_RECURSO}
-        placeholderFiltro2="Todos los recursos"
-      />
-
-      <div className="w-full overflow-x-auto rounded-[2px] shadow-sm">
-        <Tabla encabezados={encabezados}>
-          {cargando ? (
-            <tr>
-              <td colSpan={6} className="text-center py-10 text-sm lg:text-base text-noir-soft dark:text-ash">
-                <i className="bi bi-arrow-repeat animate-spin mr-2" />Cargando...
-              </td>
-            </tr>
-          ) : error ? (
-            <tr>
-              <td colSpan={6} className="p-8 text-center text-sm lg:text-base text-rojo">
-                <i className="bi bi-exclamation-circle mr-2" />{error}
-              </td>
-            </tr>
-          ) : logs.length === 0 ? (
-            <tr>
-              <td colSpan={6} className="text-center py-10 text-sm lg:text-base text-noir-soft dark:text-ash">
-                Sin registros que coincidan con los filtros
-              </td>
-            </tr>
-          ) : (
-            logs.map((l) => {
-              const detailKeys = Object.keys(l.details || {}).slice(0, 2).join(", ");
-              return (
-                <tr
-                  key={l.id}
-                  onClick={() => handleVerDetalle(l)}
-                  className="border-b border-gold/20 hover:bg-gold/8 transition-colors cursor-pointer"
-                >
-                  <td className="p-3 md:p-4 text-center">
-                    <ActionBadge action={l.action} />
-                  </td>
-                  <td className="p-3 md:p-4 text-center">
-                    <ResourceBadge resource={l.resource} />
-                  </td>
-                  <td className="p-3 md:p-4 text-center font-mono text-xs lg:text-sm text-noir-soft dark:text-ash">
-                    {l.resourceId || "—"}
-                  </td>
-                  <td className="p-3 md:p-4 text-center text-sm lg:text-base font-medium text-noir dark:text-snow">
-                    {l.usuario || "—"}
-                  </td>
-                  <td className="p-3 md:p-4 text-center text-xs lg:text-sm text-noir-soft dark:text-ash max-w-[140px] truncate overflow-hidden whitespace-nowrap">
-                  {detailKeys || "—"}
-                  </td>
-                  <td className="p-3 md:p-4 text-center text-xs lg:text-sm text-noir-soft dark:text-ash">
-                    {fmtDateShort(l.createdAt)}
-                  </td>
-                </tr>
-              );
-            })
-          )}
-        </Tabla>
-      </div>
-
-      <Paginacion
-        paginaActual={paginaActual}
-        totalRegistros={total}
-        rangoSiguiente={textoRango}
-        limit={LIMIT}
-        onCambiarPagina={handleCambiarPagina}
-        exportTitulo="Auditoría"
-        exportColumnas={[
-          { header: "Acción",   key: "accion",   width: 16 },
-          { header: "Recurso",  key: "recurso",  width: 18 },
-          { header: "Usuario",  key: "usuario",  width: 22 },
-          { header: "Detalles", key: "detalles", width: 35 },
-          { header: "Fecha",    key: "fecha",    width: 22 },
-        ]}
-        exportFilas={logs.map((l) => ({
-          accion:   l.action,
-          recurso:  l.resource,
-          usuario:  l.usuario  || "—",
-          detalles: l.details  ? JSON.stringify(l.details) : "—",
-          fecha:    fmtDateShort(l.createdAt || l.timestamp),
-        }))}
-      />
-
-      <ModalAuditoria
-        isOpen={isDetalleModalOpen}
-        onClose={() => setIsDetalleModalOpen(false)}
-        data={logSeleccionado}
-      />
-
-    </div>
-  );
+    <div className="overflow-x-auto rounded-[2px] shadow-sm"><Tabla encabezados={["Acción", "Módulo", "Usuario", "Detalles", "Fecha"]}>
+      {cargando ? <tr><td colSpan={5} className="py-10 text-center text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]"><i className="bi bi-arrow-repeat mr-2 inline-block animate-spin" style={{ animationDuration: "0.8s" }} />Consultando registros…</td></tr> : error ? <tr><td colSpan={5} className="py-10 text-center text-sm text-rojo">{error}</td></tr> : logs.length === 0 ? <tr><td colSpan={5} className="py-10 text-center text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">Sin registros que coincidan con los filtros.</td></tr> : logs.map((log) => <tr key={log.id} onClick={() => setSeleccionado(log)} className="cursor-pointer border-b border-[var(--border-gold-20)] hover:bg-[var(--gold-08)]"><td className="p-3 text-center"><ActionBadge action={log.action} /></td><td className="p-3 text-center"><ResourceBadge resource={log.resource} /></td><td className="p-3 text-center text-sm text-[var(--noir)] dark:text-[var(--snow)]">{log.usuario || "Sistema"}</td><td className="max-w-48 truncate p-3 text-center text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">{Object.keys(log.details || {}).slice(0, 2).join(", ") || "—"}</td><td className="p-3 text-center text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">{fechaCorta(log.createdAt)}</td></tr>)}</Tabla></div>
+    <Paginacion paginaActual={pagina} totalRegistros={total} rangoSiguiente={total ? `${(pagina - 1) * LIMIT + 1} – ${Math.min(pagina * LIMIT, total)}` : "0"} limit={LIMIT} onCambiarPagina={cambiarPagina} exportTitulo="Auditoría" exportColumnas={[]} exportFilas={[]} />
+    <ModalAuditoria isOpen={Boolean(seleccionado)} onClose={() => setSeleccionado(null)} data={seleccionado} />
+  </div>
 }

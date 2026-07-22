@@ -4,7 +4,7 @@ const opcionesOrden = [
   { value: "precio_desc", label: "Precio: mayor a menor" },
 ];
 
-export default function BarraOrdenamiento({ total, ordenamiento, setOrdenamiento, vista, setVista, onAbrirFiltros, filtrosActivos = 0 }) {
+export default function BarraOrdenamiento({ total, ordenamiento, setOrdenamiento, onAbrirFiltros, filtrosActivos = 0 }) {
   return (
     <div className="flex justify-between items-center gap-3 mb-4 flex-wrap">
       {filtrosActivos > 0 ? (
@@ -28,31 +28,6 @@ export default function BarraOrdenamiento({ total, ordenamiento, setOrdenamiento
             </span>
           )}
         </button>
-
-        <div className="h-10 min-w-[88px] flex items-center bg-[var(--noir-soft)] border border-[var(--border-gold-20)] rounded-[2px] p-0.5">
-          <button
-            onClick={() => setVista("grid")}
-            title="Vista cuadricula"
-            className={`w-9 h-9 rounded-[2px] flex items-center justify-center transition-colors ${
-              vista === "grid"
-                ? "bg-[var(--gold)] text-[var(--noir)]"
-                : "text-[var(--ash)] hover:text-[var(--snow)]"
-            }`}
-          >
-            <i className="bi bi-grid-3x3-gap-fill" />
-          </button>
-          <button
-            onClick={() => setVista("lista")}
-            title="Vista lista"
-            className={`w-9 h-9 rounded-[2px] flex items-center justify-center transition-colors ${
-              vista === "lista"
-                ? "bg-[var(--gold)] text-[var(--noir)]"
-                : "text-[var(--ash)] hover:text-[var(--snow)]"
-            }`}
-          >
-            <i className="bi bi-list-ul" />
-          </button>
-        </div>
 
         <select
           value={ordenamiento}

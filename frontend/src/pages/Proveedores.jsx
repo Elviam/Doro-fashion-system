@@ -158,7 +158,7 @@ export default function Proveedores() {
       )}
 
       {/* TARJETAS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-6 w-full mb-8">
         <Tarjetas 
           label="Total de proveedores" value={stats.total} sub="Todos los proveedores" icon="bi bi-building" 
           onClick={() => { setStatusFilter(""); setPaginaActiva(1); }} isActive={statusFilter === ""}
@@ -183,7 +183,7 @@ export default function Proveedores() {
       {/* TABLA */}
       <Tabla encabezados={encabezadosProveedores}>
         {cargando ? (
-          <tr><td colSpan={6} className="text-center py-10 text-sm opacity-50 text-lila"><i className="bi bi-arrow-repeat animate-spin mr-2" />Cargando...</td></tr>
+          <tr><td colSpan={6} className="text-center py-10 text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]"><i className="bi bi-arrow-repeat spinner-cargando mr-2 text-[var(--noir-soft)] dark:text-[var(--ash)]" />Cargando...</td></tr>
         ) : usuarios.length === 0 ? (
           <tr><td colSpan={6} className="text-center py-10 text-sm opacity-50 text-lila">No hay resultados</td></tr>
         ) : (

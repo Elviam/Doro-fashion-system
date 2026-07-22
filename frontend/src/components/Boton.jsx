@@ -3,7 +3,8 @@ export default function Boton({
   onClick, 
   variante = "claro", 
   className = "",
-  tipo = "button" 
+  tipo = "button",
+  disabled = false
 }) {
   
   const baseClasses = "px-6 py-2 rounded-[2px] text-sm font-tag font-semibold uppercase tracking-[0.06em] transition-all duration-300 flex items-center justify-center gap-2 active:scale-95 cursor-pointer";
@@ -27,8 +28,9 @@ export default function Boton({
   return (
     <button 
       type={tipo}
-      onClick={onClick} 
-      className={`${baseClasses} ${estiloSeleccionado} ${className}`}
+      onClick={onClick}
+      disabled={disabled}
+      className={`${baseClasses} ${estiloSeleccionado} ${disabled ? "cursor-not-allowed opacity-45 active:scale-100" : ""} ${className}`}
     >
       {children}
     </button>

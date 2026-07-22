@@ -79,3 +79,16 @@
   0%, 100% { background-color: #e4e4e4; }
   50% { background-color: #a2a2a2; }
 }
+
+.spinner-cargando {
+  display: inline-block;
+  animation: spinnerCargando 0.8s linear infinite;
+}
+
+.animate-spin {
+  animation: spinnerCargando 0.8s linear infinite !important;
+}
+
+@keyframes spinnerCargando {
+  to { transform: rotate(360deg); }
+}

@@ -1,10 +1,9 @@
 import LayoutSeccionTienda from "../../components/tienda/LayoutSeccionTienda";
 
 const zonas = [
-  { zona: "CDMX y Área Metropolitana", tiempo: "1–2 días hábiles", costo: "$59 MXN",      gratis: "desde $800"   },
-  { zona: "Norte del país",             tiempo: "3–4 días hábiles", costo: "$99 MXN",      gratis: "desde $1,200" },
-  { zona: "Sur y Sureste",              tiempo: "4–5 días hábiles", costo: "$99 MXN",      gratis: "desde $1,200" },
-  { zona: "Internacional",              tiempo: "7–15 días hábiles", costo: "Desde $250 MXN", gratis: "—"         },
+  { zona: "CDMX y Área Metropolitana", tiempo: "1–2 días hábiles", costo: "$99 MXN", gratis: "desde $799" },
+  { zona: "Norte del país",             tiempo: "3–4 días hábiles", costo: "$99 MXN", gratis: "desde $799" },
+  { zona: "Sur y Sureste",              tiempo: "4–5 días hábiles", costo: "$99 MXN", gratis: "desde $799" },
 ];
 
 export default function Envios() {

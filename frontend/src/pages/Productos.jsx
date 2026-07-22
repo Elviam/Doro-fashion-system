@@ -29,6 +29,7 @@ export default function Productos() {
   const [productosDB, setProductosDB] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
 
   const [isModalVerAbierto, setIsModalVerAbierto] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState(null);
@@ -283,7 +284,9 @@ export default function Productos() {
       mensaje: "¿Estás seguro de que deseas eliminar este producto de forma permanente? Esta acción no se puede deshacer.",
       textoConfirmar: "Eliminar",
       onConfirmar: async () => {
+        if (eliminando) return;
         try {
+          setEliminando(true);
           await api.delete(`/products/${id}`);
           await fetchProductos(true); 
           setModalConf({ isOpen: false }); 
@@ -293,10 +296,12 @@ export default function Productos() {
             isOpen: true,
             tipo: "confirmar",
             titulo: "Error",
-            mensaje: "No se pudo eliminar el producto.",
+            mensaje: error.message || "No se pudo eliminar el producto.",
             textoConfirmar: "Entendido",
             onConfirmar: () => setModalConf({ isOpen: false })
           });
+        } finally {
+          setEliminando(false);
         }
       }
     });
@@ -317,7 +322,7 @@ export default function Productos() {
       />
 
       <div className="flex flex-col lg:flex-row gap-5 mb-7 w-full">
-  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 w-full lg:w-[calc(58.333%-10px)]">
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-5 w-full lg:w-[calc(58.333%-10px)]">
     <Tarjetas 
       label="Total productos" 
       value={totalProd} 
@@ -371,8 +376,9 @@ export default function Productos() {
         busqueda={busqueda} 
         setBusqueda={setBusqueda}
         placeholderBuscar="Buscar por SKU, nombre, fecha..." 
-        textoBoton="+ Producto"
+        textoBoton="+ Nuevo Producto"
         accionBoton={handleNuevoProducto}
+        layoutCompacto
       />
 
       <Tabla encabezados={encabezadosProductos} cargando={cargando} entidad="productos">
@@ -471,8 +477,8 @@ export default function Productos() {
         <>
           {guardando && (
             <div className="fixed inset-0 bg-noir/50 backdrop-blur-sm z-110 flex flex-col items-center justify-center">
-              <i className="bi bi-arrow-repeat animate-spin text-4xl text-gold mb-2"></i>
-              <p className="text-gold font-bold">Guardando producto...</p>
+              <i className="bi bi-arrow-repeat animate-spin mb-2 text-4xl text-[var(--noir)] dark:text-[var(--gold-light)]"></i>
+              <p className="font-bold text-[var(--noir)] dark:text-[var(--gold-light)]">Guardando producto...</p>
             </div>
           )}
           
@@ -481,6 +487,7 @@ export default function Productos() {
             data={productoAEditar} 
             onGuardar={handleGuardarProducto}
             onCancelar={() => setIsModalFormAbierto(false)}
+            guardando={guardando}
           />
         </>
       )}
@@ -496,6 +503,7 @@ export default function Productos() {
           else setModalConf({ ...modalConf, isOpen: false }); 
         }}
         onCancelar={() => setModalConf({ ...modalConf, isOpen: false })}
+        cargando={eliminando}
       />
 
     </div>

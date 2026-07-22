@@ -15,7 +15,7 @@ export default function ModalProductos({ isOpen, onClose, data, onEdit, onDelete
   if (!isOpen || !data) return null;
 
   const stockTotal = calcularStockTotal(data.inventario);
-  const stockMinimo = Number(data.stockMinimo) || 5;
+  const stockMinimo = Number(data.stockMinimo ?? 0);
   const precioVenta = Number(data.precioVenta || data.pVenta || 0);
 
   const footerAcciones = (

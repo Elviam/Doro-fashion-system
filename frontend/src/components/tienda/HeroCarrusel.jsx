@@ -33,7 +33,7 @@ export default function HeroCarrusel() {
   useEffect(() => {
     const intervalo = setInterval(() => {
       setIndiceActivo((i) => (i + 1) % banners.length);
-    }, 6000);
+    }, 12000);
     return () => clearInterval(intervalo);
   }, []);
 
@@ -109,56 +109,6 @@ export default function HeroCarrusel() {
           >
             {banner.sub}
           </p>
-
-          <div className="mt-5 md:mt-8 flex items-center gap-2 md:gap-3 flex-wrap">
-            <button
-              className="flex items-center gap-2 transition-all active:scale-95"
-              style={{
-                fontFamily: "var(--font-tag)",
-                fontWeight: 600,
-                fontSize: "11px",
-                letterSpacing: "0.16em",
-                textTransform: "uppercase",
-                padding: "12px 28px",
-                background: "var(--gold)",
-                color: "var(--noir)",
-                border: "none",
-                borderRadius: "2px",
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--gold-light)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "var(--gold)")}
-            >
-              <span className="whitespace-nowrap">{banner.cta}</span>
-              <i className="bi bi-arrow-right" />
-            </button>
-            <button
-              className="transition-all active:scale-95 whitespace-nowrap"
-              style={{
-                fontFamily: "var(--font-tag)",
-                fontWeight: 400,
-                fontSize: "11px",
-                letterSpacing: "0.16em",
-                textTransform: "uppercase",
-                padding: "11px 26px",
-                background: "transparent",
-                color: "var(--snow)",
-                border: "1px solid var(--border-gold-55)",
-                borderRadius: "2px",
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--gold)";
-                e.currentTarget.style.color = "var(--gold-light)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "var(--border-gold-55)";
-                e.currentTarget.style.color = "var(--snow)";
-              }}
-            >
-              Ver lookbook
-            </button>
-          </div>
 
           <div className="mt-6 md:mt-8 flex items-center gap-2">
             {banners.map((_, i) => (

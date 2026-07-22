@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../services/api";
 import HeaderTienda from "../../components/tienda/HeaderTienda";
@@ -12,13 +12,27 @@ const pasos = ["Envío", "Pago", "Confirmación"];
 const ENVIO_GRATIS_DESDE = 799;
 const COSTO_ENVIO = 99;
 
-const generarNumeroPedido = () => `AUR-${(Date.now() % 89999) + 10000}`;
+const esperar = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+const ESTADOS_MEXICO = ["Aguascalientes", "Baja California", "Baja California Sur", "Campeche", "Chiapas", "Chihuahua", "Ciudad de México", "Coahuila", "Colima", "Durango", "Estado de México", "Guanajuato", "Guerrero", "Hidalgo", "Jalisco", "Michoacán", "Morelos", "Nayarit", "Nuevo León", "Oaxaca", "Puebla", "Querétaro", "Quintana Roo", "San Luis Potosí", "Sinaloa", "Sonora", "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz", "Yucatán", "Zacatecas"];
 
 const datosIniciales = {
-  nombre: "", email: "", calle: "", cp: "", ciudad: "",
+  nombre: "", email: "", calle: "", numeroExterior: "", numeroInterior: "", cp: "", estado: "", ciudad: "", colonia: "", referencias: "", telefono: "",
   metodoPago: "tarjeta",
   numTarjeta: "", nombreTarjeta: "", expiracion: "", cvv: "",
 };
+
+const camposDireccion = ["calle", "numeroExterior", "numeroInterior", "cp", "estado", "ciudad", "colonia", "referencias", "telefono"];
+
+function leerDirecciones(clave) {
+  if (!clave) return [];
+  try {
+    const guardadas = JSON.parse(localStorage.getItem(clave) || "[]");
+    return Array.isArray(guardadas) ? guardadas : [];
+  } catch {
+    return [];
+  }
+}
 
 const inputBase =
   "mt-1.5 w-full bg-[var(--snow)] text-[var(--noir)] border rounded-[2px] px-4 py-3 text-sm font-body outline-none focus:border-[var(--gold)] transition placeholder:text-[var(--noir-soft)] placeholder:opacity-70";
@@ -32,6 +46,7 @@ export default function Checkout() {
   const [busquedaHeader, setBusquedaHeader] = useState("");
 
   const nombreCompleto = usuario ? `${usuario.nombre ?? ""} ${usuario.apellido ?? ""}`.trim() : "";
+  const claveDirecciones = usuario?.id ? `direcciones_checkout_${usuario.id}` : null;
 
   const [paso, setPaso]       = useState(1);
   const [datos, setDatos]     = useState({
@@ -39,21 +54,72 @@ export default function Checkout() {
     nombre: nombreCompleto,
     email:  usuario?.email ?? "",
   });
-  const [numeroPedido]        = useState(generarNumeroPedido);
+  const [pedidoConfirmado, setPedidoConfirmado] = useState(null);
   const [enviando, setEnviando]   = useState(false);
   const [errorPago, setErrorPago] = useState("");
   const [erroresEnvio, setErroresEnvio] = useState({});
   const [erroresPago, setErroresPago]   = useState({});
+  const [direcciones, setDirecciones] = useState([]);
+  const [direccionSeleccionada, setDireccionSeleccionada] = useState(null);
+  const [direccionGuardada, setDireccionGuardada] = useState(false);
+
+  useEffect(() => {
+    const guardadas = leerDirecciones(claveDirecciones);
+    setDirecciones(guardadas);
+    if (guardadas[0]) {
+      setDireccionSeleccionada(guardadas[0].id);
+      setDireccionGuardada(true);
+      setDatos((actuales) => ({ ...actuales, ...guardadas[0].datos }));
+    }
+  }, [claveDirecciones]);
+
+  const seleccionarDireccion = (direccion) => {
+    setDireccionSeleccionada(direccion.id);
+    setDireccionGuardada(true);
+    setDatos((actuales) => ({ ...actuales, ...direccion.datos }));
+    setErroresEnvio({});
+  };
+
+  const agregarDireccion = () => {
+    setDireccionSeleccionada(null);
+    setDireccionGuardada(false);
+    setDatos((actuales) => ({ ...actuales, ...Object.fromEntries(camposDireccion.map((campo) => [campo, ""])) }));
+    setErroresEnvio({});
+  };
+
+  const guardarDireccion = () => {
+    if (!validarPaso1()) return;
+    const nueva = {
+      id: direccionSeleccionada || `direccion_${Date.now()}`,
+      nombre: `Direccion ${direcciones.length + (direccionSeleccionada ? 0 : 1)}`,
+      datos: Object.fromEntries(camposDireccion.map((campo) => [campo, datos[campo]])),
+    };
+    const actualizadas = direccionSeleccionada
+      ? direcciones.map((direccion) => direccion.id === direccionSeleccionada ? nueva : direccion)
+      : [...direcciones, nueva];
+    setDirecciones(actualizadas);
+    setDireccionSeleccionada(nueva.id);
+    setDireccionGuardada(true);
+    localStorage.setItem(claveDirecciones, JSON.stringify(actualizadas));
+  };
 
   const setDato = (key, value) => setDatos((d) => ({ ...d, [key]: value }));
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [paso]);
 
   const validarPaso1 = () => {
     const errs = {};
     if (!datos.nombre.trim())              errs.nombre = "El nombre es obligatorio";
     if (!datos.email.trim())               errs.email  = "El email es obligatorio";
-    if (!datos.calle.trim())               errs.calle  = "La dirección es obligatoria";
+    if (!datos.calle.trim())               errs.calle  = "La calle es obligatoria";
+    if (!datos.numeroExterior.trim())      errs.numeroExterior = "El número exterior es obligatorio";
     if (!/^\d{5}$/.test(datos.cp.trim()))  errs.cp     = "El código postal debe ser de 5 dígitos";
+    if (!datos.estado)                     errs.estado = "Selecciona un estado";
     if (!datos.ciudad.trim())              errs.ciudad = "La ciudad es obligatoria";
+    if (!datos.colonia.trim())             errs.colonia = "La colonia es obligatoria";
+    if (!/^\d{8,15}$/.test(datos.telefono.replace(/\D/g, ""))) errs.telefono = "Ingresa un teléfono válido";
     setErroresEnvio(errs);
     return Object.keys(errs).length === 0;
   };
@@ -81,8 +147,8 @@ export default function Checkout() {
     setErrorPago("");
     setEnviando(true);
     try {
-      await api.post("/ventas", {
-        cliente:    { nombre: datos.nombre, email: datos.email, calle: datos.calle, cp: datos.cp, ciudad: datos.ciudad },
+      const creada = await api.post("/ventas", {
+        cliente:    { nombre: datos.nombre, email: datos.email, calle: datos.calle, numeroExterior: datos.numeroExterior, numeroInterior: datos.numeroInterior, cp: datos.cp, estado: datos.estado, ciudad: datos.ciudad, colonia: datos.colonia, referencias: datos.referencias, telefono: datos.telefono },
         metodoPago: datos.metodoPago,
         items:      carrito.map((i) => ({
           productoId:     i.producto.id,
@@ -90,6 +156,10 @@ export default function Checkout() {
           cantidad:       i.cantidad,
         })),
       });
+      await esperar(datos.metodoPago === "oxxo" ? 6500 : 1800);
+      const confirmada = await api.post(`/ventas/${creada.item.id}/simulate-payment`);
+      guardarDireccion();
+      setPedidoConfirmado(confirmada.item);
       setPaso(3);
       vaciarCarrito();
     } catch (err) {
@@ -133,6 +203,8 @@ export default function Checkout() {
         onLogout={() => navigate("/tienda")}
         usuario={usuario}
         onIrAlDashboard={() => navigate("/dashboard")}
+        mostrarVolver
+        onVolver={() => navigate("/tienda")}
       />
 
       <main className="bg-[var(--ivory)] pb-16">
@@ -182,6 +254,25 @@ export default function Checkout() {
                   <h1 className="font-display text-2xl sm:text-3xl font-light italic text-[var(--noir)] mb-6">
                     Datos de envío
                   </h1>
+                  {direcciones.length > 0 && (
+                    <div className="mb-6 rounded-[2px] border border-[var(--border-gold-25)] bg-[var(--snow)] p-4">
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <p className="m-0 font-tag text-[10px] tracking-[0.15em] text-[var(--noir-soft)] uppercase font-bold">Mis direcciones</p>
+                        <button type="button" onClick={agregarDireccion} className="font-tag text-[10px] tracking-[0.1em] uppercase font-bold text-[var(--gold-dark)] hover:text-[var(--noir)] transition"><i className="bi bi-plus-lg mr-1" />Agregar dirección</button>
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-2">
+                        {direcciones.map((direccion) => (
+                          <button type="button" key={direccion.id} onClick={() => seleccionarDireccion(direccion)} className={`text-left rounded-[2px] border p-3 transition ${direccionSeleccionada === direccion.id ? "border-[var(--gold)] bg-[var(--gold-08)]" : "border-[var(--border-gold-25)] hover:border-[var(--gold-dark)]/60"}`}>
+                            <span className="block font-tag text-[10px] uppercase tracking-wider font-bold text-[var(--noir)]">{direccion.nombre}</span>
+                            <span className="block mt-1 font-body text-xs text-[var(--noir-soft)] truncate">{direccion.datos.calle} {direccion.datos.numeroExterior}, {direccion.datos.colonia}</span>
+                            <span className="block font-body text-xs text-[var(--noir-soft)]">{direccion.datos.ciudad}, {direccion.datos.estado}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {direcciones.length === 0 && <button type="button" onClick={agregarDireccion} className="mb-5 font-tag text-[10px] tracking-[0.1em] uppercase font-bold text-[var(--gold-dark)] hover:text-[var(--noir)] transition"><i className="bi bi-plus-lg mr-1" />Agregar dirección</button>}
+
                   <div className="flex flex-col gap-4">
                     <div className="grid sm:grid-cols-2 gap-4">
                       <label className="block">
@@ -202,16 +293,30 @@ export default function Checkout() {
                       </label>
                     </div>
 
-                    <label className="block">
-                      <span className="font-tag text-[10px] tracking-[0.15em] text-[var(--noir-soft)] uppercase font-bold">Dirección de envío</span>
-                      <input
-                        value={datos.calle}
-                        onChange={(e) => { setDato("calle", e.target.value); setErroresEnvio((p) => ({ ...p, calle: "" })); }}
-                        placeholder="Calle, número y colonia"
-                        className={`${inputBase} ${erroresEnvio.calle ? "border-[#b3261e]" : "border-[var(--border-gold-40)]"}`}
-                      />
-                      {erroresEnvio.calle && <p className="mt-1 font-tag text-[10px] text-[#b3261e]">{erroresEnvio.calle}</p>}
-                    </label>
+                    <div className="grid sm:grid-cols-[1fr_10rem] gap-4">
+                      <label className="block">
+                        <span className="font-tag text-[10px] tracking-[0.15em] text-[var(--noir-soft)] uppercase font-bold">Calle</span>
+                        <input value={datos.calle} onChange={(e) => { setDato("calle", e.target.value); setErroresEnvio((p) => ({ ...p, calle: "" })); }} placeholder="Ej. Av. Reforma" className={`${inputBase} ${erroresEnvio.calle ? "border-[#b3261e]" : "border-[var(--border-gold-40)]"}`} />
+                        {erroresEnvio.calle && <p className="mt-1 font-tag text-[10px] text-[#b3261e]">{erroresEnvio.calle}</p>}
+                      </label>
+                      <label className="block">
+                        <span className="font-tag text-[10px] tracking-[0.15em] text-[var(--noir-soft)] uppercase font-bold">No. exterior</span>
+                        <input value={datos.numeroExterior} onChange={(e) => { setDato("numeroExterior", e.target.value); setErroresEnvio((p) => ({ ...p, numeroExterior: "" })); }} placeholder="123" className={`${inputBase} ${erroresEnvio.numeroExterior ? "border-[#b3261e]" : "border-[var(--border-gold-40)]"}`} />
+                        {erroresEnvio.numeroExterior && <p className="mt-1 font-tag text-[10px] text-[#b3261e]">{erroresEnvio.numeroExterior}</p>}
+                      </label>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <label className="block">
+                        <span className="font-tag text-[10px] tracking-[0.15em] text-[var(--noir-soft)] uppercase font-bold">No. interior <em className="normal-case font-normal">(opcional)</em></span>
+                        <input value={datos.numeroInterior} onChange={(e) => setDato("numeroInterior", e.target.value)} placeholder="Depto. 4" className={`${inputBase} border-[var(--border-gold-40)]`} />
+                      </label>
+                      <label className="block">
+                        <span className="font-tag text-[10px] tracking-[0.15em] text-[var(--noir-soft)] uppercase font-bold">Colonia</span>
+                        <input value={datos.colonia} onChange={(e) => { setDato("colonia", e.target.value); setErroresEnvio((p) => ({ ...p, colonia: "" })); }} placeholder="Roma Norte" className={`${inputBase} ${erroresEnvio.colonia ? "border-[#b3261e]" : "border-[var(--border-gold-40)]"}`} />
+                        {erroresEnvio.colonia && <p className="mt-1 font-tag text-[10px] text-[#b3261e]">{erroresEnvio.colonia}</p>}
+                      </label>
+                    </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <label className="block">
@@ -225,16 +330,39 @@ export default function Checkout() {
                         {erroresEnvio.cp && <p className="mt-1 font-tag text-[10px] text-[#b3261e]">{erroresEnvio.cp}</p>}
                       </label>
                       <label className="block">
-                        <span className="font-tag text-[10px] tracking-[0.15em] text-[var(--noir-soft)] uppercase font-bold">Ciudad</span>
+                        <span className="font-tag text-[10px] tracking-[0.15em] text-[var(--noir-soft)] uppercase font-bold">Estado</span>
+                        <select value={datos.estado} onChange={(e) => { setDato("estado", e.target.value); setErroresEnvio((p) => ({ ...p, estado: "" })); }} className={`${inputBase} ${erroresEnvio.estado ? "border-[#b3261e]" : "border-[var(--border-gold-40)]"}`}><option value="">Selecciona</option>{ESTADOS_MEXICO.map((estado) => <option key={estado} value={estado}>{estado}</option>)}</select>
+                        {erroresEnvio.estado && <p className="mt-1 font-tag text-[10px] text-[#b3261e]">{erroresEnvio.estado}</p>}
+                      </label>
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <label className="block">
+                        <span className="font-tag text-[10px] tracking-[0.15em] text-[var(--noir-soft)] uppercase font-bold">Ciudad o municipio</span>
                         <input
                           value={datos.ciudad}
                           onChange={(e) => { setDato("ciudad", e.target.value); setErroresEnvio((p) => ({ ...p, ciudad: "" })); }}
-                          placeholder="CDMX"
+                          placeholder="Benito Juárez"
                           className={`${inputBase} ${erroresEnvio.ciudad ? "border-[#b3261e]" : "border-[var(--border-gold-40)]"}`}
                         />
                         {erroresEnvio.ciudad && <p className="mt-1 font-tag text-[10px] text-[#b3261e]">{erroresEnvio.ciudad}</p>}
                       </label>
+                      <label className="block">
+                        <span className="font-tag text-[10px] tracking-[0.15em] text-[var(--noir-soft)] uppercase font-bold">Teléfono de entrega</span>
+                        <input value={datos.telefono} onChange={(e) => { setDato("telefono", e.target.value); setErroresEnvio((p) => ({ ...p, telefono: "" })); }} inputMode="tel" placeholder="55 1234 5678" className={`${inputBase} ${erroresEnvio.telefono ? "border-[#b3261e]" : "border-[var(--border-gold-40)]"}`} />
+                        {erroresEnvio.telefono && <p className="mt-1 font-tag text-[10px] text-[#b3261e]">{erroresEnvio.telefono}</p>}
+                      </label>
                     </div>
+
+                    <label className="block">
+                      <span className="font-tag text-[10px] tracking-[0.15em] text-[var(--noir-soft)] uppercase font-bold">Referencias <em className="normal-case font-normal">(opcional)</em></span>
+                      <textarea value={datos.referencias} onChange={(e) => setDato("referencias", e.target.value)} placeholder="Entre qué calles, color de fachada, indicaciones para entrega..." rows="2" className={`${inputBase} resize-y border-[var(--border-gold-40)]`} />
+                    </label>
+
+                    <button type="button" onClick={guardarDireccion} className="self-start font-tag text-[10px] tracking-[0.1em] uppercase font-bold text-[var(--gold-dark)] hover:text-[var(--noir)] transition">
+                      <i className={`bi ${direccionGuardada ? "bi-check-lg" : "bi-bookmark-plus"} mr-1`} />
+                      {direccionGuardada ? "Dirección guardada" : "Guardar esta dirección"}
+                    </button>
 
                     <div className="mt-4">
                       <button
@@ -256,11 +384,10 @@ export default function Checkout() {
                     Método de pago
                   </h1>
                   <div className="flex flex-col gap-4">
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       {[
                         { v: "tarjeta", l: "Tarjeta",       i: "bi-credit-card" },
                         { v: "oxxo",    l: "OXXO Pay",      i: "bi-shop"        },
-                        { v: "spei",    l: "Transferencia", i: "bi-bank"        },
                       ].map((op) => (
                         <button
                           key={op.v}
@@ -305,7 +432,14 @@ export default function Checkout() {
                             <span className="font-tag text-[10px] tracking-[0.15em] text-[var(--noir-soft)] uppercase font-bold">Vencimiento</span>
                             <input
                               value={datos.expiracion}
-                              onChange={(e) => { setDato("expiracion", e.target.value); setErroresPago((p) => ({ ...p, expiracion: "" })); }}
+                              onChange={(e) => {
+                                const digitos = e.target.value.replace(/\D/g, "").slice(0, 4);
+                                const vencimiento = digitos.length > 2
+                                  ? `${digitos.slice(0, 2)}/${digitos.slice(2)}`
+                                  : digitos;
+                                setDato("expiracion", vencimiento);
+                                setErroresPago((p) => ({ ...p, expiracion: "" }));
+                              }}
                               placeholder="MM/AA"
                               maxLength={5}
                               className={`${inputBase} ${erroresPago.expiracion ? "border-[#b3261e]" : "border-[var(--border-gold-40)]"}`}
@@ -336,16 +470,8 @@ export default function Checkout() {
                         <i className="bi bi-shop text-3xl text-[var(--gold-dark)] mb-2 block" />
                         <p className="font-body text-sm font-bold text-[var(--noir-soft)]">Pago en OXXO</p>
                         <p className="mt-1 font-body text-xs text-[var(--noir-soft)]">
-                          Recibirás una ficha con código de barras al confirmar. Tienes 24 hrs para pagar.
+                          En esta demostración, tu pago OXXO se confirmará automáticamente en unos segundos.
                         </p>
-                      </div>
-                    )}
-
-                    {datos.metodoPago === "spei" && (
-                      <div className="bg-[var(--snow)] border border-[var(--border-gold-25)] rounded-[2px] p-5">
-                        <p className="font-body text-sm font-bold text-[var(--noir-soft)]">Transferencia SPEI</p>
-                        <p className="mt-2 font-body text-xs text-[var(--noir-soft)]">CLABE: <b className="text-[var(--gold-dark)]">012 180 01234567890 1</b></p>
-                        <p className="font-body text-xs text-[var(--noir-soft)]">Beneficiario: <b className="text-[var(--gold-dark)]">D'ORO Boutique SA de CV</b></p>
                       </div>
                     )}
 
@@ -362,8 +488,8 @@ export default function Checkout() {
                         className="bg-[var(--gold)] text-[var(--noir)] font-tag uppercase tracking-[0.12em] font-bold text-[12px] px-8 py-3.5 rounded-[2px] hover:bg-[var(--gold-dark)] transition flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         {enviando
-                          ? <><i className="bi bi-arrow-repeat animate-spin" /> Procesando...</>
-                          : <>Pagar · ${Number(total).toLocaleString("es-MX")}<i className="bi bi-arrow-right" /></>
+                          ? <><i className="bi bi-arrow-repeat animate-spin" /> {datos.metodoPago === "oxxo" ? "Confirmando pago OXXO..." : "Confirmando pago..."}</>
+                          : <>Confirmar pago simulado · ${Number(total).toLocaleString("es-MX")}<i className="bi bi-arrow-right" /></>
                         }
                       </button>
                     </div>
@@ -385,12 +511,12 @@ export default function Checkout() {
                     Gracias, {datos.nombre.split(" ")[0] || "amig@"}
                   </h1>
                   <p className="mt-2 font-body text-sm text-[var(--noir-soft)]">
-                    Te enviamos los detalles a <b className="text-[var(--gold-dark)]">{datos.email || "tu correo"}</b>
+                    Si tienes dudas sobre tu pedido, contáctanos en <a href="mailto:support@doro.com" className="font-semibold text-[var(--gold-dark)] hover:underline">support@doro.com</a>.
                   </p>
                   <div className="mt-6 inline-flex gap-6 border-t border-b border-[var(--border-gold-25)] py-4">
                     <div>
                       <p className="font-tag text-[9px] text-[var(--noir-soft)] uppercase tracking-widest">Pedido</p>
-                      <p className="font-body text-sm font-bold text-[var(--noir)]">{numeroPedido}</p>
+                      <p className="font-body text-sm font-bold text-[var(--noir)]">{pedidoConfirmado?.numeroPedido || "—"}</p>
                     </div>
                     <div>
                       <p className="font-tag text-[9px] text-[var(--noir-soft)] uppercase tracking-widest">Total</p>
@@ -410,7 +536,7 @@ export default function Checkout() {
             </div>
 
             {/* Resumen del pedido — tarjeta oscura, más grande */}
-            <aside className="lg:sticky lg:top-24 h-fit">
+            {paso !== 3 && <aside className="lg:sticky lg:top-24 lg:mt-[60px] h-fit">
               <div className="bg-[var(--noir)] rounded-[2px] p-7">
                 <p className="font-tag text-[12px] tracking-[0.15em] text-[var(--gold-light)] uppercase font-bold mb-4">
                   Resumen ({totalArticulos} {totalArticulos === 1 ? "artículo" : "artículos"})
@@ -447,7 +573,7 @@ export default function Checkout() {
                   </div>
                 </div>
               </div>
-            </aside>
+            </aside>}
           </div>
         </div>
       </main>

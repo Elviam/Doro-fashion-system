@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { obtenerTallasValidasTienda } from "./ordenarTallas";
 
 const beneficios = [
   { icono: "bi-truck",        texto: "Envío 24h CDMX"       },
@@ -61,14 +62,14 @@ function ImagenVistaRapida({ producto }) {
 }
 
 export default function VistaRapida({ producto, onCerrar, onAgregarAlCarrito }) {
-  const todasLasTallas    = producto.inventario ?? [];
+  const todasLasTallas    = obtenerTallasValidasTienda(producto);
   const tallasDisponibles = todasLasTallas.filter((i) => i.stock > 0);
   const [tallaSeleccionada, setTallaSeleccionada] = useState(
     tallasDisponibles[0]?.talla || ""
   );
   const [cantidad, setCantidad] = useState(1);
 
-  const agotado = producto.stock === 0;
+  const agotado = tallasDisponibles.length === 0;
 
   const stockTallaActual = todasLasTallas.find((i) => i.talla === tallaSeleccionada)?.stock ?? 0;
 
@@ -192,7 +193,7 @@ export default function VistaRapida({ producto, onCerrar, onAgregarAlCarrito }) 
             className="mt-5 w-full bg-lila text-oscuro font-bold py-3 rounded-xl hover:bg-lila-soft transition flex items-center justify-center gap-2 disabled:opacity-40"
           >
             <i className="bi bi-bag-plus" />
-            {agotado ? "Agotado" : "Agregar al carrito"}
+            {agotado ? "Agotado" : "Agregar a la bolsa"}
           </button>
 
           {/* Beneficios */}

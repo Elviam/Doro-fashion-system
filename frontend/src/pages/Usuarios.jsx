@@ -21,7 +21,7 @@ import FormUsuarios from "../components/FormUsuarios";
 const LIMIT = 10;
 
 export default function Usuarios() {
-  useTitulo("Usuarios");
+  useTitulo("Personal");
   const { usuario: usuarioLogeado } = useContext(AuthContext);
   
   const [filtro, setFiltro] = useState("");
@@ -29,6 +29,7 @@ export default function Usuarios() {
   
   const [usuariosDB, setUsuariosDB] = useState([]);
   const [rolesDB, setRolesDB] = useState([]);
+  const [permisosDB, setPermisosDB] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
   const [guardando, setGuardando] = useState(false);
@@ -87,15 +88,29 @@ export default function Usuarios() {
     }
   };
 
+  const fetchPermisos = async () => {
+    try {
+      const result = await api.get('/permissions?limit=100');
+      const datosReales = result.items || result.data?.items || result.data || (Array.isArray(result) ? result : []);
+      setPermisosDB(datosReales);
+    } catch (err) {
+      console.error("Error al cargar permisos:", err);
+    }
+  };
+
   useEffect(() => {
     fetchUsuarios();
     fetchRoles();
+    fetchPermisos();
   }, []);
 
   useEffect(() => { setPaginaActiva(1); }, [filtro, busqueda]);
 
   useEffect(() => {
-    if (isModalFormAbierto) fetchRoles();
+    if (isModalFormAbierto) {
+      fetchRoles();
+      fetchPermisos();
+    }
   }, [isModalFormAbierto]);
 
   const datosFiltrados = usuariosDB
@@ -124,9 +139,9 @@ export default function Usuarios() {
     setToastType(tipo);
   };
 
-  const puedeAgregar = canPerformAction(usuarioLogeado?.permissions, 'users', 'create') || usuarioLogeado?.role === "ADMIN" || usuarioLogeado?.role === "GERENTE";
-const puedeEditar = canPerformAction(usuarioLogeado?.permissions, 'users', 'update') || usuarioLogeado?.role === "ADMIN" || usuarioLogeado?.role === "GERENTE";
-const puedeBorrar = canPerformAction(usuarioLogeado?.permissions, 'users', 'delete') || usuarioLogeado?.role === "ADMIN";
+  const puedeAgregar = canPerformAction(usuarioLogeado?.permissions, 'users', 'create');
+  const puedeEditar = canPerformAction(usuarioLogeado?.permissions, 'users', 'update');
+  const puedeBorrar = canPerformAction(usuarioLogeado?.permissions, 'users', 'delete');
   const handleVerDetalles = (usuario) => {
     setUsuarioSeleccionado(usuario);
     setIsModalVerAbierto(true);
@@ -225,11 +240,11 @@ const puedeBorrar = canPerformAction(usuarioLogeado?.permissions, 'users', 'dele
   };
 
   const renderRow = (row, i) => (
-    <tr key={i} className="border-b hover:bg-lila/30 dark:hover:bg-oscuro/40 transition-colors">
+    <tr key={i} className="border-b border-[var(--border-gold-20)] hover:bg-[var(--gold-08)] transition-colors">
       <td className="p-4 text-center"><AvatarUser nombre={row.nombre} apellido={row.apellido} rol={row.role || row.roleId} /></td>
-      <td className="p-4 text-center text-sm font-medium">{row.usuario || "-"}</td>
-      <td className="p-4 text-center text-sm">{row.nombre} {row.apellido || ""}</td>
-      <td className="p-4 text-center text-sm">{row.email || "-"}</td>
+      <td className="p-4 text-center text-sm font-medium text-[var(--noir)] dark:text-[var(--snow)]">{row.usuario || "-"}</td>
+      <td className="p-4 text-center text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">{row.nombre} {row.apellido || ""}</td>
+      <td className="p-4 text-center text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">{row.email || "-"}</td>
       <td className="p-4 text-center"><Etiquetas contenido={row.role || row.roleId || "Sin rol"} /></td>
       <td className="p-4 text-center"><Etiquetas contenido={row.activo !== false ? "Activo" : "Inactivo"} /></td>
       <td className="p-4 align-middle">
@@ -242,45 +257,35 @@ const puedeBorrar = canPerformAction(usuarioLogeado?.permissions, 'users', 'dele
     </tr>
   );
 
-  if (error && !cargando) {
-    return (
-      <div className="p-4 sm:p-6 lg:p-8">
-        <div className="bg-rojo/20 border border-rojo text-rojo p-4 rounded-lg">{error}</div>
-      </div>
-    );
-  }
-
-  if (cargando) {
-    return (
-      <div className="p-4 sm:p-6 lg:p-8">
-        <h1 className="text-2xl font-bold mb-6 text-blanco uppercase tracking-wide">Gestión de Usuarios</h1>
-        <div className="flex justify-center items-center py-20"><i className="bi bi-hourglass-split text-4xl text-lila animate-spin"></i></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-4 sm:p-6 lg:p-8 relative">
+    <div className="flex min-h-screen flex-col bg-[var(--snow)] dark:bg-[var(--noir-soft)]">
+      <div className="relative flex-1 space-y-6 p-6 lg:p-8 transition-colors duration-300">
       <Toast message={toastMessage} type={toastType} onClose={() => setToastMessage("")} />
-      <Encabezado titulo="Gestión de Usuarios" onActualizar={() => fetchUsuarios()} />
+      <Encabezado titulo="Personal" onActualizar={() => fetchUsuarios()} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full mb-8">
-        <Tarjetas label="Total de usuarios" value={usuariosDB.length} sub="Todos los usuarios" icon="bi bi-people" onClick={() => setFiltro("")} isActive={filtro === ""} />
-        <Tarjetas label="Usuarios Activos" value={activos} sub={`${usuariosDB.length ? Math.round(activos / usuariosDB.length * 100) : 0}% del total`} accent="#A3E378" icon="bi bi-check-circle" onClick={() => setFiltro(filtro === true ? "" : true)} isActive={filtro === true} />
-        <Tarjetas label="Usuarios Inactivos" value={inactivos} sub={`${usuariosDB.length ? Math.round(inactivos / usuariosDB.length * 100) : 0}% del total`} accent="#FF6B6B" icon="bi bi-x-circle" onClick={() => setFiltro(filtro === false ? "" : false)} isActive={filtro === false} />
+      {error && !cargando && (
+        <div className="rounded-[2px] border border-rojo/40 bg-rojo/10 px-4 py-3 font-body text-sm text-rojo" role="alert">
+          {error}
+        </div>
+      )}
+
+      <div className="grid w-full grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
+        <Tarjetas label="Total del personal" value={usuariosSinClientes.length} sub="Cuentas internas de D'oro" icon="bi bi-people" onClick={() => setFiltro("")} isActive={filtro === ""} />
+        <Tarjetas label="Personal activo" value={activos} sub={`${usuariosSinClientes.length ? Math.round(activos / usuariosSinClientes.length * 100) : 0}% del total`} accent="#84B140" icon="bi bi-check-circle" onClick={() => setFiltro(filtro === true ? "" : true)} isActive={filtro === true} />
+        <Tarjetas label="Personal inactivo" value={inactivos} sub={`${usuariosSinClientes.length ? Math.round(inactivos / usuariosSinClientes.length * 100) : 0}% del total`} accent="#EF4444" icon="bi bi-x-circle" onClick={() => setFiltro(filtro === false ? "" : false)} isActive={filtro === false} />
       </div>
 
       <ToolBar 
         filtro={filtro} setFiltro={setFiltro} opcionesFiltro={opcionesFiltroUsuarios}
-        busqueda={busqueda} setBusqueda={setBusqueda} placeholderBuscar="Buscar por usuario, nombre o email..."
-        textoBoton={puedeAgregar ? "+ Usuario" : null} accionBoton={puedeAgregar ? handleAbrirFormCrear : null}
+        busqueda={busqueda} setBusqueda={setBusqueda} placeholderBuscar="Buscar por usuario, nombre o correo..."
+        textoBoton={puedeAgregar ? "+ Integrante" : null} accionBoton={puedeAgregar ? handleAbrirFormCrear : null}
       />
 
-      <Tabla encabezados={encabezadosUsuarios} datos={datosPaginados} renderRow={renderRow} sortableFields={["usuario", "nombre", "email", "rol"]} />
+      <Tabla encabezados={encabezadosUsuarios} datos={datosPaginados} renderRow={renderRow} sortableFields={["usuario", "nombre", "email", "rol"]} cargando={cargando} entidad="personal" />
 
       <Paginacion
         paginaActual={paginaActiva} totalRegistros={datosFiltrados.length} rangoSiguiente={textoRango} limit={LIMIT} onCambiarPagina={handleCambiarPagina}
-        exportTitulo="Gestión de Usuarios"
+        exportTitulo="Personal de D'oro"
         exportColumnas={[{ header: "Usuario", key: "usuario", width: 15 }, { header: "Nombre", key: "nombre", width: 20 }, { header: "Email", key: "email", width: 25 }, { header: "Rol", key: "rol", width: 15 }, { header: "Estado", key: "estado", width: 12 }]}
         exportFilas={datosFiltrados.map((u) => ({ usuario: u.usuario || "-", nombre: `${u.nombre || ""} ${u.apellido || ""}`.trim(), email: u.email || "-", rol: u.role || u.roleId || "Sin rol", estado: u.activo !== false ? "Activo" : "Inactivo" }))}
       />
@@ -310,6 +315,7 @@ const puedeBorrar = canPerformAction(usuarioLogeado?.permissions, 'users', 'dele
             usuarioLogeado={usuarioLogeado}
             esNuevo={!usuarioAEditar}
             rolesDisponibles={rolesDB}
+            permisosDisponibles={permisosDB}
           />
         </>
       )}
@@ -326,6 +332,7 @@ const puedeBorrar = canPerformAction(usuarioLogeado?.permissions, 'users', 'dele
           onCancelar={() => setModalConf({ ...modalConf, isOpen: false })}
         />
       )}
+      </div>
     </div>
   );
 }

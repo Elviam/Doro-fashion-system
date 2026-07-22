@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../services/api";
 import useTitulo from "../hooks/useTitulo";
 import Encabezado from "../components/Encabezado";
@@ -13,7 +12,7 @@ function obtenerVariantesBajas(producto) {
     ? producto.variants
     : [];
 
-  const minimo = Number(producto.stockMinimo) || 5;
+  const minimo = Number(producto.stockMinimo ?? 0);
   const ideal = Number(producto.stockIdeal) || 0;
 
   return inventario
@@ -29,12 +28,10 @@ function obtenerVariantesBajas(producto) {
       stockRequerido: ideal - (v.stock ?? 0),
       precioCompra: Number(producto.precioCompra) || 0,
     }))
-    .filter((fila) => fila.stockRequerido >= 1);
+    .filter((fila) => fila.stockActual <= fila.stockMinimo);
 }
 export default function Reabastecimiento() {
   useTitulo("Resumen");
-  const navigate = useNavigate();
-  const location = useLocation();
 
   const [productosDB, setProductosDB] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -77,7 +74,7 @@ const encabezadosTabla = [
   ];
 
   const renderFila = (fila) => {
-    const esCritico = fila.stockActual < fila.stockMinimo;
+    const esCritico = fila.stockActual <= fila.stockMinimo;
     const claseNumero = esCritico
       ? "text-[var(--color-rojo-dark)] dark:text-[var(--color-rojo)]"
       : "text-[var(--noir-soft)] dark:text-[var(--snow)]";
@@ -103,19 +100,12 @@ const encabezadosTabla = [
     );
   };
 
-  const tabs = [
-    { label: "Resumen", icon: "resumen", active: location.pathname === "/reabastecimiento", onClick: () => navigate("/reabastecimiento") },
-    { label: "Generar pedido", icon: "generarPedido", active: location.pathname === "/reabastecimiento/generar-pedido", onClick: () => navigate("/reabastecimiento/generar-pedido") },
-    { label: "Mis pedidos", icon: "misPedidos", active: location.pathname === "/reabastecimiento/pedidos", onClick: () => navigate("/reabastecimiento/pedidos") },
-  ];
-
  return (
-    <div className="p-4 sm:p-6 lg:p-8 pb-28 sm:pb-8 flex flex-col gap-6 font-body">
+    <div className="p-4 sm:p-6 lg:p-8 pb-8 flex flex-col gap-6 font-body">
 
       <Encabezado
         titulo="Resumen"
         onActualizar={() => setRefreshKey((k) => k + 1)}
-        tabs={tabs}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

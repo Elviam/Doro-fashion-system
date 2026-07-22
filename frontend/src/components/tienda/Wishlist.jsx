@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 function IconoCorazon() {
   return (
     <svg
@@ -30,10 +28,11 @@ const paletasPorCategoria = {
 };
 
 function ImagenMiniatura({ producto }) {
-  if (producto.imagen) {
+  const imagen = producto.imagen || producto.imagenes?.[0];
+  if (imagen) {
     return (
       <img
-        src={producto.imagen}
+        src={imagen}
         alt={producto.nombre}
         className="w-full h-full object-cover"
       />
@@ -142,10 +141,6 @@ export default function Wishlist({
   const handleVerDetalle = (producto) => {
     onProductoClick(producto);
     onCerrar();
-  };
-
-  const handleVaciarLista = () => {
-    productosEnWishlist.forEach((p) => onQuitar(p.id));
   };
 
   return (
@@ -275,34 +270,6 @@ export default function Wishlist({
           )}
         </div>
 
-        {/* Footer */}
-        {productosEnWishlist.length > 0 && (
-          <div
-            className="px-6 py-4"
-            style={{ borderTop: "1px solid var(--border-gold-20)", background: "var(--noir-soft)" }}
-          >
-            <button
-              onClick={handleVaciarLista}
-              className="w-full rounded-[2px] flex items-center justify-center gap-2 transition text-rojo"
-              style={{
-                fontFamily:    "var(--font-tag)",
-                fontSize:      "11px",
-                fontWeight:    600,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                padding:       "11px",
-                border:        "1px solid rgba(244,63,94,0.3)",
-                background:    "transparent",
-                cursor:        "pointer",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(244,63,94,0.1)", e.currentTarget.style.borderColor = "rgba(244,63,94,0.6)")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent",         e.currentTarget.style.borderColor = "rgba(244,63,94,0.3)")}
-            >
-              <i className="bi bi-trash" />
-              Vaciar lista
-            </button>
-          </div>
-        )}
       </aside>
     </>
   );

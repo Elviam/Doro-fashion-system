@@ -1,45 +1,74 @@
 import { useState, useEffect } from "react";
-import { canPerformAction } from "../utils/permissionMapper";
 import Modal from "./Modal";
 import Input from "./Input";
 import Boton from "./Boton";
 import ModalConfirmacion from "./ModalConfirmacion";
 
-export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado, esNuevo = false, rolesDisponibles: rolesDispProp = [], isOpen = true }) {
+const MODULOS_PERMISOS = {
+  auth: "Acceso",
+  dashboard: "Dashboard",
+  users: "Personal",
+  clients: "Clientes",
+  suppliers: "Proveedores",
+  products: "Productos",
+  inventory: "Inventario",
+  recepciones: "Pedidos y recepciones",
+  fulfillment: "Preparación de pedidos",
+  ventas: "Ventas",
+  audit: "Auditoría",
+  permissions: "Configuración",
+  roles: "Configuración",
+  tienda: "Tienda"
+};
+
+const RECURSOS_PERMISOS = {
+  auth: "acceso", dashboard: "dashboard", users: "personal", clients: "clientes",
+  suppliers: "proveedores", products: "productos", inventory: "inventario",
+  recepciones: "pedidos y recepciones", ventas: "ventas", audit: "auditoría",
+  fulfillment: "preparación de pedidos",
+  permissions: "permisos", roles: "roles", tienda: "tienda"
+};
+
+const ACCIONES_PERMISOS = {
+  read: "Ver", create: "Crear", update: "Editar", delete: "Eliminar",
+  confirm: "Confirmar", enviar: "Marcar como enviado", cancel: "Cancelar",
+  seed: "Configurar", me: "Ver"
+};
+
+function getPermissionLabel(code) {
+  const [resource, action] = code.split(":");
+  return `${ACCIONES_PERMISOS[action] || action} ${RECURSOS_PERMISOS[resource] || resource}`;
+}
+
+export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado, esNuevo = false, rolesDisponibles: rolesDispProp = [], permisosDisponibles = [], isOpen = true }) {
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
     email: "",
     usuario: "",
     password: "",
-    roleId: "VENDEDOR",
-    activo: true
+    roleId: "",
+    activo: true,
+    revokedPermissions: [],
+    grantedPermissions: []
   });
 
   const [errores, setErrores] = useState({});
   const [confirmarDescartar, setConfirmarDescartar] = useState(false);
   const [estadoOriginal, setEstadoOriginal] = useState("");
+  const [mostrarPassword, setMostrarPassword] = useState(false);
+  const [permisoPendiente, setPermisoPendiente] = useState(null);
+  const [mostrarAjustesPermisos, setMostrarAjustesPermisos] = useState(false);
 
   const getRolesDisponibles = () => {
-    if (rolesDispProp && rolesDispProp.length > 0) {
-      return rolesDispProp
-        .filter(rol => {
-          const esAdmin = usuarioLogeado?.role === "ADMIN";
-          const rolId = rol.id || rol.nombre;
-          if (rolId === "CLIENTE") return false;
-          if (!esAdmin && rolId === "GERENTE") return false;
-          return true;
-        })
-        .map(rol => ({ id: rol.id || rol.nombre, nombre: rol.nombre || rol.id }));
-    }
-
-    const rolesBase = ["BODEGUERO", "VENDEDOR"];
-    const esAdmin = canPerformAction(usuarioLogeado?.permissions, 'roles', 'create') || usuarioLogeado?.role === "ADMIN";
-    const esGerente = canPerformAction(usuarioLogeado?.permissions, 'users', 'create') || usuarioLogeado?.role === "GERENTE";
-
-    if (esAdmin) return [{ id: "GERENTE", nombre: "GERENTE" }, { id: "BODEGUERO", nombre: "BODEGUERO" }, { id: "VENDEDOR", nombre: "VENDEDOR" }];
-    if (esGerente) return rolesBase.map(r => ({ id: r, nombre: r }));
-    return [];
+    return rolesDispProp
+      .filter((rol) => ['ADMIN', 'BODEGUERO'].includes(rol.codigo || rol.id))
+      .map((rol) => ({
+        id: rol.id,
+        codigo: rol.codigo,
+        nombre: rol.nombre,
+        permissions: rol.permissions || []
+      }));
   };
 
   const rolesOpciones = getRolesDisponibles();
@@ -51,14 +80,25 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
       email: data?.email || "",
       usuario: data?.usuario || "",
       password: "", // Siempre vacío al iniciar
-      roleId: data?.roleId || data?.role || "VENDEDOR",
-      activo: data ? data.activo !== false : true
+      roleId: data?.roleId || rolesOpciones.find((rol) => rol.codigo === "BODEGUERO")?.id || "",
+      activo: data ? data.activo !== false : true,
+      revokedPermissions: data?.revokedPermissions || [],
+      grantedPermissions: data?.grantedPermissions || []
     };
     
     setFormData(inicial);
     setEstadoOriginal(JSON.stringify(inicial));
     setErrores({});
   }, [data]);
+
+  useEffect(() => {
+    if (!data && !formData.roleId && rolesOpciones.length > 0) {
+      const roleBodeguero = rolesOpciones.find((rol) => rol.codigo === "BODEGUERO");
+      if (roleBodeguero) {
+        setFormData((prev) => ({ ...prev, roleId: roleBodeguero.id }));
+      }
+    }
+  }, [data, rolesDispProp]);
 
   const handleIntentarCerrar = () => {
     const estadoActual = JSON.stringify(formData);
@@ -84,7 +124,8 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value
+      [name]: type === "checkbox" ? checked : value,
+      ...(name === "roleId" ? { revokedPermissions: [], grantedPermissions: [] } : {})
     }));
     if (errores[name]) setErrores(prev => ({ ...prev, [name]: null }));
   };
@@ -99,6 +140,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
     if (!formData.usuario.trim()) nuevosErrores.usuario = "El usuario es requerido";
     if (esNuevo && !formData.password.trim()) nuevosErrores.password = "La contraseña es requerida";
     if (formData.password && formData.password.length < 6) nuevosErrores.password = "Mínimo 6 caracteres";
+    if (!formData.roleId) nuevosErrores.roleId = "Selecciona un rol";
 
     setErrores(nuevosErrores);
     return Object.keys(nuevosErrores).length === 0;
@@ -117,7 +159,51 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
     }
   };
 
-  const puedeEditar = usuarioLogeado?.role === "ADMIN" || usuarioLogeado?.role === "GERENTE";
+  const puedeEditar = usuarioLogeado?.role === "ADMIN";
+  const rolSeleccionado = rolesOpciones.find((rol) => rol.id === formData.roleId);
+  const permisosConfigurables = permisosDisponibles.length > 0
+    ? permisosDisponibles
+    : (rolSeleccionado?.permissions || []).map((code) => ({ code }));
+  const permisosAgrupados = permisosConfigurables.reduce((grupos, permiso) => {
+    const [modulo] = permiso.code.split(":");
+    grupos[modulo] = [...(grupos[modulo] || []), permiso];
+    return grupos;
+  }, {});
+  const permisosActivos = [
+    ...(rolSeleccionado?.permissions || []).filter((code) => !formData.revokedPermissions.includes(code)),
+    ...formData.grantedPermissions
+  ].filter((code, index, permisos) => permisos.indexOf(code) === index);
+  const puedeModificarPermisos = usuarioLogeado?.role === "ADMIN" && (esNuevo || data?.id !== usuarioLogeado?.id);
+
+  const togglePermiso = (code) => {
+    if (!puedeModificarPermisos) return;
+    const esPermisoDelRol = rolSeleccionado?.permissions.includes(code);
+    const estaAsignado = esPermisoDelRol
+      ? !formData.revokedPermissions.includes(code)
+      : formData.grantedPermissions.includes(code);
+
+    if (!esPermisoDelRol && !estaAsignado) {
+      setPermisoPendiente(code);
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      ...(esPermisoDelRol
+        ? {
+            revokedPermissions: prev.revokedPermissions.includes(code)
+              ? prev.revokedPermissions.filter((permission) => permission !== code)
+              : [...prev.revokedPermissions, code]
+          }
+        : { grantedPermissions: prev.grantedPermissions.filter((permission) => permission !== code) })
+    }));
+  };
+
+  const confirmarPermisoAdicional = () => {
+    if (!permisoPendiente) return;
+    setFormData((prev) => ({ ...prev, grantedPermissions: [...prev.grantedPermissions, permisoPendiente] }));
+    setPermisoPendiente(null);
+  };
   
   if (!puedeEditar && !esNuevo) {
     return (
@@ -133,7 +219,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
 
   const tituloPersonalizado = (
     <span className="text-xl font-display font-bold uppercase tracking-widest transition-colors text-[var(--noir)] dark:text-[var(--snow)] m-0 block">
-      {esNuevo ? "Crear Usuario" : "Editar Usuario"}
+      {esNuevo ? "Agregar integrante" : "Editar integrante"}
     </span>
   );
 
@@ -205,15 +291,30 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
                   placeholder={!esNuevo ? "No se puede cambiar" : "m.lopez"} 
                   requerido 
                 />
-                <Input 
-                  label={esNuevo ? "Contraseña" : "Nueva Contraseña"} 
-                  tipo="password" 
-                  name="password" 
-                  value={formData.password} 
-                  onChange={handleChange} 
-                  placeholder={esNuevo ? "••••••••" : "Opcional (Dejar en blanco para no cambiar)"} 
-                  requerido={esNuevo} 
-                />
+                <div className="flex flex-col gap-1.5">
+                  <label className="pl-1 text-[11px] font-tag uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
+                    {esNuevo ? "Contraseña temporal" : "Nueva contraseña"} {esNuevo && <span className="text-rojo">*</span>}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={mostrarPassword ? "text" : "password"}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder={esNuevo ? "Mínimo 6 caracteres" : "Opcional (dejar en blanco para no cambiar)"}
+                      className="w-full rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] px-4 py-2.5 pr-11 text-sm text-[var(--noir)] transition-all focus:border-[var(--gold-dark)] focus:outline-none dark:border-[var(--border-gold-20)] dark:bg-[var(--noir)] dark:text-[var(--snow)]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setMostrarPassword((visible) => !visible)}
+                      className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[var(--gold-dark)] hover:text-[var(--noir)] dark:text-[var(--gold-light)]"
+                      aria-label={mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    >
+                      <i className={`bi ${mostrarPassword ? "bi-eye-slash" : "bi-eye"}`} />
+                    </button>
+                  </div>
+                  {esNuevo && <p className="pl-1 text-[11px] text-[var(--noir-soft)] dark:text-[var(--ash)]">Solo se puede ver antes de guardar.</p>}
+                </div>
               </div>
             </div>
 
@@ -228,12 +329,13 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input 
-                  label="Rol en el Sistema" 
+                  label="Rol del integrante"
                   name="roleId" 
                   tipo="select"
-                  opciones={rolesOpciones.map(r => r.id)}
+                  opciones={rolesOpciones.map((rol) => ({ value: rol.id, label: rol.nombre }))}
                   value={formData.roleId} 
                   onChange={handleChange} 
+                  deshabilitado={!esNuevo && data?.id === usuarioLogeado?.id}
                   abrirHaciaArriba={true}
                 />
                 <Input 
@@ -246,11 +348,95 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
                   abrirHaciaArriba={true}
                 />
               </div>
+
+              {rolSeleccionado && (
+                <div className="mt-5 rounded-[2px] border border-[var(--border-gold-25)] bg-[var(--gold-08)] p-4 dark:border-[var(--border-gold-20)]">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="font-tag text-xs font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Permisos del integrante</p>
+                      <p className="mt-1 text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">
+                        {rolSeleccionado.codigo === "ADMIN" ? "Administrador: todos los permisos del sistema." : "Bodeguero: permisos operativos de almacén."}
+                      </p>
+                    </div>
+                    <span className="w-fit rounded-[2px] border border-[var(--border-gold-30)] bg-[var(--snow)] px-2.5 py-1 font-tag text-xs font-semibold text-[var(--gold-dark)] dark:border-[var(--border-gold-20)] dark:bg-[var(--noir)] dark:text-[var(--gold-light)]">{permisosActivos.length} activos</span>
+                  </div>
+
+                  {rolSeleccionado.codigo !== "ADMIN" && (
+                    <div className="mt-4 grid grid-cols-1 gap-x-5 gap-y-2 text-sm sm:grid-cols-2">
+                      {permisosActivos.map((code) => (
+                        <span key={code} className="flex items-center gap-2 text-[var(--noir-soft)] dark:text-[var(--ash)]"><i className="bi bi-check-circle-fill text-[var(--gold-dark)] dark:text-[var(--gold-light)]" />{getPermissionLabel(code)}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-4 flex justify-end border-t border-[var(--border-gold-25)] pt-4 dark:border-[var(--border-gold-20)]">
+                    <Boton variante="secundario" onClick={() => setMostrarAjustesPermisos(true)} tipo="button">
+                      <i className="bi bi-shield-gear" /> Ajustar permisos
+                    </Boton>
+                  </div>
+                </div>
+              )}
             </div>
 
           </form>
         </div>
       </Modal>
+
+      {mostrarAjustesPermisos && rolSeleccionado && (
+        <Modal
+          isOpen={true}
+          onClose={() => setMostrarAjustesPermisos(false)}
+          ancho="max-w-2xl"
+          titulo="Ajustar permisos"
+          footer={
+            <div className="flex w-full justify-end">
+              <Boton variante="claro" className="px-4 py-2 text-xs" onClick={() => setMostrarAjustesPermisos(false)}>Listo</Boton>
+            </div>
+          }
+        >
+          <div className="font-body">
+            <div className="mb-5 rounded-[2px] border border-[var(--border-gold-25)] bg-[var(--gold-08)] p-4">
+              <p className="font-tag text-xs font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{rolSeleccionado.nombre}</p>
+              <p className="mt-1 text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">Los permisos marcados están activos. Añadir un permiso fuera del rol requiere confirmación.</p>
+            </div>
+
+            <div className="space-y-3">
+              {Object.entries(permisosAgrupados).map(([modulo, permisos]) => (
+                <details key={modulo} className="group rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] dark:border-[var(--border-gold-20)] dark:bg-[var(--noir-soft)]">
+                  <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-tag text-sm font-semibold uppercase tracking-wider text-[var(--noir)] dark:text-[var(--snow)]">
+                    <span>{MODULOS_PERMISOS[modulo] || modulo}</span>
+                    <i className="bi bi-chevron-down text-[var(--gold-dark)] transition-transform group-open:rotate-180 dark:text-[var(--gold-light)]" />
+                  </summary>
+                  <div className="border-t border-[var(--border-gold-25)] px-4 py-2 dark:border-[var(--border-gold-20)]">
+                    {permisos.map((permiso) => {
+                      const esPermisoDelRol = rolSeleccionado.permissions.includes(permiso.code);
+                      const asignado = esPermisoDelRol
+                        ? !formData.revokedPermissions.includes(permiso.code)
+                        : formData.grantedPermissions.includes(permiso.code);
+                      return (
+                        <label key={permiso.code} className={`flex items-center justify-between gap-4 border-b border-[var(--border-gold-20)] py-3 last:border-b-0 ${puedeModificarPermisos ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}>
+                          <span className="text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">{getPermissionLabel(permiso.code)}</span>
+                          <input
+                            type="checkbox"
+                            checked={asignado}
+                            disabled={!puedeModificarPermisos}
+                            onChange={() => togglePermiso(permiso.code)}
+                            className="h-4 w-4 shrink-0 accent-[var(--gold-dark)]"
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+                </details>
+              ))}
+            </div>
+
+            {!puedeModificarPermisos && !esNuevo && data?.id === usuarioLogeado?.id && (
+              <p className="mt-4 text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">No puedes modificar los permisos de tu propia cuenta.</p>
+            )}
+          </div>
+        </Modal>
+      )}
 
       {confirmarDescartar && (
         <ModalConfirmacion
@@ -269,6 +455,19 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
             if (e) e.preventDefault();
             setConfirmarDescartar(false);
           }}
+        />
+      )}
+
+      {permisoPendiente && (
+        <ModalConfirmacion
+          isOpen={true}
+          tipo="confirmar"
+          titulo="¿Otorgar permiso adicional?"
+          mensaje={`Darás el permiso “${getPermissionLabel(permisoPendiente)}” a este integrante, además de los permisos de su rol.`}
+          textoConfirmar="Otorgar permiso"
+          textoCancelar="Cancelar"
+          onConfirmar={confirmarPermisoAdicional}
+          onCancelar={() => setPermisoPendiente(null)}
         />
       )}
     </>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { api } from "../../services/api";
-import { generarTicket } from "../../utils/generarTicket";
 
 const fmt = (n) => `$${Number(n).toLocaleString("es-MX")}`;
 
@@ -33,12 +32,6 @@ function DetalleVenta({ venta, onCerrar }) {
             <p className="text-lg font-extrabold text-blanco">{venta.numeroPedido || `#${venta.id.slice(0,8).toUpperCase()}`}</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => generarTicket(venta)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-lila/30 text-lila bg-lila/10 hover:bg-lila/20 transition"
-            >
-              <i className="bi bi-download text-sm" /> Ticket
-            </button>
             <button onClick={onCerrar} className="w-9 h-9 rounded-full bg-lila/10 text-lila hover:bg-lila/20 flex items-center justify-center transition">
               <i className="bi bi-x-lg text-sm" />
             </button>
@@ -53,6 +46,21 @@ function DetalleVenta({ venta, onCerrar }) {
             </span>
             <span className="text-xs text-lila-soft">{fmtFecha(venta.createdAt)}</span>
           </div>
+
+          {venta.estado === "ENVIADO" && (
+            <div className="rounded-xl border border-lila/15 bg-lila/5 px-4 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-lila-soft">Seguimiento simulado</p>
+              <p className="mt-1 text-sm font-semibold text-blanco">Guía {venta.guiaEnvio || "—"}</p>
+              <div className="mt-3 space-y-2">
+                {(venta.eventosEnvio || []).map((evento, index) => (
+                  <div key={`${evento.estado}-${index}`} className="flex gap-2 text-xs">
+                    <i className="bi bi-check-circle-fill text-lila mt-0.5" />
+                    <div><p className="font-semibold text-blanco">{evento.estado.replaceAll("_", " ")}</p><p className="text-lila-soft">{evento.descripcion}</p></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Items */}
           <div className="flex flex-col gap-2">
@@ -153,9 +161,11 @@ export default function HistorialPedidos({ abierto, onCerrar, email, clienteId }
         {/* Lista */}
         <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
           {cargando ? (
-            <div className="flex flex-col items-center justify-center h-full">
-              <i className="bi bi-arrow-repeat text-3xl text-lila animate-spin" />
-              <p className="text-sm text-lila-soft mt-3">Cargando pedidos…</p>
+            <div className="flex items-center justify-center h-full">
+              <p className="flex items-center gap-2 text-sm text-lila-soft">
+                <i className="bi bi-arrow-repeat text-xl text-lila animate-spin" />
+                Cargando pedidos…
+              </p>
             </div>
           ) : pedidos.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-10">

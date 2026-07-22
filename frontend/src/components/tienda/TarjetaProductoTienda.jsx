@@ -87,7 +87,7 @@ function InfoProducto({ producto, className = "" }) {
   );
 }
 
-function TarjetaLista({ producto, onVistaRapida, onFavoritoChange, favoritos }) {
+function TarjetaLista({ producto, onVistaRapida, onFavoritoChange, favoritos, onPrecargarDetalle }) {
   const agotado = producto.stock === 0;
   const esFavorito = favoritos.includes(producto.id);
   const { handleClick, handleKeyDown } = useTarjetaClickeable(onVistaRapida, producto);
@@ -103,9 +103,10 @@ function TarjetaLista({ producto, onVistaRapida, onFavoritoChange, favoritos }) 
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
+      onFocus={() => onPrecargarDetalle?.(producto)}
       className="flex gap-4 min-h-[150px] rounded-[2px] overflow-hidden transition-all cursor-pointer outline-none focus-visible:ring-2"
       style={{ background: "var(--noir-soft)", border: "1px solid var(--border-gold-20)" }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--border-gold-40)")}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--border-gold-40)"; onPrecargarDetalle?.(producto); }}
       onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border-gold-20)")}
     >
       <div className="w-32 sm:w-44 aspect-[3/4] shrink-0 relative">
@@ -118,7 +119,7 @@ function TarjetaLista({ producto, onVistaRapida, onFavoritoChange, favoritos }) 
   );
 }
 
-function TarjetaGrid({ producto, onVistaRapida, onFavoritoChange, favoritos }) {
+function TarjetaGrid({ producto, onVistaRapida, onFavoritoChange, favoritos, onPrecargarDetalle }) {
   const agotado = producto.stock === 0;
   const esFavorito = favoritos.includes(producto.id);
   const { handleClick, handleKeyDown } = useTarjetaClickeable(onVistaRapida, producto);
@@ -134,7 +135,8 @@ function TarjetaGrid({ producto, onVistaRapida, onFavoritoChange, favoritos }) {
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className="group relative h-full min-h-[430px] flex flex-col rounded-[2px] overflow-hidden transition-all hover:-translate-y-1 cursor-pointer outline-none focus-visible:ring-2"
+      onFocus={() => onPrecargarDetalle?.(producto)}
+      className="group relative min-h-0 flex flex-col rounded-[2px] overflow-hidden transition-all hover:-translate-y-1 cursor-pointer outline-none focus-visible:ring-2"
       style={{
         background: "var(--noir-soft)",
         border: "1px solid var(--border-gold-20)",
@@ -143,6 +145,7 @@ function TarjetaGrid({ producto, onVistaRapida, onFavoritoChange, favoritos }) {
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = "var(--border-gold-40)";
         e.currentTarget.style.boxShadow = "0 18px 38px rgba(0,0,0,0.35)";
+        onPrecargarDetalle?.(producto);
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.borderColor = "var(--border-gold-20)";
@@ -155,20 +158,21 @@ function TarjetaGrid({ producto, onVistaRapida, onFavoritoChange, favoritos }) {
         {agotado && <EtiquetaAgotado />}
       </div>
 
-      <InfoProducto producto={producto} className="min-h-[96px] justify-between p-3.5 sm:p-4" />
+      <InfoProducto producto={producto} className="min-h-[82px] justify-start p-3.5 sm:p-4" />
 
       <div className="pointer-events-none absolute inset-0 ring-0 group-hover:ring-1 transition-all" style={{ boxShadow: "inset 0 0 0 1px var(--border-gold-40)" }} />
     </div>
   );
 }
 
-export default function TarjetaProductoTienda({ producto, vista, onVistaRapida, onFavoritoChange, favoritos }) {
+export default function TarjetaProductoTienda({ producto, vista, onVistaRapida, onFavoritoChange, favoritos, onPrecargarDetalle }) {
   if (vista === "lista") return (
     <TarjetaLista
       producto={producto}
       onVistaRapida={onVistaRapida}
       onFavoritoChange={onFavoritoChange}
       favoritos={favoritos}
+      onPrecargarDetalle={onPrecargarDetalle}
     />
   );
   return (
@@ -177,6 +181,7 @@ export default function TarjetaProductoTienda({ producto, vista, onVistaRapida, 
       onVistaRapida={onVistaRapida}
       onFavoritoChange={onFavoritoChange}
       favoritos={favoritos}
+      onPrecargarDetalle={onPrecargarDetalle}
     />
   );
 }

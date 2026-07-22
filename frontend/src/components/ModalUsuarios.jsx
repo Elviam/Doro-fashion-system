@@ -2,6 +2,7 @@ import Modal from "./Modal";
 import Etiquetas from "./Etiquetas";
 import Boton from "./Boton";
 import AvatarUser from "./AvatarUser";
+import { canPerformAction } from "../utils/permissionMapper";
 
 export default function ModalUsuarios({ data, usuarioLogeado, onClose, onEditar, onEliminar, isOpen = true }) {
   if (!data) return null;
@@ -9,16 +10,14 @@ export default function ModalUsuarios({ data, usuarioLogeado, onClose, onEditar,
   const estadoTexto = data.activo !== false ? "Activo" : "Inactivo";
   const esElMismoUsuario = data.id === usuarioLogeado?.id;
   
-  // Lógica de permisos
-  const esAdminOGerente = usuarioLogeado?.role === "ADMIN" || usuarioLogeado?.role === "GERENTE";
-  const puedeEditar = esAdminOGerente;
-  const puedeEliminar = esAdminOGerente && !esElMismoUsuario; 
+  const puedeEditar = canPerformAction(usuarioLogeado?.permissions, 'users', 'update');
+  const puedeEliminar = canPerformAction(usuarioLogeado?.permissions, 'users', 'delete') && !esElMismoUsuario;
 
   //Header
   const tituloPersonalizado = (
     <div>
       <h2 className="font-display text-xl lg:text-2xl font-bold mb-1 uppercase tracking-widest transition-colors text-[var(--noir)] dark:text-[var(--snow)] m-0">
-        Perfil de Usuario
+        Perfil del integrante
       </h2>
     </div>
   );

@@ -20,11 +20,11 @@ const formatMesAnio = (iso) => {
 
 function EstadoBadge({ estado }) {
   const estilos = {
-    pendiente: "border-gold text-gold",
-    pagado: "bg-verde/12 border-verde/35 text-verde-dark dark:text-verde",
-    enviado: "bg-azul/12 border-azul/35 text-azul-dark dark:text-azul",
-    entregado: "bg-verde/12 border-verde/35 text-verde-dark dark:text-verde",
-    cancelado: "bg-rojo/12 border-rojo/35 text-rojo-dark dark:text-rojo",
+    pendiente: "bg-amber-100 border-amber-700 text-amber-800",
+    pagado: "bg-green-600/15 border-green-600/60 text-green-700",
+    enviado: "bg-azul/10 border-azul/30 text-azul-dark",
+    entregado: "bg-green-600/15 border-green-600/60 text-green-700",
+    cancelado: "bg-red-100 border-red-700 text-red-800",
   };
 
   const key = estado?.toLowerCase();
@@ -138,7 +138,10 @@ export default function PerfilCliente({ usuario }) {
 
         {cargando ? (
           <div className="text-center py-8 font-body text-[var(--noir-soft)] dark:text-[var(--ash)] text-sm lg:text-base">
-            <p>Cargando compras...</p>
+            <p className="flex items-center justify-center gap-2">
+              <i className="bi bi-arrow-repeat animate-spin" aria-hidden="true" />
+              Cargando compras...
+            </p>
           </div>
         ) : compras.length === 0 ? (
           <div className="text-center py-8 font-body text-[var(--noir-soft)] dark:text-[var(--ash)] text-sm lg:text-base">

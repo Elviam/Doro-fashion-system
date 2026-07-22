@@ -93,9 +93,8 @@ export function CarritoProvider({ children }) {
 
       setToast({
         tipo: "exito",
-        titulo: "Agregado al carrito",
+        titulo: "Agregado a tu bolsa",
         mensaje: `${producto.nombre} · Talla ${talla} × ${cantidad}`,
-        accion: { label: "Ver carrito", onClick: () => setCarritoAbierto(true) },
       });
     }, "Inicia sesión para agregar productos a tu carrito");
   };
