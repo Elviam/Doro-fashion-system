@@ -105,12 +105,8 @@ export default function Inventario() {
       const producto = productosDB.find((p) => p.id === datos.productoId);
       if (!producto) throw new Error("No se encontró el producto.");
 
-      const tallas = Array.isArray(datos.tallas) ? datos.tallas : [datos.talla].filter(Boolean);
       const resultado = await api.patch(`/inventory/${producto.id}/adjust`, {
-        ajustes: tallas.map((talla) => ({
-          talla,
-          cantidadNueva: Number(datos.valoresPorTalla?.[talla] ?? datos.cantidad),
-        })),
+        ajustes: datos.ajustes,
         motivo: datos.motivo,
         notas: datos.notas,
         evidencia: datos.evidencia || [],

@@ -11,7 +11,7 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
   const [formData, setFormData] = useState({
     sku: "", nombre: "", departamento: "", categoria: "",
     descripcion: "", pVenta: "", pCompra: "", estado: "Activo",
-    inventario: [], imagenes: [], stockMinimo: 0, stockIdeal: 0, stockMaximo: 0,
+    inventario: [], imagenes: [], stockMinimo: "", stockIdeal: "", stockMaximo: "",
     supplierId: "", supplierNombre: "", 
   });
   const [proveedores, setProveedores] = useState([]);
@@ -52,7 +52,7 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
       inicial = { ...data, inventario: data.inventario || [], imagenes: data.imagenes || [] };
       setFormData(inicial);
     } else {
-      inicial = { sku: "", nombre: "", departamento: "", categoria: "", descripcion: "", pVenta: "", pCompra: "", estado: "Activo", inventario: [], imagenes: [], stockMinimo: 0, stockIdeal: 0, stockMaximo: 0, supplierId: "", supplierNombre: "" };
+      inicial = { sku: "", nombre: "", departamento: "", categoria: "", descripcion: "", pVenta: "", pCompra: "", estado: "Activo", inventario: [], imagenes: [], stockMinimo: "", stockIdeal: "", stockMaximo: "", supplierId: "", supplierNombre: "" };
       setFormData(inicial);
     }
     setEstadoOriginal(tomarSnapshot(inicial));
@@ -107,7 +107,11 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const esCampoStock = ["stockMinimo", "stockIdeal", "stockMaximo"].includes(name);
+    const valorNormalizado = esCampoStock
+      ? value.replace(/\D/g, "").replace(/^0+/, "")
+      : value;
+    setFormData(prev => ({ ...prev, [name]: valorNormalizado }));
     limpiarError(name);
   };
 
@@ -161,15 +165,15 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
       nuevosErrores.pVenta = "Ingresa un precio de venta válido.";
       camposFaltantes.push("Precio de Venta");
     }
-   if (formData.stockMinimo === "" || formData.stockMinimo === null || Number(formData.stockMinimo) < 0) {
+   if (!/^\d+$/.test(String(formData.stockMinimo)) || Number(formData.stockMinimo) <= 0) {
       nuevosErrores.stockMinimo = "Ingresa un stock mínimo válido (0 o mayor).";
       camposFaltantes.push("Stock Mínimo");
     }
-    if (formData.stockIdeal === "" || formData.stockIdeal === null || Number(formData.stockIdeal) < 0) {
+    if (!/^\d+$/.test(String(formData.stockIdeal)) || Number(formData.stockIdeal) <= 0) {
       nuevosErrores.stockIdeal = "Ingresa un stock ideal válido (0 o mayor).";
       camposFaltantes.push("Stock Ideal");
     }
-    if (formData.stockMaximo === "" || formData.stockMaximo === null || Number(formData.stockMaximo) < 0) {
+    if (!/^\d+$/.test(String(formData.stockMaximo)) || Number(formData.stockMaximo) <= 0) {
       nuevosErrores.stockMaximo = "Ingresa un stock máximo válido (0 o mayor).";
       camposFaltantes.push("Stock Máximo");
     }
@@ -337,19 +341,6 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
               
               <div>
                 <Input 
-                  label="Estado" name="estado" tipo="select" 
-                  opciones={["Activo", "Inactivo"]} 
-                  value={formData.estado} onChange={handleChange} 
-                />
-                {!data && (
-                  <p className="mt-1.5 text-xs leading-relaxed text-[var(--noir-soft)] dark:text-[var(--ash)]">
-                    <strong className="text-[var(--noir)] dark:text-[var(--snow)]">Activo:</strong> se publica y aparece en la tienda. <strong className="text-[var(--noir)] dark:text-[var(--snow)]">Inactivo:</strong> queda guardado, pero no se muestra en la tienda.
-                  </p>
-                )}
-              </div>
-              
-              <div>
-                <Input 
                   label="Departamento" name="departamento" tipo="select" 
                   opciones={DEPARTAMENTOS_PERMITIDOS} 
                   value={formData.departamento} onChange={handleChange} requerido 
@@ -358,15 +349,6 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
               </div>
               
               <div>
-                <Input 
-                  label="Categoría" name="categoria" tipo="select" 
-                  opciones={CATEGORIAS_PERMITIDAS} 
-                  value={formData.categoria} onChange={handleChange} requerido 
-                />
-                {errores.categoria && <p className="text-xs mt-1 text-rojo-dark dark:text-rojo">{errores.categoria}</p>}
-              </div>
-
-              <div className="md:col-span-2 mt-2">
                 <Input 
                   label="Proveedor (opcional)" 
                   name="supplierNombre" 
@@ -377,7 +359,44 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
                 />
               </div>
 
+              <div>
+                <Input 
+                  label="Categoría" name="categoria" tipo="select" 
+                  opciones={CATEGORIAS_PERMITIDAS} 
+                  value={formData.categoria} onChange={handleChange} requerido 
+                />
+                {errores.categoria && <p className="text-xs mt-1 text-rojo-dark dark:text-rojo">{errores.categoria}</p>}
+              </div>
+
             </div>
+          </div>
+
+          {/* Estado en tienda */}
+          <div className={`
+            p-5 rounded-[2px] border-2 transition-colors shadow-sm
+            bg-[var(--gold-08)] border-[var(--border-gold-40)]
+            dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
+          `}>
+            <h3 className="text-sm lg:text-base font-tag uppercase flex items-center gap-2 mb-2 text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
+              <i className="bi bi-shop-window"></i> Estado en tienda
+            </h3>
+            <p className="mb-4 text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">
+              Define si este producto estará visible y disponible para tus clientes.
+            </p>
+            <Input
+              label="Activo"
+              name="estado"
+              tipo="select"
+              opciones={["Activo", "Inactivo"]}
+              value={formData.estado}
+              onChange={handleChange}
+              claseEtiqueta="text-sm lg:text-base font-semibold"
+            />
+            {!data && (
+              <p className="mt-3 text-sm leading-relaxed text-[var(--noir-soft)] dark:text-[var(--ash)]">
+                <strong className="text-[var(--noir)] dark:text-[var(--snow)]">Activo:</strong> se publica y aparece en la tienda. <strong className="text-[var(--noir)] dark:text-[var(--snow)]">Inactivo:</strong> queda guardado, pero no se muestra en la tienda.
+              </p>
+            )}
           </div>
 
           {/* Descripción */}
@@ -435,7 +454,8 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
                   label="Stock mínimo por talla" 
                   tipo="number" 
                   name="stockMinimo" 
-                  min="0"
+                  min="1"
+                  step="1"
                   value={formData.stockMinimo} 
                   onChange={handleChange} 
                   requerido
@@ -448,7 +468,8 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
                   label="Stock ideal por talla" 
                   tipo="number" 
                   name="stockIdeal" 
-                  min="0"
+                  min="1"
+                  step="1"
                   value={formData.stockIdeal} 
                   onChange={handleChange} 
                   requerido
@@ -461,7 +482,8 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
                   label="Stock máximo por talla" 
                   tipo="number" 
                   name="stockMaximo" 
-                  min="0"
+                  min="1"
+                  step="1"
                   value={formData.stockMaximo} 
                   onChange={handleChange} 
                   requerido

@@ -245,7 +245,7 @@ export default function Tienda() {
                     color: "var(--ash)",
                   }}
                 >
-                  <i className="bi bi-arrow-repeat animate-spin" style={{ color: "var(--gold-dark)" }} />
+                  <i className="bi bi-arrow-repeat inline-block animate-spin" style={{ color: "var(--gold-dark)" }} />
                   Cargando productos…
                 </p>
               </div>

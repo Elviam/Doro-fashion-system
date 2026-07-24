@@ -12,7 +12,12 @@ export default function Input({
   deshabilitado = false, 
   className = "",
   abrirHaciaArriba = false,
-  icono = ""
+  icono = "",
+  iconoEtiqueta = "",
+  claseEtiqueta = "",
+  min,
+  max,
+  step = "1"
 }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -48,7 +53,9 @@ export default function Input({
           text-[11px] lg:text-xs font-tag uppercase tracking-wider pl-1 transition-colors
           text-[var(--gold-dark)]
           dark:text-[var(--gold-light)]
+          ${claseEtiqueta}
         `}>
+          {iconoEtiqueta && <i className={`bi ${iconoEtiqueta} mr-1.5`} aria-hidden="true" />}
           {label} {requerido && !deshabilitado && <span className="text-rojo">*</span>}
         </label>
       )}
@@ -119,9 +126,13 @@ export default function Input({
             name={name} 
             value={value} 
             onChange={onChange}
+            onWheel={(event) => event.currentTarget.blur()}
             placeholder={placeholder} 
             required={requerido} 
             disabled={deshabilitado}
+            min={min}
+            max={max}
+            step={step}
             className={`
               w-full border rounded-[2px] px-4 py-2.5 text-sm lg:text-base focus:outline-none transition-all
               bg-[var(--snow)] text-[var(--noir)] border-[var(--border-gold-40)] focus:border-[var(--gold-dark)] placeholder-[var(--noir-soft)]
@@ -163,7 +174,7 @@ export default function Input({
           <input
             type={tipo} name={name} value={value} onChange={onChange} placeholder={placeholder} required={requerido} disabled={deshabilitado}
             className={`
-              w-full border rounded-[2px] ${icono ? 'pl-9 pr-4' : 'px-4'} py-2.5 text-sm lg:text-base focus:outline-none transition-all
+              w-full h-10 border rounded-[2px] ${icono ? 'pl-9 pr-4' : 'px-4'} py-2.5 text-sm lg:text-base focus:outline-none transition-all
               bg-[var(--snow)] text-[var(--noir)] border-[var(--border-gold-40)] focus:border-[var(--gold-dark)] placeholder-[var(--noir-soft)]
               dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)] dark:focus:border-[var(--gold-light)] dark:placeholder-[var(--ash)]
               ${deshabilitado ? 'opacity-60 cursor-not-allowed bg-[var(--gold-08)] dark:bg-[var(--noir-soft)]' : ''}

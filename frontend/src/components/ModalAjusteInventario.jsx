@@ -23,6 +23,7 @@ export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guar
   const [previews, setPreviews] = useState([]);
   const [errors, setErrors] = useState({});
   const [subiendo, setSubiendo] = useState(false);
+  const [tallasEditadas, setTallasEditadas] = useState(() => new Set());
 
   const tallasDisponibles = TALLAS_POR_CATEGORIA[producto?.categoria] || ["Unitalla"];
   const stockPorTalla = Object.fromEntries((producto?.inventario || []).map((item) => [item.talla, item.stock || 0]));
@@ -36,11 +37,15 @@ export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guar
     if (isOpen) {
       const tallas = TALLAS_POR_CATEGORIA[producto?.categoria] || ["Unitalla"];
       const valoresPorTalla = Object.fromEntries(
-        tallas.map((talla) => [talla, String(stockPorTalla[talla] ?? 0)])
+        tallas.map((talla) => {
+          const stock = Number(stockPorTalla[talla] ?? 0);
+          return [talla, Object.hasOwn(stockPorTalla, talla) ? String(stock) : ""];
+        })
       );
       setForm({ valoresPorTalla, motivo: "", notas: "" });
       setEvidencia([]);
       setErrors({});
+      setTallasEditadas(new Set());
     }
   }, [isOpen, producto?.id]);
 
@@ -69,14 +74,33 @@ export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guar
     setEvidencia((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const validar = () => {
+  const construirAjustes = () => tallasDisponibles.flatMap((talla) => {
+    const valor = form.valoresPorTalla[talla] ?? "";
+    const existe = Object.hasOwn(stockPorTalla, talla);
+    const stockAnterior = Number(stockPorTalla[talla] ?? 0);
+
+    if (valor === "") {
+      return existe && tallasEditadas.has(talla) && stockAnterior > 0
+        ? [{ talla, cantidadNueva: 0 }]
+        : [];
+    }
+
+    const cantidadNueva = Number(valor);
+    return cantidadNueva !== stockAnterior
+      ? [{ talla, cantidadNueva }]
+      : [];
+  });
+
+  const validar = (ajustes) => {
     const e = {};
     tallasDisponibles.forEach((talla) => {
       const valor = form.valoresPorTalla[talla];
-      if (valor === "" || !Number.isInteger(Number(valor)) || Number(valor) < 0) {
-        e[`talla-${talla}`] = "Ingresa un valor entero igual o mayor a 0.";
+      const esCeroExistenteSinEditar = valor === "0" && Object.hasOwn(stockPorTalla, talla) && !tallasEditadas.has(talla);
+      if (valor !== "" && !esCeroExistenteSinEditar && (!/^\d+$/.test(String(valor)) || Number(valor) <= 0)) {
+        e[`talla-${talla}`] = "Ingresa un número entero mayor a 0.";
       }
     });
+    if (ajustes.length === 0) e.tallas = "Registra o modifica el stock de al menos una talla.";
     if (!form.motivo) e.motivo = "Selecciona un motivo.";
     if (form.motivo === "Otro" && !form.notas.trim()) e.notas = "Las notas son obligatorias para este motivo.";
     setErrors(e);
@@ -84,19 +108,15 @@ export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guar
   };
 
   const handleSubmit = async () => {
-    if (!validar()) return;
+    const ajustes = construirAjustes();
+    if (!validar(ajustes)) return;
     try {
       setSubiendo(true);
       const urlsEvidencia = await Promise.all(evidencia.map((f) => uploadFileToCloudinary(f)));
       if (urlsEvidencia.some((url) => !url)) throw new Error("No se pudo subir una de las evidencias.");
       onGuardar({
         productoId: producto.id,
-        tallas: tallasDisponibles,
-        valoresPorTalla: Object.fromEntries(
-          tallasDisponibles.map((talla) => [talla, Number(form.valoresPorTalla[talla])])
-        ),
-        tipo: "fijar",
-        cantidad: 0,
+        ajustes,
         motivo: form.motivo,
         notas: form.notas,
         evidencia: urlsEvidencia,
@@ -156,11 +176,15 @@ export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guar
                     {columna.map((talla) => (
                       <div key={talla} className="grid grid-cols-[minmax(3rem,1fr)_5rem] items-center gap-2 rounded-[2px] border p-1.5 bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)]">
                         <label htmlFor={`stock-${talla}`} className="text-center text-xs font-semibold text-noir dark:text-snow">{talla}</label>
-                        <input id={`stock-${talla}`} type="number" min="0" step="1" value={form.valoresPorTalla[talla] ?? ""}
+                        <input id={`stock-${talla}`} type="number" min="1" step="1" value={form.valoresPorTalla[talla] ?? ""}
+                          onWheel={(event) => event.currentTarget.blur()}
                           onChange={(e) => {
                             const { value } = e.target;
-                            setForm((prev) => ({ ...prev, valoresPorTalla: { ...prev.valoresPorTalla, [talla]: value } }));
+                            const valorNormalizado = value.replace(/\D/g, "").replace(/^0+/, "");
+                            setForm((prev) => ({ ...prev, valoresPorTalla: { ...prev.valoresPorTalla, [talla]: valorNormalizado } }));
+                            setTallasEditadas((prev) => new Set(prev).add(talla));
                             if (errors[`talla-${talla}`]) setErrors((prev) => ({ ...prev, [`talla-${talla}`]: "" }));
+                            if (errors.tallas) setErrors((prev) => ({ ...prev, tallas: "" }));
                           }}
                           className="w-full rounded-[2px] border px-1 py-1.5 text-center text-sm bg-[var(--snow)] text-[var(--noir)] border-[var(--border-gold-40)] focus:outline-none focus:border-[var(--gold-dark)] dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)] dark:focus:border-[var(--gold-light)]" />
                         {errors[`talla-${talla}`] && <p className="col-span-2 text-[9px] leading-tight text-rojo">{errors[`talla-${talla}`]}</p>}
@@ -169,6 +193,8 @@ export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guar
                   </div>
                 ))}
               </div>
+              {errors.tallas && <p className="text-rojo text-[10px] mt-1 pl-1">{errors.tallas}</p>}
+              <p className="text-xs text-noir-soft dark:text-ash mt-2">Deja vacía una talla que nunca se ha registrado. Para dejar sin stock una talla existente, borra su cantidad.</p>
             </div>
 
           </div>

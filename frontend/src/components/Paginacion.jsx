@@ -9,6 +9,7 @@ export default function Paginacion({
   exportTitulo   = "Reporte",
   exportColumnas = [],
   exportFilas    = [],
+  mostrarExportar = true,
 }) {
   const [mostrarMenu, setMostrarMenu] = useState(false)
   const [exportando,  setExportando]  = useState(false)
@@ -41,7 +42,7 @@ export default function Paginacion({
     <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 font-body">
 
       {/* Botón Exportar con dropdown */}
-      <div className="relative" ref={menuRef}>
+      {mostrarExportar && <div className="relative" ref={menuRef}>
         <button
           onClick={() => setMostrarMenu((v) => !v)}
           disabled={exportando}
@@ -80,7 +81,7 @@ export default function Paginacion({
             </button>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Navegación simplificada */}
       <div className="flex items-center gap-3">

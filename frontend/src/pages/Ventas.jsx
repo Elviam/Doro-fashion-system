@@ -10,6 +10,7 @@ import ModalConfirmacion from "../components/ModalConfirmacion";
 import Encabezado from "../components/Encabezado";
 import { api } from "../services/api";
 import ModalVentas from "../components/ModalVentas";
+import FechaMexicoInput from "../components/FechaMexicoInput";
 
 const LIMIT = 7;
 
@@ -244,8 +245,8 @@ export default function Ventas() {
 
         {error && <p className="rounded-[2px] border border-rojo/30 bg-rojo/10 px-4 py-3 text-sm text-rojo">{error}</p>}
         <div className="flex flex-wrap items-end gap-3 rounded-[2px] border border-[var(--border-gold-20)] bg-[var(--snow)] p-3 dark:bg-[var(--noir-soft)]">
-          <label className="text-xs font-semibold text-[var(--noir-soft)] dark:text-[var(--ash)]">Desde<input type="date" value={desde} onChange={(event) => setDesde(event.target.value)} className="mt-1 block h-9 rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] px-2 text-sm text-[var(--noir)] dark:border-[var(--border-gold-20)] dark:bg-[var(--noir)] dark:text-[var(--snow)]" /></label>
-          <label className="text-xs font-semibold text-[var(--noir-soft)] dark:text-[var(--ash)]">Hasta<input type="date" value={hasta} min={desde || undefined} onChange={(event) => setHasta(event.target.value)} className="mt-1 block h-9 rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] px-2 text-sm text-[var(--noir)] dark:border-[var(--border-gold-20)] dark:bg-[var(--noir)] dark:text-[var(--snow)]" /></label>
+          <FechaMexicoInput etiqueta="Desde" value={desde} onChange={setDesde} />
+          <FechaMexicoInput etiqueta="Hasta" value={hasta} onChange={setHasta} min={desde || "2026-01-01"} />
           {(desde || hasta) && <button type="button" onClick={() => { setDesde(""); setHasta(""); }} className="h-9 rounded-[2px] border border-[var(--border-gold-40)] px-3 text-xs font-semibold text-[var(--gold-dark)] dark:border-[var(--border-gold-20)] dark:text-[var(--gold-light)]">Limpiar fechas</button>}
         </div>
         <ToolBar

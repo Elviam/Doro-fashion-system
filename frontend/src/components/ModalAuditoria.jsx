@@ -93,7 +93,7 @@ export default function ModalAuditoria({ isOpen, onClose, data }) {
   const esProductoEliminado = data.resource === "products" && data.action === "DELETE";
   const camposProductoCreado = ["imagenes", "sku", "nombre", "descripcion", "categoria", "departamento", "precioCompra", "precioVenta", "stockMinimo", "stockIdeal", "stockMaximo", "activo"];
   const camposOmitidosProductoCreado = ["supplierId", "supplierNombre", "stock", "inventario"];
-  const camposProductoEliminado = ["sku", "nombre", "descripcion", "categoria", "departamento", "precioCompra", "precioVenta", "stock", "stockMinimo", "stockIdeal", "stockMaximo", "activo", "inventario"];
+  const camposProductoEliminado = ["imagenes", "sku", "nombre", "descripcion", "categoria", "departamento", "precioCompra", "precioVenta", "stock", "stockMinimo", "stockIdeal", "stockMaximo", "activo", "inventario"];
   const contextoProducto = productoContexto || (data.resource === "products" ? {
     sku: data.details?.sku,
     nombre: data.details?.nombre,
@@ -235,7 +235,14 @@ export default function ModalAuditoria({ isOpen, onClose, data }) {
               <div className="overflow-hidden rounded-[2px] border border-rojo/25 dark:border-rojo/25">
                 <table className="w-full text-left text-xs lg:text-sm">
                   <tbody>
-                    {camposProductoEliminado.filter((campo) => data.details?.[campo] !== undefined).map((campo) => <tr key={campo} className="border-t border-rojo/15"><td className="w-[35%] px-3 py-2.5 align-top font-semibold text-[var(--noir-soft)] dark:text-[var(--ash)]">{etiquetaCampo(campo)}</td><td className="px-3 py-2.5 align-top break-words text-[var(--noir)] dark:text-[var(--snow)]">{formatearValor(campo, data.details?.[campo])}</td></tr>)}
+                    {camposProductoEliminado.filter((campo) => data.details?.[campo] !== undefined).map((campo) => {
+                      const valor = data.details?.[campo];
+                      if (campo === "imagenes") {
+                        const imagenes = Array.isArray(valor) ? valor.filter((url) => typeof url === "string" && url) : [];
+                        return <tr key={campo} className="border-t border-rojo/15"><td className="w-[35%] px-3 py-2.5 align-top font-semibold text-[var(--noir-soft)] dark:text-[var(--ash)]">Imagen</td><td className="px-3 py-2.5">{imagenes.length ? <div className="flex gap-2 overflow-x-auto pb-2">{imagenes.map((url, indice) => <img key={`${url}-${indice}`} src={url} alt={`Imagen conservada del producto eliminado ${indice + 1}`} className="h-28 w-20 shrink-0 rounded-[2px] object-cover" />)}</div> : <span className="text-[var(--noir-soft)] dark:text-[var(--ash)]">Sin imágenes</span>}</td></tr>;
+                      }
+                      return <tr key={campo} className="border-t border-rojo/15"><td className="w-[35%] px-3 py-2.5 align-top font-semibold text-[var(--noir-soft)] dark:text-[var(--ash)]">{etiquetaCampo(campo)}</td><td className="px-3 py-2.5 align-top break-words text-[var(--noir)] dark:text-[var(--snow)]">{formatearValor(campo, valor)}</td></tr>;
+                    })}
                   </tbody>
                 </table>
               </div>

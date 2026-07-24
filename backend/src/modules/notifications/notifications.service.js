@@ -1,8 +1,10 @@
 import { prisma } from '../../lib/prisma.js'
 
 export class NotificationsService {
-  async getNotifications(userPermissions = []) {
+  async getNotifications(user = {}) {
     const notifications = []
+
+    const userPermissions = user.permissions ?? []
 
     const canReadProducts    = userPermissions.includes('products:read')
     const canReadRecepciones = userPermissions.includes('recepciones:read')
@@ -31,6 +33,32 @@ export class NotificationsService {
           })
         })
       })
+
+      // The notification is derived from the product flag, so it disappears
+      // as soon as the administrator saves the product after reviewing it.
+      if (user.role === 'ADMIN') {
+        const productsWithPendingPriceReview = await prisma.product.findMany({
+          where: { pendingPriceReview: true },
+          select: {
+            id: true,
+            nombre: true,
+            purchasePriceChangedAt: true,
+          },
+        })
+
+        productsWithPendingPriceReview.forEach((product) => {
+          notifications.push({
+            id: `revision-precio-${product.id}`,
+            tipo: 'revision_precio_venta',
+            titulo: 'Revisión de precio de venta',
+            mensaje: `El costo de compra de "${product.nombre}" cambió. Revisa si deseas actualizar su precio de venta.`,
+            ruta: `/productos?detalle=${encodeURIComponent(product.id)}`,
+            icon: 'bi-exclamation-triangle',
+            nivel: 'advertencia',
+            createdAt: product.purchasePriceChangedAt || null,
+          })
+        })
+      }
     }
 
     // ── Recepciones pendientes ─────────────────────────────────────────

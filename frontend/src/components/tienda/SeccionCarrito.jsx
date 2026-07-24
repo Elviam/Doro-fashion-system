@@ -390,8 +390,6 @@ export default function SeccionCarrito({
             <div className="flex justify-center gap-4 mt-3">
               {[
                 { icono: "bi-credit-card-2-front", label: "Tarjeta" },
-                { icono: "bi-paypal",              label: "PayPal"  },
-                { icono: "bi-apple",               label: "Apple Pay" },
                 { icono: "bi-shop",                label: "OXXO"    },
               ].map(({ icono, label }) => (
                 <i

@@ -26,7 +26,7 @@ const navItems = [
         { label: "Mis pedidos", ruta: "/reabastecimiento/pedidos" },
       ],
     },
-    { label: "Recepciones",      ruta: "/recepciones",       icon: ClipboardList, permiso: "recepciones:read" },
+    { label: "Recepción de mercancía", ruta: "/recepciones", icon: ClipboardList, permiso: "recepciones:read" },
     { label: "Clientes",         ruta: "/clientes",          icon: Users,        permiso: "clients:read" },
     { label: "Proveedores",      ruta: "/proveedores",       icon: Truck,        permiso: "suppliers:read" },
   ],
@@ -229,7 +229,7 @@ export default function Sidebar({ onCerrar }) {
 
                       {!isCollapsed && (
                         <span
-                          className={`transition-all duration-300 group-hover:translate-x-1 ${
+                          className={`flex-1 text-left transition-all duration-300 group-hover:translate-x-1 ${
                             isActive ? "text-[var(--noir-soft)] dark:text-[var(--snow)]" : "text-[var(--noir-soft)]/80 dark:text-[var(--ash)]"
                           }`}
                           style={{

@@ -15,7 +15,7 @@ function nombreArchivo(titulo) {
   return `${titulo}-${fecha}`
 }
 
-export function exportarPDF(titulo, columnas, filas) {
+export function exportarPDF(titulo, columnas, filas, { total } = {}) {
   const doc   = new jsPDF({ orientation: 'landscape' })
   const pageW = doc.internal.pageSize.getWidth()
 
@@ -43,6 +43,7 @@ export function exportarPDF(titulo, columnas, filas) {
     startY: 34,
     head: [columnas.map((c) => c.header)],
     body: filas.map((fila) => columnas.map((c) => fila[c.key] ?? '—')),
+    ...(total ? { foot: [columnas.map((_, index) => index === columnas.length - 1 ? total : '')] } : {}),
     styles: {
       fillColor: [255, 255, 255],
       textColor: C.text,
@@ -62,6 +63,14 @@ export function exportarPDF(titulo, columnas, filas) {
       lineWidth: 0.2,
     },
     alternateRowStyles: { fillColor: [251, 247, 240] },
+    footStyles: {
+      fillColor: C.headerBg,
+      textColor: C.text,
+      fontStyle: 'bold',
+      halign: 'center',
+      lineColor: C.line,
+      lineWidth: 0.2,
+    },
     tableLineColor: C.line,
     tableLineWidth: 0.2,
   })
@@ -80,7 +89,7 @@ export function exportarPDF(titulo, columnas, filas) {
   doc.save(`${nombreArchivo(titulo)}.pdf`)
 }
 
-export async function exportarExcel(titulo, columnas, filas) {
+export async function exportarExcel(titulo, columnas, filas, { total } = {}) {
   const wb = new ExcelJS.Workbook()
   wb.creator = "D'ORO"
   wb.created = new Date()
@@ -127,6 +136,22 @@ export async function exportarExcel(titulo, columnas, filas) {
       }
     })
   })
+
+  if (total) {
+    const totalRow = ws.addRow([total])
+    totalRow.height = 24
+    ws.mergeCells(totalRow.number, 1, totalRow.number, columnas.length)
+    const cell = totalRow.getCell(1)
+    cell.font = { bold: true, color: { argb: 'FF000000' }, size: 11, name: 'Calibri' }
+    cell.alignment = { horizontal: 'right', vertical: 'middle' }
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F0E6' } }
+    cell.border = {
+      top: { style: 'medium', color: { argb: 'FF000000' } },
+      bottom: { style: 'thin', color: { argb: 'FF000000' } },
+      left: { style: 'thin', color: { argb: 'FF000000' } },
+      right: { style: 'thin', color: { argb: 'FF000000' } },
+    }
+  }
 
   const buffer = await wb.xlsx.writeBuffer()
   saveAs(

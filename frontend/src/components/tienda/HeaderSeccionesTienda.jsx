@@ -45,23 +45,17 @@ export default function HeaderSeccionesTienda() {
               textTransform: "uppercase",
               color: "var(--gold-light)",
               background: "transparent",
-              border: "1px solid var(--border-gold-40)",
-              borderRadius: "2px",
               cursor: "pointer",
               whiteSpace: "nowrap",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--noir)";
-              e.currentTarget.style.background = "var(--gold)";
-              e.currentTarget.style.borderColor = "var(--gold)";
+              e.currentTarget.style.color = "var(--gold)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.color = "var(--gold-light)";
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.borderColor = "var(--border-gold-40)";
             }}
           >
-            <i className="bi bi-chevron-left text-sm" />
+            <span className="font-display text-2xl leading-none" aria-hidden="true">←</span>
             <span className="hidden sm:inline">Volver a la tienda</span>
             <span className="sm:hidden">Volver</span>
           </button>

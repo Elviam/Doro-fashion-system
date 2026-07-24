@@ -39,8 +39,13 @@ export const uploadFileToCloudinary = async (file) => {
   formData.append("upload_preset", UPLOAD_PRESET);
 
   try {
+    // Cloudinary may classify PDFs sent to `auto` as image assets.  Those
+    // deliveries can be blocked by the account's PDF preview security policy.
+    // Keeping invoices as raw files preserves their original MIME type and
+    // gives the invoice viewer a stable URL to render or download.
+    const resourceType = file.type === "application/pdf" ? "raw" : "auto";
     const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`,
+      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`,
       { method: "POST", body: formData }
     );
     const data = await response.json();

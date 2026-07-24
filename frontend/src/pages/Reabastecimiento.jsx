@@ -125,14 +125,16 @@ const encabezadosTabla = [
         />
       </div>
 
-      <Tabla
-        encabezados={encabezadosTabla}
-        datos={filasReabastecimiento}
-        renderRow={renderFila}
-        sortableFields={["sku", "nombre", "talla", "stockActual", "stockRequerido"]}
-        cargando={cargando}
-        entidad="productos por reabastecer"
-      />
+      <div className="max-h-[31rem] overflow-y-auto rounded-[2px] custom-scrollbar">
+        <Tabla
+          encabezados={encabezadosTabla}
+          datos={filasReabastecimiento}
+          renderRow={renderFila}
+          sortableFields={["sku", "nombre", "talla", "stockActual", "stockRequerido"]}
+          cargando={cargando}
+          entidad="productos por reabastecer"
+        />
+      </div>
     </div>
   );
 }

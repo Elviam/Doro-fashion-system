@@ -273,6 +273,9 @@ export class ProductsService {
     if (payload.stockIdeal !== undefined) data.stockIdeal = Number(payload.stockIdeal)
     if (payload.stockMaximo !== undefined) data.stockMaximo = Number(payload.stockMaximo)
     if (payload.activo !== undefined) data.activo = payload.activo
+    // Saving the edit form acknowledges the latest purchase-cost review,
+    // even when the administrator keeps the same sale price.
+    if (currentProduct.pendingPriceReview) data.pendingPriceReview = false
     const cambios = construirCambiosProducto(currentProduct, data, payload.inventario)
     if (cambios.length === 0) return this.sanitizeProduct(currentProduct)
     await productsRepository.update(id, data)
@@ -361,7 +364,9 @@ export class ProductsService {
         stockIdeal: productoEliminado.stockIdeal,
         stockMaximo: productoEliminado.stockMaximo,
         activo: productoEliminado.activo,
-        imagenes: productoEliminado.imagenes,
+        // El producto deja de existir, por lo que la auditoría necesita su propia
+        // copia de las referencias visuales para poder identificarlo después.
+        imagenes: [...(productoEliminado.imagenes || [])],
         inventario: productoEliminado.inventario
       },
       currentUser
@@ -388,6 +393,11 @@ export class ProductsService {
       supplierId: product.supplierId || '',
       supplierNombre: product.supplier?.nombre || '',
       precioCompra: Number(product.precioCompra || 0),
+      precioCompraAnterior: product.precioCompraAnterior === null || product.precioCompraAnterior === undefined
+        ? null
+        : Number(product.precioCompraAnterior),
+      pendingPriceReview: product.pendingPriceReview ?? false,
+      purchasePriceChangedAt: product.purchasePriceChangedAt || null,
       precioVenta: Number(product.precioVenta || 0),
       stock: computeTotalStock(product.variants || []),
       stockMinimo: Number(product.stockMinimo ?? 0),

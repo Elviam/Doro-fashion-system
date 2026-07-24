@@ -69,3 +69,22 @@ export async function enviarPedido(id) {
   const data = await handleResponse(res);
   return data.item;
 }
+
+export async function cancelarPedido(id) {
+  const res = await fetch(`${BASE_URL}/recepciones/${id}/cancel`, {
+    method: "PATCH",
+    headers: authHeaders(),
+  });
+
+  const data = await handleResponse(res);
+  return data.item;
+}
+
+export async function eliminarPedido(id) {
+  const res = await fetch(`${BASE_URL}/recepciones/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+
+  return handleResponse(res);
+}

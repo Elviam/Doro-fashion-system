@@ -29,7 +29,9 @@ function EstadoBadge({ estado }) {
 
   const key = estado?.toLowerCase();
   const clases = estilos[key] || estilos.pendiente;
-  const label = estado ? estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase() : "—";
+  const label = key === "enviado"
+    ? "Entregado"
+    : estado ? estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase() : "—";
 
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded-[2px] text-xs lg:text-sm font-tag font-semibold whitespace-nowrap border ${clases}`}>
@@ -156,6 +158,17 @@ export default function PerfilCliente({ usuario }) {
                 className="p-3 sm:p-4 rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] bg-[var(--gold-08)] hover:bg-[var(--gold-08)]/70 transition cursor-pointer active:scale-[0.99]"
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="w-16 h-20 sm:w-20 sm:h-24 shrink-0 overflow-hidden rounded-[2px] border border-[var(--border-gold-25)] bg-[var(--ivory)] flex items-center justify-center">
+                    {compra.items?.[0]?.imagen || compra.items?.[0]?.producto?.imagen ? (
+                      <img
+                        src={compra.items[0].imagen || compra.items[0].producto.imagen}
+                        alt={compra.items[0].nombre || compra.items[0].producto?.nombre || "Producto comprado"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <i className="bi bi-image text-xl text-[var(--gold)]/50" aria-hidden="true" />
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
                       <span className="font-tag text-xs lg:text-sm font-bold text-[var(--noir-soft)] truncate">Pedido #{compra.numeroPedido || compra.id}</span>

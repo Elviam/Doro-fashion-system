@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../services/api";
 import { uploadImageToCloudinary } from "../services/cloudinaryClient"; 
 
@@ -20,6 +20,7 @@ import BarraCategorias from "../components/BarraCategorias";
 export default function Productos() {
   useTitulo("Productos");
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const [filtro, setFiltro] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState("");
@@ -99,6 +100,15 @@ export default function Productos() {
   useEffect(() => {
     fetchProductos();
   }, []);
+
+  useEffect(() => {
+    const productId = searchParams.get("detalle");
+    if (!productId || productosDB.length === 0) return;
+    const producto = productosDB.find((item) => item.id === productId);
+    if (!producto) return;
+    handleVerDetalles(producto);
+    setSearchParams({}, { replace: true });
+  }, [productosDB, searchParams, setSearchParams]);
 
   useEffect(() => {
     setPaginaActiva(1);

@@ -206,7 +206,7 @@ export default function ModalDetalleVenta({ venta, puedeActualizar, onClose, onC
                 <Boton variante="oscuro" disabled={actualizandoEnvio} onClick={() => onActualizarEnvio(venta.id, "ENTREGADO")}>{actualizandoEnvio && <i className="bi bi-arrow-repeat mr-1 animate-spin" />}{actualizandoEnvio ? "Actualizando..." : "Marcar entregado"}</Boton>
               </div>
             )}
-            <p className="mt-3 flex items-start gap-2 text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]"><i className="bi bi-info-circle mt-0.5 text-[var(--gold-dark)] dark:text-[var(--gold-light)]" />{venta.estadoEnvio === "ENTREGADO" ? "Entrega registrada automáticamente por el simulador de paquetería del portafolio." : "El seguimiento es una simulación. La entrega se actualizará automáticamente después de un minuto en tránsito."}</p>
+            <p className="mt-3 flex items-start gap-2 text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]"><i className="bi bi-info-circle mt-0.5 text-[var(--gold-dark)] dark:text-[var(--gold-light)]" />{venta.estadoEnvio === "ENTREGADO" ? "Entrega registrada automáticamente por el simulador de paquetería." : "El seguimiento es una simulación. La entrega se actualizará automáticamente después de un minuto en tránsito."}</p>
           </div>
         )}
 

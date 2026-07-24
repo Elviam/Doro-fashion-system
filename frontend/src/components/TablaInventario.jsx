@@ -16,12 +16,6 @@ function getEstadoStock(stock, minimo) {
   return "normal";
 }
 
-function getColorStock(stock) {
-  if (stock <= 10) return "text-rojo";
-  if (stock <= 30) return "text-amarillo";
-  return "text-verde";
-}
-
 export default function TablaInventario({ productosDB, busqueda, filtroEstado, cargando, onVer, onEditar }) {
   const [paginaActual, setPaginaActual] = useState(1);
   const [hoveredId, setHoveredId] = useState(null);
@@ -96,8 +90,8 @@ export default function TablaInventario({ productosDB, busqueda, filtroEstado, c
                   <td className="py-2 px-4 text-center text-xs lg:text-sm font-mono text-gold-dark dark:text-gold-light">{p.sku}</td>
                   <td className="py-2 px-4 text-center text-sm lg:text-base font-medium text-noir dark:text-snow">{p.nombre}</td>
                   <td className="py-2 px-4 text-center"><Etiquetas contenido={p.categoria} /></td>
-                  <td className={`py-2 px-4 text-center text-sm lg:text-base font-bold ${getColorStock(stockTotal)}`}>{stockTotal}</td>
-                  <td className="py-2 px-4 text-center text-xs lg:text-sm text-noir-soft dark:text-ash">{stockMinimo}</td>
+                  <td className="py-2 px-4 text-center text-sm lg:text-base font-bold text-noir dark:text-snow">{stockTotal}</td>
+                  <td className="py-2 px-4 text-center text-sm lg:text-base font-bold text-noir dark:text-snow">{stockMinimo}</td>
                   <td className="py-2 px-4 text-center" onClick={(e) => e.stopPropagation()}>
                     <AccionesTabla onVer={() => onVer(p)} onEditar={() => onEditar(p)} />
                   </td>
@@ -125,7 +119,7 @@ export default function TablaInventario({ productosDB, busqueda, filtroEstado, c
                         return (
                           <span
                             key={t}
-                            className={`px-2 py-0.5 rounded-[2px] bg-ivory border border-black/5 dark:border-white/10 text-[11px] font-bold ${
+                            className={`px-2 py-0.5 rounded-[2px] border text-[11px] font-bold bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] ${
                               registrada
                                 ? "text-noir dark:text-snow"
                                 : "text-noir-soft/40 dark:text-ash/40"

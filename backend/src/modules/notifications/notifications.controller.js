@@ -2,8 +2,7 @@ import { notificationsService } from './notifications.service.js'
 
 export class NotificationsController {
   async list(req, res) {
-    const permissions = req.user?.permissions ?? []
-    const result = await notificationsService.getNotifications(permissions)
+    const result = await notificationsService.getNotifications(req.user)
     return res.status(200).json(result)
   }
 }

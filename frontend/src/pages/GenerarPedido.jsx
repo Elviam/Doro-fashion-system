@@ -27,7 +27,7 @@ function obtenerVariantesBajas(producto) {
   const ideal = Number(producto.stockIdeal) || 0;
 
   return inventario
-    .filter((v) => (v.stock ?? 0) < minimo)
+    .filter((v) => (v.stock ?? 0) <= minimo)
     .map((v) => ({
       id: `${producto.id}-${v.talla}`,
       productId: producto.id,
@@ -35,7 +35,7 @@ function obtenerVariantesBajas(producto) {
       nombre: producto.nombre,
       talla: v.talla,
       stockActual: v.stock ?? 0,
-      stockRequerido: Math.max(0, minimo - (v.stock ?? 0)),
+      stockRequerido: Math.max(1, ideal - (v.stock ?? 0)),
       precioCompra: Number(producto.precioCompra) || 0,
       supplierId: producto.supplierId || "",
       sugerido: true,
@@ -111,6 +111,9 @@ export default function GenerarPedido() {
   const [productoManualId, setProductoManualId] = useState("");
   const [tallaManual, setTallaManual] = useState("");
   const [cantidadManual, setCantidadManual] = useState(1);
+  const [pestanaAgregar, setPestanaAgregar] = useState("PRODUCTO");
+  const [filtroStockPedido, setFiltroStockPedido] = useState("");
+  const [filtroProveedorPedido, setFiltroProveedorPedido] = useState("");
   const [busquedaProductoManual, setBusquedaProductoManual] = useState("");
   const [sugerenciasProductoAbiertas, setSugerenciasProductoAbiertas] = useState(false);
   const [cargando, setCargando] = useState(true);
@@ -133,7 +136,11 @@ export default function GenerarPedido() {
         setProductosActivos(productosDisponibles);
 
         const cantidadesIniciales = {};
-        filasBajas.forEach((f) => (cantidadesIniciales[f.id] = ""));
+        filasBajas.forEach((fila) => {
+          cantidadesIniciales[fila.id] = String(
+            Math.max(1, Number(fila.stockRequerido) || 1)
+          );
+        });
         setCantidades(cantidadesIniciales);
 
         setProveedores(resultProveedores.items || []);
@@ -151,15 +158,41 @@ export default function GenerarPedido() {
   const toggleSeleccion = (id) => setSeleccionados((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const handleCantidadChange = (id, valor) => {
-    if (valor === "") {
+    const soloDigitos = String(valor).replace(/\D/g, "");
+
+    if (soloDigitos === "") {
       setCantidades((prev) => ({ ...prev, [id]: "" }));
       return;
     }
-    const num = parseInt(valor, 10);
-    if (!Number.isNaN(num) && num >= 1) {
+
+    const cantidadNormalizada = String(Number(soloDigitos));
+
+    setCantidades((prev) => ({
+      ...prev,
+      [id]: cantidadNormalizada,
+    }));
+
+    if (Number(cantidadNormalizada) >= 1) {
       setSeleccionados((prev) => ({ ...prev, [id]: true }));
     }
-    setCantidades((prev) => ({ ...prev, [id]: Number.isNaN(num) ? "" : Math.max(1, num) }));
+  };
+
+  const ajustarCantidad = (fila, cambio) => {
+    const valorActual = cantidades[fila.id];
+    const cantidadActual = valorActual === "" || valorActual == null
+      ? 0
+      : Number(valorActual);
+    const nuevaCantidad = Math.max(1, cantidadActual + cambio);
+
+    setCantidades((prev) => ({
+      ...prev,
+      [fila.id]: String(nuevaCantidad),
+    }));
+
+    setSeleccionados((prev) => ({
+      ...prev,
+      [fila.id]: true,
+    }));
   };
 
   const filasSeleccionadas = filas.filter((f) => seleccionados[f.id]);
@@ -234,7 +267,7 @@ export default function GenerarPedido() {
       ]));
     }
     setSeleccionados((prev) => ({ ...prev, [id]: true }));
-    setCantidades((prev) => ({ ...prev, [id]: Number(cantidadManual) }));
+    setCantidades((prev) => ({ ...prev, [id]: String(Number(cantidadManual)) }));
     setProductoManualId("");
     setTallaManual("");
     setCantidadManual(1);
@@ -255,6 +288,31 @@ export default function GenerarPedido() {
     return coincideProveedor && coincideEstado;
   });
   const filasSugeridasVisibles = filasVisibles.filter((fila) => fila.sugerido);
+  const filasParaAgregar = filasSugeridasVisibles.filter((fila) => {
+    const coincideProveedor = !filtroProveedorPedido
+      || (filtroProveedorPedido === "SIN_PROVEEDOR" ? !fila.supplierId : fila.supplierId === filtroProveedorPedido);
+    if (filtroStockPedido === "SIN_STOCK") return coincideProveedor && fila.stockActual === 0;
+    if (filtroStockPedido === "BAJO_MINIMO") return coincideProveedor && fila.stockActual > 0;
+    return coincideProveedor;
+  });
+
+  const agregarFilasSugeridas = () => {
+    if (filasParaAgregar.length === 0) return showToast("No hay productos para agregar con este filtro.", "error");
+    setSeleccionados((prev) => Object.fromEntries([
+      ...Object.entries(prev),
+      ...filasParaAgregar.map((fila) => [fila.id, true]),
+    ]));
+    setCantidades((prev) => Object.fromEntries([
+      ...Object.entries(prev),
+      ...filasParaAgregar.map((fila) => [
+        fila.id,
+        prev[fila.id] === "" || prev[fila.id] == null
+          ? String(Math.max(1, Number(fila.stockRequerido) || 1))
+          : String(prev[fila.id]),
+      ]),
+    ]));
+    showToast(`${filasParaAgregar.length} producto${filasParaAgregar.length === 1 ? "" : "s"} agregado${filasParaAgregar.length === 1 ? "" : "s"} al pedido.`, "success");
+  };
 
   const construirItems = () =>
     filasSeleccionadas.map((f) => ({
@@ -273,7 +331,8 @@ export default function GenerarPedido() {
     setGuardando(true);
     try {
       await crearPedido({ supplierId: supplierId || null, items: construirItems(), folio: nombrePedido });
-      showToast("Pedido guardado como borrador.", "success");
+      showToast("Borrador guardado exitosamente, puede consultarlo en mis pedidos", "success");
+      await new Promise((resolve) => setTimeout(resolve, 1400));
       navigate("/reabastecimiento/pedidos");
     } catch (err) {
       showToast(err.message || "No se pudo guardar el pedido.", "error");
@@ -324,7 +383,7 @@ export default function GenerarPedido() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4 border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)]">
             <div>
               <h2 className="text-sm font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Pedido actual</h2>
-              <p className="mt-1 text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">Revisa cantidades, elimina artículos y confirma el proveedor antes de guardar o enviar.</p>
+              <p className="mt-1 text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">Revisa los artículos, elimina los incorrectos y confirma el proveedor antes de guardar o enviar.</p>
             </div>
             <div className="flex gap-4 text-right">
               <div><p className="text-[10px] font-tag uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)]">Piezas</p><p className="font-bold text-[var(--noir)] dark:text-[var(--snow)]">{totalPiezasSeleccionadas}</p></div>
@@ -346,7 +405,7 @@ export default function GenerarPedido() {
                       <th className="p-3 text-left font-tag text-[11px] uppercase tracking-wider">Producto</th>
                       <th className="p-3 text-center font-tag text-[11px] uppercase tracking-wider">Talla</th>
                       <th className="p-3 text-center font-tag text-[11px] uppercase tracking-wider">Cantidad (Piezas)</th>
-                      <th className="p-3 text-right font-tag text-[11px] uppercase tracking-wider">Costo unit.</th>
+                      <th className="border-l border-[var(--border-gold-20)] p-3 text-right font-tag text-[11px] uppercase tracking-wider">Costo unit.</th>
                       <th className="p-3 text-right font-tag text-[11px] uppercase tracking-wider">Subtotal</th>
                       <th className="p-3 text-center font-tag text-[11px] uppercase tracking-wider">Acción</th>
                     </tr>
@@ -358,8 +417,8 @@ export default function GenerarPedido() {
                         <tr key={fila.id} className="border-b border-[var(--border-gold-20)]">
                           <td className="p-3"><p className="font-semibold text-[var(--noir)] dark:text-[var(--snow)]">{fila.nombre}</p><p className="text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">{fila.sku} · <span className="uppercase">{fila.sugerido ? "Sugerido" : "Agregado manualmente"}</span></p></td>
                           <td className="p-3 text-center">{fila.talla}</td>
-                          <td className="p-3 text-center"><input type="number" min="1" value={cantidades[fila.id] ?? ""} onChange={(e) => handleCantidadChange(fila.id, e.target.value)} className="h-9 w-20 rounded-[2px] text-center outline-none bg-[var(--snow)] border border-[var(--border-gold-40)] text-[var(--noir)] dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)]" /></td>
-                          <td className="p-3 text-right">${Number(fila.precioCompra || 0).toLocaleString("es-MX")}</td>
+                          <td className="p-3 text-center font-semibold tabular-nums">{cantidad}</td>
+                          <td className="border-l border-[var(--border-gold-20)] p-3 text-right">${Number(fila.precioCompra || 0).toLocaleString("es-MX")}</td>
                           <td className="p-3 text-right font-semibold">${(cantidad * Number(fila.precioCompra || 0)).toLocaleString("es-MX")}</td>
                           <td className="p-3 text-center"><button type="button" onClick={() => quitarDelPedido(fila)} className="text-xs font-bold text-red-700 dark:text-rojo hover:underline"><i className="bi bi-trash3 mr-1" />Quitar</button></td>
                         </tr>
@@ -378,7 +437,7 @@ export default function GenerarPedido() {
                   ) : <p className="text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">Proveedor del pedido: <strong>{proveedorSeleccionado?.nombre || "Sin proveedor asignado"}</strong></p>}
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                  {puedeCrear && <button onClick={handleGuardarBorrador} disabled={guardando} className="px-5 py-2.5 text-xs font-bold rounded-[2px] border border-[var(--border-gold-40)] text-[var(--gold-dark)] dark:text-[var(--gold-light)] disabled:opacity-50"><i className="bi bi-save mr-2" />Guardar borrador</button>}
+                  {puedeCrear && <button onClick={handleGuardarBorrador} disabled={guardando} className="px-5 py-2.5 text-xs font-bold rounded-[2px] border border-[var(--border-gold-40)] text-[var(--gold-dark)] dark:text-[var(--gold-light)] disabled:opacity-50"><i className={`bi ${guardando ? "bi-arrow-repeat spinner-cargando" : "bi-save"} mr-2`} />{guardando ? "Guardando..." : "Guardar borrador"}</button>}
                   {puedeCrear && puedeEnviar && <button onClick={handleEnviarProveedor} disabled={guardando || !supplierId} className="px-5 py-2.5 text-xs font-bold rounded-[2px] bg-[var(--gold)] text-[var(--noir)] disabled:opacity-50"><i className="bi bi-send mr-2" />Enviar a {proveedorSeleccionado?.nombre || "proveedor"}</button>}
                 </div>
               </div>
@@ -387,15 +446,91 @@ export default function GenerarPedido() {
       </section>
 
       <>
+      <div className="flex gap-4 border-b border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)]">
+        <button type="button" onClick={() => setPestanaAgregar("PRODUCTO")} className={`border-b-2 px-1 pb-2 text-base font-semibold ${pestanaAgregar === "PRODUCTO" ? "border-[var(--gold-dark)] text-[var(--gold-dark)] dark:border-[var(--gold-light)] dark:text-[var(--gold-light)]" : "border-transparent text-[var(--noir-soft)] dark:text-[var(--ash)]"}`}>
+          Agregar producto
+        </button>
+        <button type="button" onClick={() => setPestanaAgregar("SIN_STOCK")} className={`border-b-2 px-1 pb-2 text-base font-semibold ${pestanaAgregar === "SIN_STOCK" ? "border-[var(--gold-dark)] text-[var(--gold-dark)] dark:border-[var(--gold-light)] dark:text-[var(--gold-light)]" : "border-transparent text-[var(--noir-soft)] dark:text-[var(--ash)]"}`}>
+          Agregar los productos sin stock
+        </button>
+      </div>
 
-      <section className="order-5 rounded-[2px] border p-4 bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)]">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Agregar producto</h2>
-            <p className="mt-1 text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">Busca cualquier producto activo y agrega una talla aunque todavía no tenga inventario.</p>
+      {pestanaAgregar === "SIN_STOCK" && <section className="order-5 rounded-[2px] border p-4 bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)]">
+        <div className="flex flex-wrap items-end justify-end gap-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)]">
+              Filtrar por
+              <select value={filtroStockPedido} onChange={(e) => setFiltroStockPedido(e.target.value)} className="mt-1.5 h-11 min-w-52 rounded-[2px] px-3 text-sm normal-case font-body outline-none bg-[var(--snow)] border border-[var(--border-gold-40)] text-[var(--noir)] dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)]">
+                <option value="">Todos los productos</option>
+                <option value="SIN_STOCK">Productos sin stock (0)</option>
+                <option value="BAJO_MINIMO">Productos debajo del mínimo</option>
+              </select>
+            </label>
+            <label className="text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)]">
+              Filtrar por proveedor
+              <select value={filtroProveedorPedido} onChange={(e) => setFiltroProveedorPedido(e.target.value)} className="mt-1.5 h-11 min-w-52 rounded-[2px] px-3 text-sm normal-case font-body outline-none bg-[var(--snow)] border border-[var(--border-gold-40)] text-[var(--noir)] dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)]">
+                <option value="">Todos</option>
+                <option value="SIN_PROVEEDOR">Sin proveedor</option>
+                {proveedores.map((proveedor) => <option key={proveedor.id} value={proveedor.id}>{proveedor.nombre}</option>)}
+              </select>
+            </label>
+            {puedeCrear && <button type="button" onClick={agregarFilasSugeridas} className="h-11 rounded-[2px] bg-[var(--gold)] px-4 text-xs font-bold text-[var(--noir)] transition-opacity hover:opacity-90">
+              <i className="bi bi-plus-lg mr-1" />{filtroStockPedido || filtroProveedorPedido ? "Agregar" : "Agregar todos"}
+            </button>}
           </div>
-          <div className="relative w-full sm:w-[30rem] text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)]">
+        </div>
+        <div className="mt-4 max-h-[31rem] overflow-auto rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)]">
+          <table className="w-full min-w-[620px] text-sm">
+            <thead className="bg-[var(--ivory-deep)] dark:bg-[var(--gold-08)]"><tr className="border-b border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)]"><th className="p-3 text-left font-tag text-[11px] uppercase tracking-wider">Producto</th><th className="p-3 text-center font-tag text-[11px] uppercase tracking-wider">Talla</th><th className="p-3 text-center font-tag text-[11px] uppercase tracking-wider">Stock actual</th><th className="p-3 text-center font-tag text-[11px] uppercase tracking-wider">Cantidad a pedir</th></tr></thead>
+            <tbody>
+              {cargando ? <tr><td colSpan={4} className="p-8 text-center">Cargando productos...</td></tr> : filasParaAgregar.length === 0 ? <tr><td colSpan={4} className="p-8 text-center text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">No hay productos que coincidan con el filtro.</td></tr> : filasParaAgregar.map((fila) => <tr key={fila.id} className="border-b border-[var(--border-gold-20)]"><td className="p-3"><p className="font-semibold text-[var(--noir)] dark:text-[var(--snow)]">{fila.nombre}</p><p className="text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">{fila.sku}</p></td><td className="p-3 text-center">{fila.talla}</td><td className="p-3 text-center font-semibold">{fila.stockActual}</td><td className="p-3 text-center">
+                      <div className="mx-auto flex h-9 w-fit items-stretch overflow-hidden rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] focus-within:ring-1 focus-within:ring-[var(--gold)] dark:border-[var(--border-gold-20)] dark:bg-[var(--noir)]">
+                        <button
+                          type="button"
+                          onClick={() => ajustarCantidad(fila, -1)}
+                          disabled={Number(cantidades[fila.id] || 0) <= 1}
+                          className="w-9 border-r border-[var(--border-gold-40)] text-base font-bold text-[var(--gold-dark)] transition-colors hover:bg-[var(--gold-08)] disabled:cursor-not-allowed disabled:opacity-35 dark:border-[var(--border-gold-20)] dark:text-[var(--gold-light)]"
+                          aria-label={`Restar una pieza de ${fila.nombre}`}
+                        >
+                          −
+                        </button>
+
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={cantidades[fila.id] ?? ""}
+                          onChange={(e) => handleCantidadChange(fila.id, e.target.value)}
+                          onFocus={(e) => e.currentTarget.select()}
+                          onKeyDown={(e) => {
+                            if (["e", "E", "+", "-", ".", ","].includes(e.key)) {
+                              e.preventDefault();
+                            }
+                          }}
+                          className="h-full w-20 bg-transparent px-2 text-center font-semibold tabular-nums text-[var(--noir)] outline-none dark:text-[var(--snow)]"
+                          aria-label={`Cantidad a pedir de ${fila.nombre}`}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => ajustarCantidad(fila, 1)}
+                          className="w-9 border-l border-[var(--border-gold-40)] text-base font-bold text-[var(--gold-dark)] transition-colors hover:bg-[var(--gold-08)] dark:border-[var(--border-gold-20)] dark:text-[var(--gold-light)]"
+                          aria-label={`Agregar una pieza de ${fila.nombre}`}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </td></tr>)}
+            </tbody>
+          </table>
+        </div>
+      </section>}
+
+      <section className={`${pestanaAgregar === "PRODUCTO" ? "" : "hidden"} order-5 rounded-[2px] border p-4 bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)]`}>
+        <div className="grid grid-cols-1 gap-3 items-end sm:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,0.7fr)_7rem_auto]">
+          <div className="relative text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)] sm:col-span-2 lg:col-span-1">
             Buscar producto
+            <i className="bi bi-search pointer-events-none absolute left-3 top-[2.1rem] text-[var(--gold-dark)] dark:text-[var(--gold-light)]" aria-hidden="true" />
             <input
               type="search"
               value={busquedaProductoManual}
@@ -414,7 +549,7 @@ export default function GenerarPedido() {
               aria-expanded={sugerenciasProductoAbiertas && productosManualesFiltrados.length > 0}
               aria-controls="sugerencias-productos-pedido"
               aria-autocomplete="list"
-              className="mt-1.5 h-10 w-full rounded-[2px] px-3 text-sm normal-case font-body outline-none bg-[var(--snow)] border border-[var(--border-gold-40)] text-[var(--noir)] focus:ring-1 focus:ring-[var(--gold)] dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)]"
+              className="mt-2 h-11 w-full rounded-[2px] pl-9 pr-3 text-sm normal-case font-body outline-none bg-[var(--snow)] border border-[var(--border-gold-40)] text-[var(--noir)] focus:ring-1 focus:ring-[var(--gold)] dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)]"
             />
             {sugerenciasProductoAbiertas && terminoBusquedaProducto && (
               <div id="sugerencias-productos-pedido" role="listbox" className="absolute z-30 mt-1.5 max-h-72 w-full overflow-y-auto rounded-[2px] border shadow-lg bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)]">
@@ -436,8 +571,8 @@ export default function GenerarPedido() {
             )}
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,0.7fr)_7rem_auto] gap-3 items-end">
-          <div className="min-h-11 rounded-[2px] border px-3 py-2 bg-[var(--ivory-deep)] border-[var(--border-gold-25)] dark:bg-[var(--gold-08)] dark:border-[var(--border-gold-20)]">
+        <div className="mt-3 flex flex-wrap items-end gap-3 lg:flex-nowrap lg:items-end">
+          <div className="hidden min-h-11 rounded-[2px] border px-3 py-2 bg-[var(--ivory-deep)] border-[var(--border-gold-25)] dark:bg-[var(--gold-08)] dark:border-[var(--border-gold-20)]">
             {productoManual ? <><p className="text-[10px] font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Producto seleccionado{productoManual.activo === false ? " · Inactivo" : ""}</p><p className="mt-0.5 truncate text-sm font-semibold normal-case text-[var(--noir)] dark:text-[var(--snow)]">{productoManual.sku} — {productoManual.nombre}</p></> : <p className="pt-1 text-xs font-body normal-case text-[var(--noir-soft)] dark:text-[var(--ash)]">Busca y selecciona un producto para continuar.</p>}
           </div>
           <label className="hidden">
@@ -455,7 +590,7 @@ export default function GenerarPedido() {
             </select>
           </label>
 
-          <label className="text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)]">
+          <label className="w-[calc(50%-0.375rem)] text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)] sm:w-auto sm:max-w-[10rem] lg:max-w-none lg:flex-1">
             Talla
             <select
               value={tallaManual}
@@ -471,7 +606,7 @@ export default function GenerarPedido() {
             </select>
           </label>
 
-          <label className="text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)]">
+          <label className="w-[calc(50%-0.375rem)] text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)] sm:w-auto sm:max-w-[10rem] lg:max-w-none lg:flex-1">
             Cantidad (Piezas)
             <input
               type="number"
@@ -486,7 +621,7 @@ export default function GenerarPedido() {
           <button
             type="button"
             onClick={handleAgregarProducto}
-            className="h-11 px-4 rounded-[2px] bg-[var(--gold)] text-[var(--noir)] text-xs font-bold font-body transition-opacity hover:opacity-90"
+            className="h-11 w-full rounded-[2px] bg-[var(--gold)] px-4 text-[var(--noir)] text-xs font-bold font-body transition-opacity hover:opacity-90 sm:w-auto sm:min-w-[10rem] sm:ml-auto lg:ml-0 lg:flex-none lg:shrink-0 lg:min-w-[12rem]"
           >
             <i className="bi bi-plus-lg mr-1" /> Agregar
           </button>

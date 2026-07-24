@@ -23,6 +23,7 @@ export default function ModalConfirmacion({
   onConfirmar,
   onCancelar,
   cargando = false,
+  textoCargando = "Eliminando...",
   deshabilitarConfirmar = false,
   children,
 }) {
@@ -135,7 +136,7 @@ export default function ModalConfirmacion({
                 disabled={cargando || deshabilitarConfirmar}
                 className="flex-1 h-11 bg-transparent font-tag text-xs lg:text-sm tracking-widest uppercase transition-colors rounded-[2px] cursor-pointer border border-rojo-dark/60 text-rojo-dark hover:bg-rojo-dark hover:text-[var(--snow)] dark:border-rojo/60 dark:text-rojo dark:hover:bg-rojo"
               >
-                {cargando ? <><i className="bi bi-arrow-repeat mr-2 inline-block animate-spin" />Eliminando...</> : textoConfirmar}
+                {cargando ? <><i className="bi bi-arrow-repeat mr-2 inline-block animate-spin" />{textoCargando}</> : textoConfirmar}
               </button>
             ) : (
               <Boton

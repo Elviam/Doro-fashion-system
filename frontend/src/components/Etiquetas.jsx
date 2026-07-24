@@ -21,6 +21,16 @@ export default function Etiquetas({ contenido }) {
       bg-green-600/15 text-green-700 border-green-600/60
       dark:bg-verde/20 dark:text-verde dark:border-verde/30
     `,
+
+    "Por confirmar": `
+      bg-amarillo/40 text-[var(--gold-dark)] border-[var(--gold-dark)]/50
+      dark:bg-amarillo/20 dark:text-amarillo dark:border-amarillo/30
+    `,
+
+    Cancelada: `
+      bg-red-600/15 text-red-700 border-red-600/60
+      dark:bg-rojo/20 dark:text-rojo dark:border-rojo/30
+    `,
     
     Inactivo: `
       bg-red-600/15 text-red-700 border-red-600/60
@@ -40,6 +50,16 @@ export default function Etiquetas({ contenido }) {
     Draft: `
       bg-amarillo/40 text-amarillo border-amarillo/60 
       dark:bg-amarillo/20 dark:text-amarillo dark:border-amarillo/30
+    `,
+
+    "En borrador": `
+      bg-amarillo/40 text-[var(--color-amarillo-dark)] border-[var(--color-amarillo-dark)]/60
+      dark:bg-amarillo/20 dark:text-amarillo dark:border-amarillo/30
+    `,
+
+    Recibido: `
+      bg-azul/10 text-[var(--color-azul-dark)] border-[var(--color-azul-dark)]/40
+      dark:bg-azul/20 dark:text-azul dark:border-azul/30
     `,
 
     // --- ESTADOS VENTAS ---
