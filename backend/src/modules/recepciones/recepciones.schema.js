@@ -49,3 +49,8 @@ export const confirmRecepcionSchema = z.object({
     costoUnitarioReal: z.coerce.number().min(0, 'El costo unitario real no puede ser negativo').nullable().optional()
   })).min(1, 'Debes incluir las cantidades recibidas')
 })
+
+export const attachReceptionInvoiceSchema = z.object({
+  facturaProveedor: z.string().nullable().optional(),
+  facturaUrl: z.string().url('La URL de la factura no es válida')
+})

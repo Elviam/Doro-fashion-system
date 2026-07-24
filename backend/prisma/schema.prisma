@@ -87,6 +87,9 @@ model Product {
   departamento String?
   unidad       String?
   precioCompra Decimal  @default(0) @db.Decimal(10, 2) @map("precio_compra")
+  precioCompraAnterior Decimal? @db.Decimal(10, 2) @map("precio_compra_anterior")
+  pendingPriceReview Boolean @default(false) @map("pending_price_review")
+  purchasePriceChangedAt DateTime? @map("purchase_price_changed_at")
   precioVenta  Decimal  @default(0) @db.Decimal(10, 2) @map("precio_venta")
   stockMinimo  Int      @default(5) @map("stock_minimo")
   stockIdeal   Int      @default(0) @map("stock_ideal")
@@ -134,8 +137,33 @@ model Client {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   sales Sale[]
+  addresses ClientAddress[]
 
   @@map("clients")
+}
+
+model ClientAddress {
+  id              String   @id @default(cuid())
+  clientId        String   @map("client_id")
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  alias           String   @default("Dirección")
+  country         String   @default("México")
+  state           String
+  city            String
+  neighborhood    String
+  postalCode      String   @map("postal_code")
+  street          String
+  exteriorNumber  String   @map("exterior_number")
+  interiorNumber  String?  @map("interior_number")
+  references      String?
+  phone           String
+  isDefault       Boolean  @default(false) @map("is_default")
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([clientId, active])
+  @@map("client_addresses")
 }
 
 model Supplier {

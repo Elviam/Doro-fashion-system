@@ -75,3 +75,21 @@ export const toggleClientActiveSchema = z.object({
     required_error: 'El campo activo es obligatorio'
   })
 })
+
+export const addressIdParamSchema = z.object({
+  addressId: z.string().min(1, 'El id de la dirección es obligatorio')
+})
+
+export const addressSchema = z.object({
+  alias: z.string().trim().min(1).max(40).optional(),
+  calle: z.string().trim().min(3),
+  numeroExterior: z.string().trim().min(1),
+  numeroInterior: z.string().trim().max(30).optional().default(''),
+  cp: z.string().trim().regex(/^\d{5}$/, 'El código postal debe tener 5 dígitos'),
+  estado: z.string().trim().min(2),
+  ciudad: z.string().trim().min(2),
+  colonia: z.string().trim().min(2),
+  referencias: z.string().trim().max(300).optional().default(''),
+  telefono: z.string().trim().min(8),
+  esPredeterminada: z.boolean().optional()
+})

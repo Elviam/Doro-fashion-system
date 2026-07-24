@@ -49,6 +49,11 @@ export class RecepcionesController {
 
     return res.status(200).json(result)
   }
+
+  async attachInvoice(req, res) {
+    const item = await recepcionesService.attachInvoice(req.params.id, req.body, req.user)
+    return res.status(200).json({ message: 'Factura adjuntada correctamente', item })
+  }
   
   async enviar(req, res) {
     const result = await recepcionesService.enviar(req.params.id, req.user)

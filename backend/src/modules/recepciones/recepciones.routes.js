@@ -6,6 +6,7 @@ import { validate } from '../../middlewares/validate.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
 import {
   confirmRecepcionSchema,
+  attachReceptionInvoiceSchema,
   createRecepcionSchema,
   listRecepcionesQuerySchema,
   recepcionIdParamSchema,
@@ -61,6 +62,15 @@ router.patch(
   validate(recepcionIdParamSchema, 'params'),
   validate(confirmRecepcionSchema),
   asyncHandler(recepcionesController.confirm.bind(recepcionesController))
+)
+
+router.patch(
+  '/:id/factura',
+  authenticate,
+  requirePermissions(['recepciones:confirm']),
+  validate(recepcionIdParamSchema, 'params'),
+  validate(attachReceptionInvoiceSchema),
+  asyncHandler(recepcionesController.attachInvoice.bind(recepcionesController))
 )
 
 router.patch(

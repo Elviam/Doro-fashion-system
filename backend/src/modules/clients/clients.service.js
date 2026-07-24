@@ -1,5 +1,6 @@
 import { clientsRepository } from './clients.repository.js'
 import { logAuditEvent } from '../../utils/audit.js'
+import { prisma } from '../../lib/prisma.js'
 
 function normalizeOptionalText(value) {
   if (value === undefined) return undefined
@@ -10,6 +11,88 @@ function normalizeOptionalText(value) {
 }
 
 export class ClientsService {
+  async getCurrentClient(currentUser) {
+    let client = await clientsRepository.findByUserId(currentUser.sub)
+    if (client) return client
+
+    const user = await prisma.user.findUnique({ where: { id: currentUser.sub } })
+    if (!user) {
+      const error = new Error('Usuario no encontrado')
+      error.statusCode = 404
+      throw error
+    }
+    client = await clientsRepository.findByEmail(user.email)
+    if (client) return clientsRepository.update(client.id, { userId: user.id })
+    return clientsRepository.create({ userId: user.id, nombre: user.nombre || 'Cliente', email: user.email, activo: true })
+  }
+
+  sanitizeAddress(address) {
+    return {
+      id: address.id,
+      nombre: address.alias,
+      esPredeterminada: address.isDefault,
+      datos: {
+        calle: address.street,
+        numeroExterior: address.exteriorNumber,
+        numeroInterior: address.interiorNumber || '',
+        cp: address.postalCode,
+        estado: address.state,
+        ciudad: address.city,
+        colonia: address.neighborhood,
+        referencias: address.references || '',
+        telefono: address.phone,
+      }
+    }
+  }
+
+  addressData(payload) {
+    return {
+      alias: payload.alias || 'Dirección', country: 'México', state: payload.estado, city: payload.ciudad,
+      neighborhood: payload.colonia, postalCode: payload.cp, street: payload.calle,
+      exteriorNumber: payload.numeroExterior, interiorNumber: payload.numeroInterior || null,
+      references: payload.referencias || null, phone: payload.telefono,
+    }
+  }
+
+  async listMyAddresses(currentUser) {
+    const client = await this.getCurrentClient(currentUser)
+    const addresses = await prisma.clientAddress.findMany({ where: { clientId: client.id, active: true }, orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }] })
+    return { items: addresses.map((address) => this.sanitizeAddress(address)) }
+  }
+
+  async createMyAddress(payload, currentUser) {
+    const client = await this.getCurrentClient(currentUser)
+    const count = await prisma.clientAddress.count({ where: { clientId: client.id, active: true } })
+    const isDefault = payload.esPredeterminada ?? count === 0
+    if (isDefault) await prisma.clientAddress.updateMany({ where: { clientId: client.id }, data: { isDefault: false } })
+    const address = await prisma.clientAddress.create({ data: { clientId: client.id, ...this.addressData(payload), isDefault } })
+    return this.sanitizeAddress(address)
+  }
+
+  async updateMyAddress(id, payload, currentUser) {
+    const client = await this.getCurrentClient(currentUser)
+    const existing = await prisma.clientAddress.findFirst({ where: { id, clientId: client.id, active: true } })
+    if (!existing) {
+      const error = new Error('Dirección no encontrada')
+      error.statusCode = 404
+      throw error
+    }
+    if (payload.esPredeterminada) await prisma.clientAddress.updateMany({ where: { clientId: client.id }, data: { isDefault: false } })
+    const address = await prisma.clientAddress.update({ where: { id }, data: { ...this.addressData(payload), ...(payload.esPredeterminada !== undefined ? { isDefault: payload.esPredeterminada } : {}) } })
+    return this.sanitizeAddress(address)
+  }
+
+  async removeMyAddress(id, currentUser) {
+    const client = await this.getCurrentClient(currentUser)
+    const existing = await prisma.clientAddress.findFirst({ where: { id, clientId: client.id, active: true } })
+    if (!existing) {
+      const error = new Error('Dirección no encontrada')
+      error.statusCode = 404
+      throw error
+    }
+    await prisma.clientAddress.update({ where: { id }, data: { active: false, isDefault: false } })
+  }
+
   async list(query) {
     const {
       q = '',

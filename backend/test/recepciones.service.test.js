@@ -10,8 +10,8 @@ function makeReception(estado = 'ENVIADA') {
   return {
     id: 'rec-1', folio: 'RCP-001', origen: 'REABASTECIMIENTO', estado,
     items: [
-      { id: 'item-1', productId: 'prod-1', talla: 'M', cantidad: 5, costoUnitario: 100, product: { nombre: 'Blusa', sku: 'BLU-M' } },
-      { id: 'item-2', productId: 'prod-2', talla: 'L', cantidad: 2, costoUnitario: 150, product: { nombre: 'Pantalón', sku: 'PAN-L' } },
+      { id: 'item-1', productId: 'prod-1', talla: 'M', cantidad: 5, costoUnitario: 100, product: { nombre: 'Blusa', sku: 'BLU-M', precioCompra: 100 } },
+      { id: 'item-2', productId: 'prod-2', talla: 'L', cantidad: 2, costoUnitario: 150, product: { nombre: 'Pantalón', sku: 'PAN-L', precioCompra: 150 } },
     ],
   }
 }
@@ -112,7 +112,11 @@ test('confirmación parcial actualiza stock, omite movimientos cero y reporta fa
   assert.equal(calls.movements.length, 1)
   assert.equal(calls.movements[0].cantidad, 3)
   assert.equal(calls.itemUpdates[0].data.costoUnitarioReal, 115)
-  assert.equal(calls.productUpdates.length, 0)
+  assert.equal(calls.productUpdates.length, 1)
+  assert.equal(calls.productUpdates[0].data.precioCompra, 115)
+  assert.equal(calls.productUpdates[0].data.precioCompraAnterior, 100)
+  assert.equal(calls.productUpdates[0].data.pendingPriceReview, true)
+  assert.ok(calls.productUpdates[0].data.purchasePriceChangedAt instanceof Date)
   assert.equal(result.itemsFaltantes.length, 2)
   assert.deepEqual(result.itemsFaltantes.map((item) => item.cantidadRecibida), [3, 0])
 })

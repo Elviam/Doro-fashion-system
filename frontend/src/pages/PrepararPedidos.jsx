@@ -44,7 +44,13 @@ export default function PrepararPedidos() {
   };
 
   const pedidosPorEnviar = pedidos.filter((pedido) => pedido.estado === "PAGADO");
-  const enviadosRecientes = pedidos.filter((pedido) => pedido.estado === "ENVIADO");
+  const enviadosRecientes = pedidos
+    .filter((pedido) => pedido.estado === "ENVIADO")
+    .sort((a, b) => {
+      const fechaEnvioA = new Date(a.shippedAt || a.createdAt).getTime();
+      const fechaEnvioB = new Date(b.shippedAt || b.createdAt).getTime();
+      return fechaEnvioB - fechaEnvioA;
+    });
   const pedidosVisibles = pestana === "POR_ENVIAR" ? pedidosPorEnviar : enviadosRecientes;
   const esEnviado = seleccionado?.estado === "ENVIADO";
   const totalPiezas = seleccionado?.items.reduce((total, item) => total + item.cantidad, 0) || 0;
@@ -104,7 +110,10 @@ export default function PrepararPedidos() {
       </section>
 
       <Modal isOpen={Boolean(seleccionado)} onClose={() => !guardando && setSeleccionado(null)} titulo={seleccionado ? `Pedido ${seleccionado.numeroPedido}` : "Pedido"} ancho="max-w-3xl" footer={seleccionado && (
-        <div className="flex w-full flex-wrap justify-end gap-3"><Boton variante="secundario" onClick={() => setSeleccionado(null)}>Cerrar</Boton>{puedeActualizar && !esEnviado && <Boton variante="oscuro" onClick={confirmarPreparacionYEnvio} className={!todoVerificado || guardando ? "pointer-events-none opacity-50" : ""}><i className="bi bi-truck" /> {guardando ? "Confirmando..." : "Confirmar preparacion y envio"}</Boton>}</div>
+        <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:justify-between">
+          <Boton variante="secundario" onClick={() => setSeleccionado(null)} className="hidden sm:inline-flex">Cerrar</Boton>
+          {puedeActualizar && !esEnviado && <Boton variante="oscuro" onClick={confirmarPreparacionYEnvio} className={!todoVerificado || guardando ? "pointer-events-none opacity-50" : ""}><i className="bi bi-truck" /> {guardando ? "Confirmando..." : "Confirmar preparacion y envio"}</Boton>}
+        </div>
       )}>
         {seleccionado && <div className="space-y-5">
           <div className="grid gap-3 rounded-[2px] border border-[var(--border-gold-25)] bg-[var(--gold-08)] p-4 text-sm sm:grid-cols-2 dark:border-[var(--border-gold-20)]"><p><span className="font-semibold">Cliente:</span> {seleccionado.cliente?.nombre || "-"}</p><p><span className="font-semibold">Pedido creado:</span> {formatDate(seleccionado.createdAt)}</p><p className="sm:col-span-2"><span className="font-semibold">Entrega:</span> {seleccionado.cliente?.direccion || "Sin direccion registrada"}</p>{seleccionado.direccionEntrega?.telefono && <p><span className="font-semibold">Teléfono:</span> {seleccionado.direccionEntrega.telefono}</p>}{seleccionado.direccionEntrega?.referencias && <p className="sm:col-span-2"><span className="font-semibold">Referencias:</span> {seleccionado.direccionEntrega.referencias}</p>}</div>

@@ -370,6 +370,7 @@ export class RecepcionesService {
       }
 
       const movements = []
+      const receivedCostsByProduct = new Map()
       for (const item of current.items) {
         const cantidadRecibida = quantitiesByItemId.get(item.id)
         const costoUnitarioReal = realCostsByItemId.get(item.id)
@@ -382,6 +383,13 @@ export class RecepcionesService {
         })
 
         if (cantidadRecibida === 0) continue
+
+        // If no actual cost was entered, the originally ordered cost is the
+        // effective received cost.
+        receivedCostsByProduct.set(item.productId, {
+          product: item.product,
+          costoNuevo: Number(costoUnitarioReal ?? item.costoUnitario),
+        })
 
         const talla = item.talla || 'Única'
         const variantBefore = await tx.productVariant.findUnique({
@@ -410,6 +418,23 @@ export class RecepcionesService {
         })
       }
 
+      const purchasePriceChanges = []
+      for (const [productId, { product, costoNuevo }] of receivedCostsByProduct) {
+        const costoAnterior = Number(product?.precioCompra ?? 0)
+        if (costoAnterior === costoNuevo) continue
+
+        await tx.product.update({
+          where: { id: productId },
+          data: {
+            precioCompra: costoNuevo,
+            precioCompraAnterior: costoAnterior,
+            pendingPriceReview: true,
+            purchasePriceChangedAt: new Date(),
+          },
+        })
+        purchasePriceChanges.push({ productId, costoAnterior, costoNuevo })
+      }
+
       const updated = await tx.reception.update({
         where: { id: current.id },
         data: {
@@ -426,7 +451,7 @@ export class RecepcionesService {
         include: { items: { include: { product: true } }, supplier: true }
       })
 
-      return { updated, movements }
+      return { updated, movements, purchasePriceChanges }
     })
 
     const [updatedWithUsers] = await this.attachAuditUsers([result.updated])
@@ -452,14 +477,68 @@ export class RecepcionesService {
       action: 'CONFIRM',
       resource: 'recepciones',
       resourceId: result.updated.id,
-      details: { folio: result.updated.folio || '', itemsCount: item.items.length, itemsFaltantes: itemsFaltantes.length, diferenciasCosto: diferenciasCosto.length },
+      details: {
+        folio: result.updated.folio || '',
+        itemsCount: item.items.length,
+        itemsFaltantes: itemsFaltantes.length,
+        diferenciasCosto: diferenciasCosto.length,
+        cambiosPrecioCompra: result.purchasePriceChanges.length,
+      },
       currentUser,
     })
 
-    return { message: 'Recepción confirmada correctamente', item, movements: result.movements, itemsFaltantes, diferenciasCosto }
+    return {
+      message: 'Recepción confirmada correctamente',
+      item,
+      movements: result.movements,
+      itemsFaltantes,
+      diferenciasCosto,
+      purchasePriceChanges: result.purchasePriceChanges,
+    }
+  }
+
+  async attachInvoice(id, { facturaProveedor, facturaUrl }, currentUser = null) {
+    const recepcion = await this.repository.findById(id)
+    if (!recepcion) {
+      const error = new Error('Recepción no encontrada')
+      error.statusCode = 404
+      throw error
+    }
+    if (recepcion.estado !== 'CONFIRMADA') {
+      const error = new Error('Solo puedes adjuntar una factura a una recepción confirmada')
+      error.statusCode = 400
+      throw error
+    }
+    if (recepcion.facturaUrl) {
+      const error = new Error('Esta recepción ya tiene una factura adjunta')
+      error.statusCode = 409
+      throw error
+    }
+
+    const updated = await this.repository.update(id, {
+      facturaProveedor: normalizeOptionalText(facturaProveedor) || null,
+      facturaUrl: normalizeOptionalText(facturaUrl),
+    })
+
+    await this.auditLogger({
+      action: 'UPDATE',
+      resource: 'recepciones',
+      resourceId: updated.id,
+      details: { folio: updated.folio || '', facturaAdjuntada: true },
+      currentUser,
+    })
+
+    const [updatedWithUsers] = await this.attachAuditUsers([updated])
+    return this.sanitizeRecepcion(updatedWithUsers)
   }
 
   async cancelar(id, currentUser = null) {
+    if (currentUser?.role !== 'ADMIN') {
+      const error = new Error('Solo un administrador puede cancelar recepciones')
+      error.statusCode = 403
+      throw error
+    }
+
     const recepcion = await recepcionesRepository.findById(id)
     if (!recepcion) {
       const error = new Error('Recepción no encontrada')

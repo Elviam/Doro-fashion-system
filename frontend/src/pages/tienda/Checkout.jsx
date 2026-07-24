@@ -24,16 +24,6 @@ const datosIniciales = {
 
 const camposDireccion = ["calle", "numeroExterior", "numeroInterior", "cp", "estado", "ciudad", "colonia", "referencias", "telefono"];
 
-function leerDirecciones(clave) {
-  if (!clave) return [];
-  try {
-    const guardadas = JSON.parse(localStorage.getItem(clave) || "[]");
-    return Array.isArray(guardadas) ? guardadas : [];
-  } catch {
-    return [];
-  }
-}
-
 const inputBase =
   "mt-1.5 w-full bg-[var(--snow)] text-[var(--noir)] border rounded-[2px] px-4 py-3 text-sm font-body outline-none focus:border-[var(--gold)] transition placeholder:text-[var(--noir-soft)] placeholder:opacity-70";
 
@@ -46,7 +36,6 @@ export default function Checkout() {
   const [busquedaHeader, setBusquedaHeader] = useState("");
 
   const nombreCompleto = usuario ? `${usuario.nombre ?? ""} ${usuario.apellido ?? ""}`.trim() : "";
-  const claveDirecciones = usuario?.id ? `direcciones_checkout_${usuario.id}` : null;
 
   const [paso, setPaso]       = useState(1);
   const [datos, setDatos]     = useState({
@@ -62,16 +51,18 @@ export default function Checkout() {
   const [direcciones, setDirecciones] = useState([]);
   const [direccionSeleccionada, setDireccionSeleccionada] = useState(null);
   const [direccionGuardada, setDireccionGuardada] = useState(false);
+  const [guardandoDireccion, setGuardandoDireccion] = useState(false);
 
   useEffect(() => {
-    const guardadas = leerDirecciones(claveDirecciones);
-    setDirecciones(guardadas);
-    if (guardadas[0]) {
-      setDireccionSeleccionada(guardadas[0].id);
-      setDireccionGuardada(true);
-      setDatos((actuales) => ({ ...actuales, ...guardadas[0].datos }));
-    }
-  }, [claveDirecciones]);
+    if (!usuario?.id) return;
+    api.get("/clients/me/addresses")
+      .then((result) => {
+        const guardadas = result.items || [];
+        setDirecciones(guardadas);
+        if (guardadas[0]) seleccionarDireccion(guardadas[0]);
+      })
+      .catch(() => setDirecciones([]));
+  }, [usuario?.id]);
 
   const seleccionarDireccion = (direccion) => {
     setDireccionSeleccionada(direccion.id);
@@ -87,20 +78,30 @@ export default function Checkout() {
     setErroresEnvio({});
   };
 
-  const guardarDireccion = () => {
+  const guardarDireccion = async () => {
     if (!validarPaso1()) return;
-    const nueva = {
-      id: direccionSeleccionada || `direccion_${Date.now()}`,
-      nombre: `Direccion ${direcciones.length + (direccionSeleccionada ? 0 : 1)}`,
-      datos: Object.fromEntries(camposDireccion.map((campo) => [campo, datos[campo]])),
-    };
-    const actualizadas = direccionSeleccionada
-      ? direcciones.map((direccion) => direccion.id === direccionSeleccionada ? nueva : direccion)
-      : [...direcciones, nueva];
-    setDirecciones(actualizadas);
-    setDireccionSeleccionada(nueva.id);
-    setDireccionGuardada(true);
-    localStorage.setItem(claveDirecciones, JSON.stringify(actualizadas));
+    setGuardandoDireccion(true);
+    try {
+      const existente = direcciones.find((direccion) => direccion.id === direccionSeleccionada);
+      const payload = {
+        alias: existente?.nombre || `Dirección ${direcciones.length + 1}`,
+        ...Object.fromEntries(camposDireccion.map((campo) => [campo, datos[campo]])),
+        ...(!direccionSeleccionada ? { esPredeterminada: direcciones.length === 0 } : {}),
+      };
+      const result = direccionSeleccionada
+        ? await api.patch(`/clients/me/addresses/${direccionSeleccionada}`, payload)
+        : await api.post("/clients/me/addresses", payload);
+      const nueva = result.item;
+      setDirecciones((actuales) => direccionSeleccionada ? actuales.map((direccion) => direccion.id === nueva.id ? nueva : direccion) : [nueva, ...actuales]);
+      setDireccionSeleccionada(nueva.id);
+      setDireccionGuardada(true);
+      return nueva;
+    } catch (error) {
+      setErroresEnvio((actuales) => ({ ...actuales, general: error.message || "No se pudo guardar la dirección." }));
+      return null;
+    } finally {
+      setGuardandoDireccion(false);
+    }
   };
 
   const setDato = (key, value) => setDatos((d) => ({ ...d, [key]: value }));
@@ -158,7 +159,7 @@ export default function Checkout() {
       });
       await esperar(datos.metodoPago === "oxxo" ? 6500 : 1800);
       const confirmada = await api.post(`/ventas/${creada.item.id}/simulate-payment`);
-      guardarDireccion();
+      await guardarDireccion();
       setPedidoConfirmado(confirmada.item);
       setPaso(3);
       vaciarCarrito();
@@ -359,9 +360,10 @@ export default function Checkout() {
                       <textarea value={datos.referencias} onChange={(e) => setDato("referencias", e.target.value)} placeholder="Entre qué calles, color de fachada, indicaciones para entrega..." rows="2" className={`${inputBase} resize-y border-[var(--border-gold-40)]`} />
                     </label>
 
-                    <button type="button" onClick={guardarDireccion} className="self-start font-tag text-[10px] tracking-[0.1em] uppercase font-bold text-[var(--gold-dark)] hover:text-[var(--noir)] transition">
-                      <i className={`bi ${direccionGuardada ? "bi-check-lg" : "bi-bookmark-plus"} mr-1`} />
-                      {direccionGuardada ? "Dirección guardada" : "Guardar esta dirección"}
+                    {erroresEnvio.general && <p className="text-xs text-[#b3261e]">{erroresEnvio.general}</p>}
+                    <button type="button" onClick={guardarDireccion} disabled={guardandoDireccion} className="self-start font-tag text-[10px] tracking-[0.1em] uppercase font-bold text-[var(--gold-dark)] hover:text-[var(--noir)] transition disabled:opacity-50">
+                      <i className={`bi ${guardandoDireccion ? "bi-arrow-repeat spinner-cargando" : direccionGuardada ? "bi-check-lg" : "bi-bookmark-plus"} mr-1`} />
+                      {guardandoDireccion ? "Guardando..." : direccionGuardada ? "Dirección guardada" : "Guardar esta dirección"}
                     </button>
 
                     <div className="mt-4">
@@ -518,17 +520,19 @@ export default function Checkout() {
                       <p className="font-tag text-[9px] text-[var(--noir-soft)] uppercase tracking-widest">Pedido</p>
                       <p className="font-body text-sm font-bold text-[var(--noir)]">{pedidoConfirmado?.numeroPedido || "—"}</p>
                     </div>
-                    <div>
-                      <p className="font-tag text-[9px] text-[var(--noir-soft)] uppercase tracking-widest">Total</p>
-                      <p className="font-body text-sm font-bold text-[var(--gold-dark)]">${Number(total).toLocaleString("es-MX")}</p>
-                    </div>
                   </div>
-                  <div className="mt-8">
+                  <div className="mt-8 flex flex-wrap gap-3">
                     <button
                       onClick={() => navigate('/tienda')}
                       className="font-tag uppercase tracking-[0.15em] font-bold text-[11px] px-6 py-3 rounded-[2px] bg-[var(--gold)] text-[var(--noir)] hover:bg-[var(--gold-dark)] transition"
                     >
                       Seguir explorando
+                    </button>
+                    <button
+                      onClick={() => navigate('/perfil')}
+                      className="font-tag uppercase tracking-[0.15em] font-bold text-[11px] px-6 py-3 rounded-[2px] border border-[var(--gold)] text-[var(--gold-dark)] hover:bg-[var(--gold-08)] transition"
+                    >
+                      Ver compras
                     </button>
                   </div>
                 </div>

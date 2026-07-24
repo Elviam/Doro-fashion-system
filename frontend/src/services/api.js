@@ -1,18 +1,33 @@
 const BASE = import.meta.env.VITE_API_URL
+const REQUEST_TIMEOUT_MS = 30000
 
 function getToken() {
   return localStorage.getItem('token')
 }
 
 async function request(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${getToken()}`,
-      ...options.headers,
-    },
-  })
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+
+  let res
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`,
+        ...options.headers,
+      },
+    })
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('La solicitud tardó demasiado. Verifica tu conexión e inténtalo de nuevo.')
+    }
+    throw error
+  } finally {
+    clearTimeout(timeout)
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))

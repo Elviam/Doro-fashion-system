@@ -7,10 +7,17 @@ import { asyncHandler } from '../../utils/asyncHandler.js'
 import {
   clientIdParamSchema,
   createClientSchema,
-  listClientsQuerySchema
+  listClientsQuerySchema,
+  addressIdParamSchema,
+  addressSchema
 } from './clients.schema.js'
 
 const router = Router()
+
+router.get('/me/addresses', authenticate, asyncHandler(clientsController.listMyAddresses.bind(clientsController)))
+router.post('/me/addresses', authenticate, validate(addressSchema), asyncHandler(clientsController.createMyAddress.bind(clientsController)))
+router.patch('/me/addresses/:addressId', authenticate, validate(addressIdParamSchema, 'params'), validate(addressSchema), asyncHandler(clientsController.updateMyAddress.bind(clientsController)))
+router.delete('/me/addresses/:addressId', authenticate, validate(addressIdParamSchema, 'params'), asyncHandler(clientsController.removeMyAddress.bind(clientsController)))
 
 router.get(
   '/',

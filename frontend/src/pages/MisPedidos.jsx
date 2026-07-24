@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import Encabezado from "../components/Encabezado";
 import Etiquetas from "../components/Etiquetas";
 import ModalRecepciones from "../components/ModalRecepciones";
-import { fetchPedidos, enviarPedido, ESTADO_PEDIDO_LABELS } from "../services/pedidos.service";
+import ModalConfirmacion from "../components/ModalConfirmacion";
+import Paginacion from "../components/Paginacion";
+import { cancelarPedido, eliminarPedido, fetchPedidos, enviarPedido, ESTADO_PEDIDO_LABELS } from "../services/pedidos.service";
 import useTitulo from "../hooks/useTitulo";
 import { useAuth } from "../hooks/useAuth";
 import { canPerformAction } from "../utils/permissionMapper";
+import FechaMexicoInput from "../components/FechaMexicoInput";
 
 function formatFechaCorta(iso) {
   if (!iso) return "—";
@@ -29,8 +32,16 @@ function formatFechaHora(iso) {
   return fecha.toLocaleString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
+const FECHA_MINIMA = "2026-01-01";
+const FECHA_MAXIMA = new Date().toISOString().slice(0, 10);
+const PEDIDOS_POR_PAGINA = 5;
+
+function fechaParaFiltro(iso) {
+  return iso ? String(iso).slice(0, 10) : "";
+}
+
 function estadoVisualPedido(pedido) {
-  if (pedido.status === "BORRADOR") return "Pendiente";
+  if (pedido.status === "BORRADOR") return "En borrador";
   return ESTADO_PEDIDO_LABELS[pedido.status] || pedido.status;
 }
 
@@ -38,13 +49,21 @@ export default function MisPedidos() {
   useTitulo("Mis pedidos");
   const { usuario } = useAuth();
   const puedeEnviar = canPerformAction(usuario?.permissions, "recepciones", "enviar");
+  const puedeCancelar = usuario?.role === "ADMIN" && canPerformAction(usuario?.permissions, "recepciones", "cancel");
+  const puedeEliminar = canPerformAction(usuario?.permissions, "recepciones", "delete");
 
   const [pedidos, setPedidos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [enviandoId, setEnviandoId] = useState(null);
+  const [accionPendiente, setAccionPendiente] = useState(null);
+  const [procesandoAccion, setProcesandoAccion] = useState(false);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
   const [busqueda, setBusqueda] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("");
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
+  const [paginaActual, setPaginaActual] = useState(1);
 
   useEffect(() => {
     setCargando(true);
@@ -66,12 +85,38 @@ export default function MisPedidos() {
     }
   };
 
+  const handleConfirmarAccion = async () => {
+    if (!accionPendiente) return;
+    setProcesandoAccion(true);
+    try {
+      if (accionPendiente.tipo === "eliminar") {
+        await eliminarPedido(accionPendiente.pedido.id);
+      } else {
+        await cancelarPedido(accionPendiente.pedido.id);
+      }
+      setPedidoSeleccionado((actual) => actual?.id === accionPendiente.pedido.id ? null : actual);
+      setAccionPendiente(null);
+      setPaginaActual(1);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      window.alert(err.message || "No se pudo actualizar el pedido.");
+    } finally {
+      setProcesandoAccion(false);
+    }
+  };
+
   const terminoBusqueda = busqueda.trim().toLowerCase();
   const pedidosVisibles = pedidos.filter((pedido) => {
+    if (filtroEstado && pedido.status !== filtroEstado) return false;
+    const fechaPedido = fechaParaFiltro(pedido.fecha || pedido.createdAt);
+    if (fechaDesde && fechaPedido < fechaDesde) return false;
+    if (fechaHasta && fechaPedido > fechaHasta) return false;
     if (!terminoBusqueda) return true;
     const fecha = formatFechaCorta(pedido.sentAt || pedido.fecha || pedido.createdAt).toLowerCase();
     return [pedido.folio, pedido.supplierNombre, fecha].some((valor) => String(valor || "").toLowerCase().includes(terminoBusqueda));
   });
+  const inicioPagina = (paginaActual - 1) * PEDIDOS_POR_PAGINA;
+  const pedidosPagina = pedidosVisibles.slice(inicioPagina, inicioPagina + PEDIDOS_POR_PAGINA);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-8 flex flex-col gap-6 font-body">
@@ -79,7 +124,7 @@ export default function MisPedidos() {
 
       {cargando ? (
         <div className="text-center py-10 text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">
-          <i className="bi bi-arrow-repeat animate-spin mr-2" />Cargando pedidos...
+          <i className="bi bi-arrow-repeat spinner-cargando mr-2 text-[var(--gold-dark)] dark:text-[var(--gold-light)]" aria-hidden="true" />Cargando pedidos...
         </div>
       ) : pedidos.length === 0 ? (
         <div className="text-center py-10 rounded-[2px] border bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)]">
@@ -87,9 +132,24 @@ export default function MisPedidos() {
         </div>
       ) : (
         <>
-          <div className="relative"><i className="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--gold-dark)] dark:text-[var(--gold-light)]" /><input type="search" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por nombre, fecha o proveedor..." className="h-11 w-full rounded-[2px] border py-2 pl-9 pr-3 text-sm outline-none bg-[var(--snow)] border-[var(--border-gold-40)] text-[var(--noir)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:text-[var(--snow)]" /></div>
           <div className="flex flex-col gap-3">
-          {pedidosVisibles.map((pedido) => (
+            <div className="relative flex-1"><i className="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--gold-dark)] dark:text-[var(--gold-light)]" /><input type="search" value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPaginaActual(1); }} placeholder="Buscar por nombre, fecha o proveedor..." className="h-11 w-full rounded-[2px] border py-2 pl-9 pr-3 text-sm outline-none bg-[var(--snow)] border-[var(--border-gold-40)] text-[var(--noir)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:text-[var(--snow)]" /></div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <label className="flex items-center gap-2 text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
+                Estado
+                <select value={filtroEstado} onChange={(e) => { setFiltroEstado(e.target.value); setPaginaActual(1); }} className="h-11 rounded-[2px] border px-3 text-sm normal-case font-body outline-none bg-[var(--snow)] border-[var(--border-gold-40)] text-[var(--noir)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:text-[var(--snow)]">
+                  <option value="">Todos</option>
+                  <option value="BORRADOR">En borrador</option>
+                  <option value="ENVIADA">Enviado</option>
+                  <option value="CONFIRMADA">Recibido</option>
+                </select>
+              </label>
+              <FechaMexicoInput etiqueta="Desde" value={fechaDesde} onChange={(valor) => { setFechaDesde(valor); setPaginaActual(1); }} min={FECHA_MINIMA} max={fechaHasta || FECHA_MAXIMA} />
+              <FechaMexicoInput etiqueta="Hasta" value={fechaHasta} onChange={(valor) => { setFechaHasta(valor); setPaginaActual(1); }} min={fechaDesde || FECHA_MINIMA} max={FECHA_MAXIMA} />
+            </div>
+          </div>
+          <div className="flex flex-col gap-3">
+          {pedidosPagina.map((pedido) => (
             <div
               key={pedido.id}
               onClick={() => setPedidoSeleccionado(pedido)}
@@ -105,31 +165,45 @@ export default function MisPedidos() {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <Etiquetas contenido={estadoVisualPedido(pedido)} />
                 {pedido.status === "CONFIRMADA" && (
-                  <span className="text-[11px] text-[var(--noir-soft)] dark:text-[var(--ash)]">
+                  <span className="text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">
                     <span className="block">Confirmado por {pedido.confirmedByNombre || "Admin Sistema"}</span>
                     <span className="block">{formatFechaHora(pedido.confirmedAt)}</span>
                   </span>
                 )}
+                <div className="flex flex-col items-stretch gap-2">
+                  <Etiquetas contenido={estadoVisualPedido(pedido)} />
+                  {puedeEnviar && pedido.status === "BORRADOR" && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMarcarEnviado(pedido.id);
+                      }}
+                      disabled={enviandoId === pedido.id}
+                      className="flex h-9 w-28 items-center justify-center gap-1.5 rounded-[2px] bg-[var(--gold)] px-2 text-center text-xs font-bold text-[var(--noir)] transition-all hover:bg-[var(--gold-dark)] hover:text-[var(--snow)] disabled:opacity-50 lg:w-32"
+                    >
+                      {enviandoId === pedido.id ? <i className="bi bi-arrow-repeat inline-block animate-spin" /> : <i className="bi bi-send" />}
+                      Marcar enviado
+                    </button>
+                  )}
+                </div>
               </div>
-
-              {puedeEnviar && pedido.status === "BORRADOR" && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMarcarEnviado(pedido.id);
-                  }}
-                  disabled={enviandoId === pedido.id}
-                  className="flex items-center justify-center gap-2 bg-transparent text-[var(--gold-dark)] border border-[var(--border-gold-40)] rounded-[2px] px-4 py-2 text-xs lg:text-sm font-bold font-body transition-all duration-300 active:scale-95 cursor-pointer hover:bg-[var(--gold)] hover:text-[var(--noir)] dark:text-[var(--gold-light)] dark:border-[var(--border-gold-20)] dark:hover:bg-[var(--gold)] dark:hover:text-[var(--noir)] disabled:opacity-50 shrink-0"
-                >
-                  {enviandoId === pedido.id ? <i className="bi bi-arrow-repeat animate-spin" /> : <i className="bi bi-send" />}
-                  Marcar como enviado
-                </button>
-              )}
             </div>
           ))}
           </div>
+          {pedidosVisibles.length > PEDIDOS_POR_PAGINA && (
+            <Paginacion
+              paginaActual={paginaActual}
+              totalRegistros={pedidosVisibles.length}
+              limit={PEDIDOS_POR_PAGINA}
+              mostrarExportar={false}
+              onCambiarPagina={(direccion) => {
+                const totalPaginas = Math.ceil(pedidosVisibles.length / PEDIDOS_POR_PAGINA);
+                if (direccion === "â€¹") setPaginaActual((pagina) => Math.max(1, pagina - 1));
+                else if (direccion === "â€º") setPaginaActual((pagina) => Math.min(totalPaginas, pagina + 1));
+              }}
+            />
+          )}
           {pedidosVisibles.length === 0 && <p className="py-8 text-center text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">No se encontraron pedidos.</p>}
         </>
       )}
@@ -139,7 +213,28 @@ export default function MisPedidos() {
         row={pedidoSeleccionado}
         onClose={() => setPedidoSeleccionado(null)}
         soloLectura
+        vistaMisPedidos
+        puedeEliminar={puedeEliminar}
+        puedeCancelar={puedeCancelar}
+        onEliminar={(pedido) => { setPedidoSeleccionado(null); setAccionPendiente({ tipo: "eliminar", pedido }); }}
+        onCancelar={(pedido) => { setPedidoSeleccionado(null); setAccionPendiente({ tipo: "cancelar", pedido }); }}
       />
+
+      {accionPendiente && (
+        <ModalConfirmacion
+          isOpen
+          tipo="eliminar"
+          titulo={accionPendiente.tipo === "eliminar" ? "¿Eliminar este borrador?" : "¿Cancelar este pedido?"}
+          mensaje={accionPendiente.tipo === "eliminar"
+            ? "El borrador se eliminará permanentemente."
+            : "El pedido dejará de estar disponible para recepción y quedará registrado como cancelado."}
+          textoConfirmar={accionPendiente.tipo === "eliminar" ? "Eliminar pedido" : "Cancelar pedido"}
+          onConfirmar={handleConfirmarAccion}
+          onCancelar={() => { if (!procesandoAccion) setAccionPendiente(null); }}
+          cargando={procesandoAccion}
+          textoCargando={accionPendiente.tipo === "eliminar" ? "Eliminando..." : "Cancelando..."}
+        />
+      )}
     </div>
   );
 }

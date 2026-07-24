@@ -1,6 +1,25 @@
 import { clientsService } from './clients.service.js'
 
 export class ClientsController {
+  async listMyAddresses(req, res) {
+    return res.status(200).json(await clientsService.listMyAddresses(req.user))
+  }
+
+  async createMyAddress(req, res) {
+    const item = await clientsService.createMyAddress(req.body, req.user)
+    return res.status(201).json({ item })
+  }
+
+  async updateMyAddress(req, res) {
+    const item = await clientsService.updateMyAddress(req.params.addressId, req.body, req.user)
+    return res.status(200).json({ item })
+  }
+
+  async removeMyAddress(req, res) {
+    await clientsService.removeMyAddress(req.params.addressId, req.user)
+    return res.status(204).send()
+  }
+
   async list(req, res) {
     const result = await clientsService.list(req.query)
 

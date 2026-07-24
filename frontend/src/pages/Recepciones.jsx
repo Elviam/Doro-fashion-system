@@ -2,24 +2,15 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "../services/api";
 import useTitulo from "../hooks/useTitulo";
 import Encabezado from "../components/Encabezado";
-import Tarjetas from "../components/Tarjetas";
-import ToolBar from "../components/ToolBar";
 import ModalConfirmacion from "../components/ModalConfirmacion";
 import ModalRecepciones from "../components/ModalRecepciones";
 import Etiquetas from "../components/Etiquetas";
 import { useAuth } from "../hooks/useAuth";
 import { canPerformAction } from "../utils/permissionMapper";
 
-const LIMIT = 10;
+const LIMIT = 100;
 
-const OPCIONES_FILTRO = [
-  { value: "ENVIADA", label: "Por confirmar" },
-  { value: "CONFIRMADA", label: "Confirmadas" },
-  { value: "CANCELADA", label: "Canceladas" },
-  { value: "", label: "Todas" },
-];
-
-const ESTADO_LABELS = { BORRADOR: "Borrador", ENVIADA: "Enviada", CONFIRMADA: "Confirmada", CANCELADA: "Cancelada" };
+const ESTADO_LABELS = { ENVIADA: "Por confirmar", CONFIRMADA: "Recibido", CANCELADA: "Cancelada" };
 
 function formatDate(iso) {
   if (!iso) return "—";
@@ -29,22 +20,23 @@ function formatDate(iso) {
 }
 
 export default function Recepciones() {
-  useTitulo("Recepciones");
+  useTitulo("Recepción de mercancía");
   const { usuario } = useAuth();
   const puedeConfirmar = canPerformAction(usuario?.permissions, "recepciones", "confirm");
-  const puedeCancelar = canPerformAction(usuario?.permissions, "recepciones", "cancel");
+  const puedeCancelar = usuario?.role === "ADMIN" && canPerformAction(usuario?.permissions, "recepciones", "cancel");
 
   const [rows, setRows] = useState([]);
-  const [stats, setStats] = useState({ total: 0, porConfirmar: 0, confirmadas: 0 });
   const [filtro, setFiltro] = useState("ENVIADA");
-  const [busqueda, setBusqueda] = useState("");
+  const [busquedas, setBusquedas] = useState({ ENVIADA: "", CONFIRMADA: "", CANCELADA: "" });
   const [paginaActiva, setPaginaActiva] = useState(1);
   const [totalRegistros, setTotalRegistros] = useState(0);
   const [rowSeleccionada, setRowSeleccionada] = useState(null);
   const [rowCancelando, setRowCancelando] = useState(null);
+  const [cancelando, setCancelando] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refresh, setRefresh] = useState(0);
   const [modalExito, setModalExito] = useState("");
+  const busquedaActiva = busquedas[filtro] || "";
 
   const refetch = useCallback(() => setRefresh((valor) => valor + 1), []);
 
@@ -52,32 +44,20 @@ export default function Recepciones() {
     setLoading(true);
     const params = new URLSearchParams({ page: paginaActiva, limit: LIMIT, origen: "REABASTECIMIENTO" });
     if (filtro) params.set("status", filtro);
-    if (busqueda) params.set("q", busqueda);
+    if (busquedaActiva) params.set("q", busquedaActiva);
 
-    api.get(`/recepciones?${params}`)
+      api.get(`/recepciones?${params}`)
       .then((res) => {
-        setRows(res.items || []);
-        setTotalRegistros(res.total || 0);
+        const items = (res.items || []).filter((item) => item.status !== "BORRADOR");
+        setRows(items);
+        setTotalRegistros(items.length);
       })
       .catch(() => {
         setRows([]);
         setTotalRegistros(0);
       })
       .finally(() => setLoading(false));
-  }, [paginaActiva, filtro, busqueda, refresh]);
-
-  useEffect(() => {
-    const base = "origen=REABASTECIMIENTO&limit=1";
-    Promise.all([
-      api.get(`/recepciones?${base}`),
-      api.get(`/recepciones?${base}&status=ENVIADA`),
-      api.get(`/recepciones?${base}&status=CONFIRMADA`),
-    ])
-      .then(([total, porConfirmar, confirmadas]) => {
-        setStats({ total: total.total || 0, porConfirmar: porConfirmar.total || 0, confirmadas: confirmadas.total || 0 });
-      })
-      .catch(console.error);
-  }, [refresh]);
+  }, [paginaActiva, filtro, busquedaActiva, refresh]);
 
   const totalPaginas = Math.max(1, Math.ceil(totalRegistros / LIMIT));
 
@@ -102,8 +82,9 @@ export default function Recepciones() {
   };
 
   const handleCancelar = async () => {
-    if (!rowCancelando) return;
+    if (!rowCancelando || cancelando) return;
     try {
+      setCancelando(true);
       await api.patch(`/recepciones/${rowCancelando.id}/cancel`);
       setRowSeleccionada(null);
       refetch();
@@ -111,92 +92,73 @@ export default function Recepciones() {
     } catch (error) {
       window.alert(error.message || "No se pudo cancelar la recepción.");
     } finally {
+      setCancelando(false);
       setRowCancelando(null);
     }
+  };
+
+  const handleAdjuntarFactura = async (recepcion, datosFactura) => {
+    const resultado = await api.patch(`/recepciones/${recepcion.id}/factura`, datosFactura);
+    const actualizada = resultado.item || resultado.data?.item;
+    if (actualizada) setRowSeleccionada(actualizada);
+    refetch();
   };
 
   return (
     <div className="flex min-h-screen flex-col">
       <main className="flex-1 space-y-6 p-4 sm:p-6 lg:p-8">
-        <Encabezado titulo="Recepciones" onActualizar={refetch} />
-
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(220px,1fr))]">
-          <Tarjetas
-            label="Por confirmar"
-            value={stats.porConfirmar}
-            sub="Pedidos enviados por recibir"
-            accent="#bf9d40"
-            icon="bi bi-hourglass-split"
-            onClick={() => { setFiltro("ENVIADA"); setPaginaActiva(1); }}
-            isActive={filtro === "ENVIADA"}
-          />
-          <Tarjetas
-            label="Confirmadas"
-            value={stats.confirmadas}
-            sub="Recepciones finalizadas"
-            accent="#8DB051"
-            icon="bi bi-check-circle"
-            onClick={() => { setFiltro("CONFIRMADA"); setPaginaActiva(1); }}
-            isActive={filtro === "CONFIRMADA"}
-          />
-          <Tarjetas
-            label="Todas las recepciones"
-            value={stats.total}
-            sub="Historial de pedidos enviados"
-            accent="#717171"
-            icon="bi bi-layers"
-            onClick={() => { setFiltro(""); setPaginaActiva(1); }}
-            isActive={filtro === ""}
-          />
-        </section>
-
-        <ToolBar
-          filtro={filtro}
-          setFiltro={(valor) => { setFiltro(valor); setPaginaActiva(1); }}
-          opcionesFiltro={OPCIONES_FILTRO}
-          placeholderFiltro="Estado"
-          busqueda={busqueda}
-          setBusqueda={(valor) => { setBusqueda(valor); setPaginaActiva(1); }}
-          placeholderBuscar="Buscar por folio, proveedor, factura o SKU..."
-        />
+        <Encabezado titulo="Recepción de mercancía" onActualizar={refetch} />
 
         <section>
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-[var(--border-gold-25)] pb-4 dark:border-[var(--border-gold-20)]">
             <div>
-              <h2 className="text-sm font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
-                {filtro === "ENVIADA" ? "Recepciones recientes por confirmar" : "Recepciones"}
+              <div className="flex gap-4" role="tablist" aria-label="Estado de recepciones">
+                <button type="button" role="tab" aria-selected={filtro === "ENVIADA"} onClick={() => { setFiltro("ENVIADA"); setPaginaActiva(1); }} className={`border-b-2 pb-2 text-sm font-semibold transition ${filtro === "ENVIADA" ? "border-[var(--gold-dark)] text-[var(--gold-dark)] dark:border-[var(--gold-light)] dark:text-[var(--gold-light)]" : "border-transparent text-[var(--noir-soft)] dark:text-[var(--ash)]"}`}>Por confirmar</button>
+                <button type="button" role="tab" aria-selected={filtro === "CONFIRMADA"} onClick={() => { setFiltro("CONFIRMADA"); setPaginaActiva(1); }} className={`border-b-2 pb-2 text-sm font-semibold transition ${filtro === "CONFIRMADA" ? "border-[var(--gold-dark)] text-[var(--gold-dark)] dark:border-[var(--gold-light)] dark:text-[var(--gold-light)]" : "border-transparent text-[var(--noir-soft)] dark:text-[var(--ash)]"}`}>Recibidas</button>
+                <button type="button" role="tab" aria-selected={filtro === "CANCELADA"} onClick={() => { setFiltro("CANCELADA"); setPaginaActiva(1); }} className={`border-b-2 pb-2 text-sm font-semibold transition ${filtro === "CANCELADA" ? "border-[var(--gold-dark)] text-[var(--gold-dark)] dark:border-[var(--gold-light)] dark:text-[var(--gold-light)]" : "border-transparent text-[var(--noir-soft)] dark:text-[var(--ash)]"}`}>Canceladas</button>
+              </div>
+              <h2 className="mt-3 font-display text-xl font-semibold text-[var(--noir)] dark:text-[var(--snow)]">
+                {filtro === "CONFIRMADA" ? "Recepciones recibidas" : filtro === "CANCELADA" ? "Recepciones canceladas" : "Recepciones por confirmar"}
               </h2>
-              <p className="mt-1 text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">Abre una tarjeta para revisar cantidades y confirmar lo que llegó.</p>
+              <p className="mt-1 text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">{filtro === "CONFIRMADA" ? "Historial de mercancía de proveedores que ya fue recibida y confirmada." : filtro === "CANCELADA" ? "Historial de recepciones de mercancía que fueron canceladas." : "Confirma la mercancía recibida de tus proveedores."}</p>
+              <div className="relative mt-4 max-w-md">
+                <i className="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--gold-dark)] dark:text-[var(--gold-light)]" />
+                <input type="search" value={busquedaActiva} onChange={(event) => { const valor = event.target.value; setBusquedas((actuales) => ({ ...actuales, [filtro]: valor })); setPaginaActiva(1); }} placeholder="Buscar por folio, proveedor, factura o SKU..." className="h-10 w-full rounded-[2px] border py-2 pl-9 pr-3 text-sm outline-none bg-[var(--snow)] border-[var(--border-gold-40)] text-[var(--noir)] focus:ring-1 focus:ring-[var(--gold)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:text-[var(--snow)]" />
+              </div>
             </div>
-            <span className="text-xs font-semibold text-[var(--noir-soft)] dark:text-[var(--ash)]">{totalRegistros} resultado(s)</span>
+            <span className="rounded-[2px] bg-[var(--gold-08)] px-3 py-1 text-sm font-semibold text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{totalRegistros}</span>
           </div>
 
           {loading ? (
-            <div className="rounded-[2px] border p-10 text-center text-sm text-[var(--noir-soft)] border-[var(--border-gold-40)] dark:text-[var(--ash)] dark:border-[var(--border-gold-20)]"><i className="bi bi-arrow-repeat mr-2 animate-spin" />Cargando recepciones...</div>
+            <div className="rounded-[2px] border p-10 text-center text-sm text-[var(--noir-soft)] border-[var(--border-gold-40)] dark:text-[var(--ash)] dark:border-[var(--border-gold-20)]"><i className="bi bi-arrow-repeat inline-block mr-2 animate-spin" />Cargando recepciones...</div>
           ) : rows.length === 0 ? (
             <div className="rounded-[2px] border p-10 text-center text-sm text-[var(--noir-soft)] border-[var(--border-gold-40)] dark:text-[var(--ash)] dark:border-[var(--border-gold-20)]">No hay recepciones para este filtro.</div>
           ) : (
-            <div className="flex flex-col gap-3">
+            <div className="grid max-h-[34rem] gap-4 overflow-y-auto pb-20 pr-2 md:grid-cols-2 xl:grid-cols-3">
               {rows.map((row) => (
                 <button
                   key={row.id}
                   type="button"
                   onClick={() => setRowSeleccionada(row)}
-                  className="flex w-full flex-col gap-3 rounded-[2px] border px-4 py-4 text-left transition-colors hover:bg-[var(--gold-08)] sm:flex-row sm:items-center sm:px-5 bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)]"
+                  className="group relative rounded-[2px] border border-[var(--border-gold-25)] bg-[var(--snow)] p-4 text-left transition hover:-translate-y-0.5 hover:border-[var(--border-gold-55)] hover:bg-[var(--gold-08)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)]"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-bold text-[var(--noir)] dark:text-[var(--snow)]">{row.folio}</p>
-                      <Etiquetas contenido={ESTADO_LABELS[row.status] || row.status} />
+                  {row.status === "CONFIRMADA" && (
+                    <div className="absolute right-4 top-4">
+                      <Etiquetas contenido={ESTADO_LABELS[row.status]} />
                     </div>
-                    <p className="mt-1 text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">Enviado el {formatDate(row.sentAt)} por <strong>{row.sentByNombre || "—"}</strong></p>
+                  )}
+                  <div className={`mb-3 flex items-start justify-between gap-3 ${row.status === "CONFIRMADA" ? "pr-32" : ""}`}>
+                    <div className="min-w-0">
+                      <p className="font-mono text-sm font-semibold text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{row.folio}</p>
+                      <p className="mt-1 truncate text-base font-semibold text-[var(--noir)] dark:text-[var(--snow)]">{row.supplierNombre || "Sin proveedor asignado"}</p>
+                    </div>
+                    {row.status !== "CONFIRMADA" && <i className="bi bi-chevron-right text-[var(--gold-dark)] transition-transform group-hover:translate-x-1 dark:text-[var(--gold-light)]" />}
                   </div>
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs sm:w-auto sm:text-right">
-                    <p className="text-[var(--noir-soft)] dark:text-[var(--ash)]">Fecha <strong className="ml-1 text-[var(--noir)] dark:text-[var(--snow)]">{formatDate(row.sentAt || row.createdAt)}</strong></p>
-                    <p className="text-[var(--noir-soft)] dark:text-[var(--ash)]">Productos <strong className="ml-1 text-[var(--noir)] dark:text-[var(--snow)]">{row.items?.length || 0}</strong></p>
-                    <p className="col-span-2 text-[var(--noir-soft)] dark:text-[var(--ash)]">Total de piezas <strong className="ml-1 text-[var(--noir)] dark:text-[var(--snow)]">{row.piezasTotales || 0}</strong></p>
+                  <p className="line-clamp-2 min-h-10 text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">{row.status === "CONFIRMADA" ? <>Recibido por {row.confirmedByNombre || "Admin Sistema"} el {formatDate(row.confirmedAt || row.updatedAt)}</> : <>Enviado el {formatDate(row.sentAt || row.createdAt)} por {row.sentByNombre || "—"}</>}</p>
+                  <div className="mt-4 flex items-center justify-between border-t border-[var(--border-gold-20)] pt-3 text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">
+                    <span>{row.items?.length || 0} productos / {row.piezasTotales || 0} piezas</span>
+                    <span>{row.status === "CONFIRMADA" ? `Recibido ${formatDate(row.confirmedAt)}` : formatDate(row.sentAt || row.createdAt)}</span>
                   </div>
-                  <i className="bi bi-chevron-right hidden text-[var(--gold-dark)] sm:block dark:text-[var(--gold-light)]" />
                 </button>
               ))}
             </div>
@@ -218,8 +180,10 @@ export default function Recepciones() {
           row={rowSeleccionada}
           onClose={() => setRowSeleccionada(null)}
           onConfirmar={handleConfirmar}
+          onAdjuntarFactura={handleAdjuntarFactura}
           onCancelar={(row) => { setRowSeleccionada(null); setRowCancelando(row); }}
           modoChecklist={rowSeleccionada.status === "ENVIADA"}
+          soloLectura={["CONFIRMADA", "CANCELADA"].includes(rowSeleccionada.status)}
           puedeConfirmar={puedeConfirmar}
           puedeCancelar={puedeCancelar}
         />
@@ -229,11 +193,14 @@ export default function Recepciones() {
         <ModalConfirmacion
           isOpen
           tipo="eliminar"
-          titulo="¿Cancelar esta recepción?"
+          titulo="¿Desea cancelar la recepción?"
           mensaje={`${rowCancelando.folio} se conservará en el historial como cancelada.`}
-          textoConfirmar="Cancelar recepción"
+          textoConfirmar="Sí, cancelar"
+          textoCancelar="No"
           onConfirmar={handleCancelar}
-          onCancelar={() => setRowCancelando(null)}
+          onCancelar={() => { if (!cancelando) setRowCancelando(null); }}
+          cargando={cancelando}
+          textoCargando="Cancelando..."
         />
       )}
 
