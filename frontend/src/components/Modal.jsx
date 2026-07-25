@@ -21,11 +21,11 @@ export default function Modal({ isOpen, onClose, titulo, footer, children, ancho
         
         {/* Header */}
         <div className={`
-          shrink-0 flex items-center justify-between px-6 py-5 border-b transition-colors
+          shrink-0 flex items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5 border-b transition-colors
           border-[var(--border-gold-25)]
           dark:border-[var(--border-gold-20)]
         `}>
-          <h2 className={`text-xl lg:text-2xl font-display font-bold uppercase tracking-widest text-[var(--noir)] dark:text-[var(--snow)] m-0 ${tituloClassName}`}> 
+          <h2 className={`min-w-0 flex-1 text-lg sm:text-xl lg:text-2xl font-display font-bold uppercase tracking-wide sm:tracking-widest text-[var(--noir)] dark:text-[var(--snow)] m-0 ${tituloClassName}`}> 
             {titulo}
           </h2>
           <button 
@@ -42,7 +42,7 @@ export default function Modal({ isOpen, onClose, titulo, footer, children, ancho
 
         {/* Contenido */}
         <div className={`
-          flex-1 overflow-y-auto overscroll-contain p-6
+          flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6
           [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-[2px]
           [&::-webkit-scrollbar-thumb]:bg-[var(--gold)]/20 hover:[&::-webkit-scrollbar-thumb]:bg-[var(--gold)]/50
           dark:[&::-webkit-scrollbar-thumb]:bg-[var(--gold-light)]/30 dark:hover:[&::-webkit-scrollbar-thumb]:bg-[var(--gold-light)]
@@ -53,7 +53,7 @@ export default function Modal({ isOpen, onClose, titulo, footer, children, ancho
         {/* Footer */}
         {footer && (
           <div className={`
-            shrink-0 px-6 py-4 flex flex-col sm:flex-row justify-end gap-3 border-t transition-colors
+            shrink-0 px-4 py-3 sm:px-6 sm:py-4 flex w-full border-t transition-colors
             border-[var(--border-gold-25)] bg-[var(--gold-08)]
             dark:border-[var(--border-gold-20)] dark:bg-transparent
           `}>

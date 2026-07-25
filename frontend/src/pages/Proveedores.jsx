@@ -188,13 +188,22 @@ export default function Proveedores() {
           <tr><td colSpan={6} className="text-center py-10 text-sm opacity-50 text-lila">No hay resultados</td></tr>
         ) : (
           usuarios.map((usuario) => (
-            <tr key={usuario.id} className="border-b hover:bg-lila/30 dark:hover:bg-oscuro/40 transition-colors">
+            <tr
+              key={usuario.id}
+              onClick={() => handleVerProveedor(usuario)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") handleVerProveedor(usuario);
+              }}
+              tabIndex={0}
+              role="button"
+              className="border-b hover:bg-lila/30 dark:hover:bg-oscuro/40 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
+            >
               <td className="p-4 text-center text-sm whitespace-nowrap font-medium">{usuario.nombre}</td>
               <td className="p-4 text-center text-sm whitespace-nowrap">{usuario.rfc}</td>
               <td className="p-4 text-center text-sm whitespace-nowrap">{usuario.giro}</td>
               <td className="p-4 text-center text-sm whitespace-nowrap">{usuario.telefono}</td>
               <td className="p-4 text-center whitespace-nowrap"><Etiquetas contenido={usuario.estado} /></td>
-              <td className="p-4 align-middle whitespace-nowrap">
+              <td className="p-4 align-middle whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                 <AccionesTabla
                   onVer={() => handleVerProveedor(usuario)}
                   onEditar={() => handleEditarProveedor(usuario)}

@@ -4,6 +4,15 @@ import Boton from "./Boton";
 import AvatarUser from "./AvatarUser";
 import { canPerformAction } from "../utils/permissionMapper";
 
+const formatFechaCreacion = (iso) => {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("es-MX", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
 export default function ModalUsuarios({ data, usuarioLogeado, onClose, onEditar, onEliminar, isOpen = true }) {
   if (!data) return null;
 
@@ -82,8 +91,8 @@ export default function ModalUsuarios({ data, usuarioLogeado, onClose, onEditar,
 
           <div className="rounded-[2px] p-4 border transition-colors shadow-sm bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none">
             <p className="font-tag text-[10px] lg:text-xs uppercase tracking-[0.2em] font-bold text-[var(--noir-soft)] dark:text-[var(--ash)] mb-2">Fecha de Creación</p>
-            <p className="font-body text-sm lg:text-base font-semibold truncate text-[var(--noir)] dark:text-[var(--snow)]">
-              {data.createdAt ? new Date(data.createdAt).toLocaleDateString("es-MX") : "—"}
+            <p className="font-body text-sm lg:text-base font-semibold text-[var(--noir)] dark:text-[var(--snow)]">
+              {formatFechaCreacion(data.createdAt)}
             </p>
           </div>
 

@@ -240,14 +240,23 @@ export default function Usuarios() {
   };
 
   const renderRow = (row, i) => (
-    <tr key={i} className="border-b border-[var(--border-gold-20)] hover:bg-[var(--gold-08)] transition-colors">
+    <tr
+      key={i}
+      onClick={() => handleVerDetalles(row)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") handleVerDetalles(row);
+      }}
+      tabIndex={0}
+      role="button"
+      className="border-b border-[var(--border-gold-20)] hover:bg-[var(--gold-08)] transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold)]"
+    >
       <td className="p-4 text-center"><AvatarUser nombre={row.nombre} apellido={row.apellido} rol={row.role || row.roleId} /></td>
       <td className="p-4 text-center text-sm font-medium text-[var(--noir)] dark:text-[var(--snow)]">{row.usuario || "-"}</td>
       <td className="p-4 text-center text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">{row.nombre} {row.apellido || ""}</td>
       <td className="p-4 text-center text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">{row.email || "-"}</td>
       <td className="p-4 text-center"><Etiquetas contenido={row.role || row.roleId || "Sin rol"} /></td>
       <td className="p-4 text-center"><Etiquetas contenido={row.activo !== false ? "Activo" : "Inactivo"} /></td>
-      <td className="p-4 align-middle">
+      <td className="p-4 align-middle" onClick={(e) => e.stopPropagation()}>
         <AccionesTabla 
           onVer={() => handleVerDetalles(row)}
           onEditar={puedeEditar ? () => handleAbrirFormEditar(row) : null}

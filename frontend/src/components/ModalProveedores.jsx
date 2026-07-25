@@ -2,6 +2,19 @@ import Modal from "./Modal";
 import Etiquetas from "./Etiquetas";
 import Boton from "./Boton";
 
+const clasesBotonFooter =
+  "px-3 py-1.5 text-[10px] sm:px-4 sm:py-2 sm:text-xs lg:px-6 lg:py-2 lg:text-sm shrink-0";
+
+function formatearFechaCreacion(valor) {
+  if (!valor) return "—";
+  const partes = String(valor).trim().split("-");
+  if (partes.length === 3) {
+    const [dd, mm, yyyy] = partes;
+    return `${dd}/${mm}/${yyyy}`;
+  }
+  return valor;
+}
+
 export default function ModalProveedores({ proveedor, onClose, onEditar, onEliminar, isOpen = true }) {
   if (!proveedor) return null;
 
@@ -26,23 +39,21 @@ export default function ModalProveedores({ proveedor, onClose, onEditar, onElimi
 
   // Footer
   const footerAcciones = (
-    <div className="flex justify-between items-center w-full">
-      <div className="flex gap-4">
-        {proveedor.creado && (
-          <div>
-            <p className="text-[10px] lg:text-[11px] font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)] mb-0.5">Creado</p>
-            <p className="text-xs lg:text-sm font-semibold text-[var(--noir-soft)] dark:text-[var(--ash)]">{proveedor.creado}</p>
-          </div>
-        )}
-      </div>
-      <div className="flex gap-3">
-        <Boton variante="secundario" onClick={() => onEliminar(proveedor.id)}>
-          <i className="bi bi-trash"></i> Eliminar
-        </Boton>
-        <Boton variante="claro" onClick={() => onEditar(proveedor)}>
-          <i className="bi bi-pencil-square"></i> Editar
-        </Boton>
-      </div>
+    <div className="flex flex-row items-center justify-between gap-2 sm:gap-3 w-full">
+      <Boton
+        variante="secundario"
+        onClick={() => onEliminar(proveedor.id)}
+        className={`${clasesBotonFooter} !bg-red-700/10 !text-red-700 !border-red-700/30 hover:!bg-red-700 hover:!text-[var(--snow)] dark:!bg-rojo/10 dark:!text-rojo dark:!border-rojo/30 dark:hover:!bg-rojo dark:hover:!border-rojo`}
+      >
+        <i className="bi bi-trash text-xs sm:text-sm" /> Eliminar
+      </Boton>
+      <Boton
+        variante="claro"
+        onClick={() => onEditar(proveedor)}
+        className={clasesBotonFooter}
+      >
+        <i className="bi bi-pencil-square text-xs sm:text-sm" /> Editar
+      </Boton>
     </div>
   );
 
@@ -55,6 +66,17 @@ export default function ModalProveedores({ proveedor, onClose, onEditar, onElimi
       footer={footerAcciones}
     >
       <div className="font-body pt-2 pb-2">
+        {proveedor.creado && (
+          <div className="mb-5 sm:mb-6 inline-flex flex-col rounded-[2px] border border-[var(--border-gold-40)] bg-transparent px-3 py-2 sm:px-4 sm:py-2.5 dark:border-[var(--border-gold-20)]">
+            <p className="text-[10px] sm:text-[11px] font-tag font-bold uppercase tracking-wider text-[var(--noir-soft)] dark:text-[var(--ash)]">
+              Fecha de creación
+            </p>
+            <p className="text-sm sm:text-base font-semibold text-[var(--noir)] dark:text-[var(--snow)]">
+              {formatearFechaCreacion(proveedor.creado)}
+            </p>
+          </div>
+        )}
+
         <div className="flex flex-col md:flex-row gap-6">
           
           {/* Columna Izquierda: Tarjeta de Perfil y Avatar */}

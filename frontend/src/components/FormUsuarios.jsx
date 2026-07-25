@@ -218,18 +218,32 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
   }
 
   const tituloPersonalizado = (
-    <span className="text-xl font-display font-bold uppercase tracking-widest transition-colors text-[var(--noir)] dark:text-[var(--snow)] m-0 block">
+    <span className="text-base sm:text-lg lg:text-xl font-display font-bold uppercase tracking-wide sm:tracking-widest transition-colors text-[var(--noir)] dark:text-[var(--snow)] m-0 block pr-2">
       {esNuevo ? "Agregar integrante" : "Editar integrante"}
     </span>
   );
 
+  const clasesBotonFooter =
+    "px-3 py-1.5 text-[10px] sm:px-4 sm:py-2 sm:text-xs lg:px-6 lg:py-2 lg:text-sm shrink-0";
+
   const footerAcciones = (
-    <div className="flex justify-end gap-3 w-full">
-      <Boton variante="secundario" onClick={handleIntentarCerrar} tipo="button">
-        <i className="bi bi-x-lg"></i> Cancelar
+    <div className="flex flex-row items-center justify-between gap-2 sm:gap-3 w-full">
+      <Boton
+        variante="secundario"
+        onClick={handleIntentarCerrar}
+        tipo="button"
+        className={clasesBotonFooter}
+      >
+        <i className="bi bi-x-lg text-xs sm:text-sm" /> Cancelar
       </Boton>
-      <Boton variante="claro" onClick={handleGuardarClick} tipo="button">
-        <i className="bi bi-save"></i> {esNuevo ? "Crear usuario" : "Guardar cambios"}
+      <Boton
+        variante="claro"
+        onClick={handleGuardarClick}
+        tipo="button"
+        className={clasesBotonFooter}
+      >
+        <i className="bi bi-save text-xs sm:text-sm" />
+        <span className="whitespace-nowrap">{esNuevo ? "Crear usuario" : "Guardar cambios"}</span>
       </Boton>
     </div>
   );
@@ -243,20 +257,20 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
         titulo={tituloPersonalizado}
         footer={footerAcciones}
       >
-        <div className="font-body pt-2 pb-4">
+        <div className="font-body pt-1 pb-2 sm:pt-2 sm:pb-4">
           
           {Object.keys(errores).length > 0 && (
-            <div className="mb-6 px-4 py-3 rounded-[2px] text-sm lg:text-base font-semibold border bg-rojo/10 text-red-700 dark:text-rojo border-rojo/20 flex items-center">
+            <div className="mb-4 sm:mb-6 px-3 py-2.5 sm:px-4 sm:py-3 rounded-[2px] text-xs sm:text-sm lg:text-base font-semibold border bg-rojo/10 text-red-700 dark:text-rojo border-rojo/20 flex items-center">
               <i className="bi bi-exclamation-triangle-fill mr-2"></i>
               Por favor, corrige los errores antes de continuar.
             </div>
           )}
 
-          <form className="flex flex-col gap-8">
+          <form className="flex flex-col gap-5 sm:gap-6 lg:gap-8">
             
             {/* Sección: Datos Personales */}
             <div className={`
-              p-5 rounded-[2px] border transition-colors shadow-sm
+              p-4 sm:p-5 rounded-[2px] border transition-colors shadow-sm
               bg-[var(--snow)] border-[var(--border-gold-40)]
               dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
             `}>
@@ -274,7 +288,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
 
             {/* Sección: Credenciales */}
             <div className={`
-              p-5 rounded-[2px] border transition-colors shadow-sm
+              p-4 sm:p-5 rounded-[2px] border transition-colors shadow-sm
               bg-[var(--snow)] border-[var(--border-gold-40)]
               dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
             `}>
@@ -320,7 +334,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
 
             {/* Sección: Permisos */}
             <div className={`
-              p-5 rounded-[2px] border transition-colors shadow-sm
+              p-4 sm:p-5 rounded-[2px] border transition-colors shadow-sm
               bg-[var(--snow)] border-[var(--border-gold-40)]
               dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-none
             `}>
@@ -369,8 +383,13 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
                     </div>
                   )}
 
-                  <div className="mt-4 flex justify-end border-t border-[var(--border-gold-25)] pt-4 dark:border-[var(--border-gold-20)]">
-                    <Boton variante="secundario" onClick={() => setMostrarAjustesPermisos(true)} tipo="button">
+                  <div className="mt-4 flex justify-stretch sm:justify-end border-t border-[var(--border-gold-25)] pt-4 dark:border-[var(--border-gold-20)]">
+                    <Boton
+                      variante="secundario"
+                      onClick={() => setMostrarAjustesPermisos(true)}
+                      tipo="button"
+                      className="w-full sm:w-auto px-3 py-1.5 text-[10px] sm:px-4 sm:py-2 sm:text-xs lg:text-sm"
+                    >
                       <i className="bi bi-shield-gear" /> Ajustar permisos
                     </Boton>
                   </div>
