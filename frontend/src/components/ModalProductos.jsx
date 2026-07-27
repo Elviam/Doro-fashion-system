@@ -75,11 +75,15 @@ export default function ModalProductos({ isOpen, onClose, data, onEdit, onDelete
   const footerAcciones = (
     <div className="flex w-full flex-nowrap items-center justify-between gap-3">
       {onDelete && (
-        <button type="button" onClick={() => { onClose?.(); onDelete(data.id); }} aria-label="Eliminar producto" title="Eliminar producto" className="font-tag shrink-0 rounded-[2px] border px-3 py-2 text-sm font-bold transition-colors cursor-pointer text-red-700 dark:text-rojo border-red-700/30 dark:border-rojo/30 bg-red-700/10 dark:bg-rojo/10 hover:bg-red-700 dark:hover:bg-rojo hover:text-[var(--snow)] sm:px-4">
-          <i className="bi bi-trash3 sm:mr-1"></i><span className="hidden sm:inline"> Eliminar</span>
-        </button>
+        <Boton
+          variante="secundario"
+          onClick={() => { onClose?.(); onDelete(data.id); }}
+          className="text-rojo border-rojo/30 bg-rojo/10 hover:bg-rojo hover:text-[var(--snow)] dark:text-rojo dark:border-rojo/30 dark:bg-rojo/10 dark:hover:bg-rojo"
+        >
+          <i className="bi bi-trash3"></i> Eliminar
+        </Boton>
       )}
-      <Boton variante="oscuro" onClick={() => { onClose?.(); onEdit?.(data); }} className="ml-auto min-w-[168px] shrink-0"><i className="bi bi-pencil-square"></i> Editar Producto</Boton>
+      <Boton variante="claro" onClick={() => { onClose?.(); onEdit?.(data); }} className="ml-auto"><i className="bi bi-pencil-square"></i> Editar</Boton>
     </div>
   );
 

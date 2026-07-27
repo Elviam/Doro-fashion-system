@@ -11,7 +11,7 @@ export default function Boton({
 
   const estilos = {
     // Guardar, Aceptar, Nuevo, Exportar
-    claro: "bg-[var(--snow)] text-[var(--gold-dark)] border border-[var(--border-gold-40)] hover:bg-[var(--gold)] hover:text-[var(--noir)] dark:bg-[var(--gold)] dark:text-[var(--noir)] dark:border-[var(--gold)] dark:hover:bg-[var(--gold-light)] dark:hover:text-[var(--noir)]",
+    claro: "bg-[var(--gold)] text-[var(--noir)] border border-[var(--gold)] hover:bg-[var(--gold-light)] hover:text-[var(--noir)] dark:bg-[var(--gold)] dark:text-[var(--noir)] dark:border-[var(--gold)] dark:hover:bg-[var(--gold-light)] dark:hover:text-[var(--noir)]",
     
     // Eliminar, Cancelar
     oscuro: "bg-[var(--noir)] text-[var(--snow)] border border-[var(--noir)] hover:bg-[var(--gold)] hover:text-[var(--noir)] dark:bg-[var(--noir-soft)] dark:text-[var(--gold-light)] dark:border-[var(--border-gold-25)] dark:hover:bg-[var(--gold)] dark:hover:text-[var(--noir)]",

@@ -12,7 +12,8 @@ const MODULOS_PERMISOS = {
   suppliers: "Proveedores",
   products: "Productos",
   inventory: "Inventario",
-  recepciones: "Pedidos y recepciones",
+  pedidos: "Pedidos",
+  recepciones: "Recepción de mercancía",
   fulfillment: "Preparación de pedidos",
   ventas: "Ventas",
   audit: "Auditoría",
@@ -21,9 +22,9 @@ const MODULOS_PERMISOS = {
   tienda: "Tienda"
 };
 
-const RECURSOS_PERMISOS = {
+export const RECURSOS_PERMISOS = {
   auth: "acceso", dashboard: "dashboard", users: "personal", clients: "clientes",
-  suppliers: "proveedores", products: "productos", inventory: "inventario",
+  suppliers: "proveedores", products: "productos", inventory: "inventario", pedidos: "pedidos",
   recepciones: "pedidos y recepciones", ventas: "ventas", audit: "auditoría",
   fulfillment: "preparación de pedidos",
   permissions: "permisos", roles: "roles", tienda: "tienda"
@@ -35,7 +36,7 @@ const ACCIONES_PERMISOS = {
   seed: "Configurar", me: "Ver"
 };
 
-function getPermissionLabel(code) {
+export function getPermissionLabel(code) {
   const [resource, action] = code.split(":");
   return `${ACCIONES_PERMISOS[action] || action} ${RECURSOS_PERMISOS[resource] || resource}`;
 }
@@ -223,26 +224,22 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
     </span>
   );
 
-  const clasesBotonFooter =
-    "px-3 py-1.5 text-[10px] sm:px-4 sm:py-2 sm:text-xs lg:px-6 lg:py-2 lg:text-sm shrink-0";
-
   const footerAcciones = (
     <div className="flex flex-row items-center justify-between gap-2 sm:gap-3 w-full">
       <Boton
         variante="secundario"
         onClick={handleIntentarCerrar}
         tipo="button"
-        className={clasesBotonFooter}
+        className="border-[var(--border-gold-40)] bg-transparent text-[var(--gold-dark)] hover:bg-[var(--border-gold-25)] dark:border-[var(--border-gold-20)] dark:bg-transparent dark:text-[var(--ash)] dark:hover:bg-[var(--gold-15)] dark:hover:text-[var(--ash)]"
       >
-        <i className="bi bi-x-lg text-xs sm:text-sm" /> Cancelar
+        <i className="bi bi-x-lg" /> Cancelar
       </Boton>
       <Boton
         variante="claro"
         onClick={handleGuardarClick}
         tipo="button"
-        className={clasesBotonFooter}
       >
-        <i className="bi bi-save text-xs sm:text-sm" />
+        <i className="bi bi-save" />
         <span className="whitespace-nowrap">{esNuevo ? "Crear usuario" : "Guardar cambios"}</span>
       </Boton>
     </div>
@@ -383,12 +380,12 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
                     </div>
                   )}
 
-                  <div className="mt-4 flex justify-stretch sm:justify-end border-t border-[var(--border-gold-25)] pt-4 dark:border-[var(--border-gold-20)]">
+                  <div className="mt-4 flex justify-center border-t border-[var(--border-gold-25)] pt-4 dark:border-[var(--border-gold-20)]">
                     <Boton
-                      variante="secundario"
+                      variante="claro"
                       onClick={() => setMostrarAjustesPermisos(true)}
                       tipo="button"
-                      className="w-full sm:w-auto px-3 py-1.5 text-[10px] sm:px-4 sm:py-2 sm:text-xs lg:text-sm"
+                      className="w-full sm:w-auto"
                     >
                       <i className="bi bi-shield-gear" /> Ajustar permisos
                     </Boton>

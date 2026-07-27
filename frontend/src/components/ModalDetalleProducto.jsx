@@ -18,7 +18,7 @@ export default function ModalDetalleProducto({ isOpen, onClose, producto, onEdit
 
   const footerAcciones = onEditar ? (
     <div className="w-full flex flex-wrap items-center justify-end gap-3">
-      <Boton variante="oscuro" onClick={() => { onClose(); onEditar(producto); }} className="min-w-[168px]">
+      <Boton variante="claro" onClick={() => { onClose(); onEditar(producto); }} className="shrink-0">
         <i className="bi bi-pencil-square"></i> Ajustar inventario
       </Boton>
     </div>

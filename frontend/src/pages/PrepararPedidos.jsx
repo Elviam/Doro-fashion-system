@@ -110,9 +110,8 @@ export default function PrepararPedidos() {
       </section>
 
       <Modal isOpen={Boolean(seleccionado)} onClose={() => !guardando && setSeleccionado(null)} titulo={seleccionado ? `Pedido ${seleccionado.numeroPedido}` : "Pedido"} ancho="max-w-3xl" footer={seleccionado && (
-        <div className="flex w-full flex-wrap items-center justify-end gap-3 sm:justify-between">
-          <Boton variante="secundario" onClick={() => setSeleccionado(null)} className="hidden sm:inline-flex">Cerrar</Boton>
-          {puedeActualizar && !esEnviado && <Boton variante="oscuro" onClick={confirmarPreparacionYEnvio} className={!todoVerificado || guardando ? "pointer-events-none opacity-50" : ""}><i className="bi bi-truck" /> {guardando ? "Confirmando..." : "Confirmar preparacion y envio"}</Boton>}
+        <div className="flex w-full flex-wrap items-center justify-end gap-3">
+          {puedeActualizar && !esEnviado && <Boton variante="claro" onClick={confirmarPreparacionYEnvio} className={`shrink-0 ${!todoVerificado || guardando ? "pointer-events-none opacity-50" : ""}`}><i className="bi bi-truck" /> {guardando ? "Confirmando..." : "Confirmar preparacion y envio"}</Boton>}
         </div>
       )}>
         {seleccionado && <div className="space-y-5">

@@ -223,18 +223,19 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
   const hayCambios = !data || tomarSnapshot(formData) !== estadoOriginal;
 
   const footerAcciones = (
-  <div className="flex flex-col sm:flex-row sm:justify-between gap-3 w-full">
-    <Boton variante="oscuro" onClick={handleGuardarYRegistrarClick} tipo="button" className="w-full sm:w-auto" disabled={guardando}>
-      {guardando ? <><i className="bi bi-arrow-repeat animate-spin"></i> Guardando...</> : <><i className="bi bi-box-seam"></i> Agregar Inventario</>}
+  <div className="flex w-full items-center justify-between gap-3">
+    <Boton
+      variante="secundario"
+      onClick={handleIntentarCerrar}
+      tipo="button"
+      className="border-[var(--border-gold-40)] bg-transparent text-[var(--gold-dark)] hover:bg-[var(--border-gold-25)] dark:border-[var(--border-gold-20)] dark:bg-transparent dark:text-[var(--ash)] dark:hover:bg-[var(--gold-15)] dark:hover:text-[var(--ash)]"
+      disabled={guardando}
+    >
+      <i className="bi bi-x-lg"></i> Cancelar
     </Boton>
-    <div className="flex flex-row justify-end gap-3 w-full sm:w-auto">
-      <Boton variante="secundario" onClick={handleIntentarCerrar} tipo="button" disabled={guardando}>
-        <i className="bi bi-x-lg"></i> Cancelar
-      </Boton>
-      <Boton variante="claro" onClick={handleGuardarClick} tipo="button" disabled={!hayCambios || guardando}>
-        {guardando ? <><i className="bi bi-arrow-repeat animate-spin"></i> Guardando...</> : <><i className="bi bi-save"></i> Guardar</>}
-      </Boton>
-    </div>
+    <Boton variante="claro" onClick={handleGuardarClick} tipo="button" disabled={!hayCambios || guardando}>
+      {guardando ? <><i className="bi bi-arrow-repeat animate-spin"></i> Guardando...</> : <><i className="bi bi-save"></i> Guardar</>}
+    </Boton>
   </div>
 );
 
@@ -510,6 +511,12 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
               </p>
             </div>
           )}
+
+            <div className="mt-5 flex justify-center">
+              <Boton variante="claro" onClick={handleGuardarYRegistrarClick} tipo="button" disabled={guardando}>
+                {guardando ? <><i className="bi bi-arrow-repeat animate-spin"></i> Guardando...</> : <><i className="bi bi-box-seam"></i> Agregar Inventario</>}
+              </Boton>
+            </div>
 
           </div>
 

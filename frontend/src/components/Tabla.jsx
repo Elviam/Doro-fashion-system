@@ -167,11 +167,12 @@ export default function Tabla({
 
   return (
     <div
-      className="overflow-x-auto rounded-[2px] border transition-colors duration-300
+      className="w-full min-w-0 overflow-x-auto rounded-[2px] border transition-colors duration-300
         bg-[var(--snow)] border-[var(--border-gold-40)] shadow-md
         dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.25)]"
+      style={{ WebkitOverflowScrolling: "touch" }}
     >
-      <table className="w-full">
+      <table className="w-full min-w-max table-auto">
         <thead>
           <tr
             className="border-b transition-colors duration-300

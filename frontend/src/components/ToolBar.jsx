@@ -105,11 +105,11 @@ export default function ToolBar({
         <div className="w-full sm:flex-1 sm:min-w-0 max-w-md">{buscador}</div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-2.5 w-full lg:w-auto shrink-0">
+      <div className="flex flex-col items-end sm:flex-row gap-2.5 w-full lg:w-auto shrink-0">
         {textoBoton2 && accionBoton2 && (
           <button 
             onClick={accionBoton2}
-            className="bg-transparent text-[var(--noir-soft)] border border-[var(--border-gold-40)] rounded-[2px] px-5 py-2 font-bold font-body text-sm lg:text-sm cursor-pointer hover:border-[var(--gold)] hover:bg-[var(--gold-08)] transition-all active:scale-95 w-full sm:w-auto whitespace-nowrap dark:text-[var(--snow)] dark:border-[var(--border-gold-20)] dark:hover:border-[var(--gold)] dark:hover:bg-[var(--gold-08)]"
+            className="bg-transparent text-[var(--noir-soft)] border border-[var(--border-gold-40)] rounded-[2px] px-5 py-2 font-bold font-body text-sm lg:text-sm cursor-pointer hover:border-[var(--gold)] hover:bg-[var(--gold-08)] transition-all active:scale-95 w-fit sm:w-auto whitespace-nowrap dark:text-[var(--snow)] dark:border-[var(--border-gold-20)] dark:hover:border-[var(--gold)] dark:hover:bg-[var(--gold-08)]"
           >
             {textoBoton2}
           </button>
@@ -118,7 +118,7 @@ export default function ToolBar({
         {textoBoton && accionBoton && (
           <button 
             onClick={accionBoton}
-            className="bg-[var(--gold)] text-[var(--noir)] border-none rounded-[2px] px-5 py-2 font-bold font-body text-sm lg:text-sm cursor-pointer hover:bg-[var(--gold-dark)] hover:text-[var(--snow)] hover:scale-[1.02] transition-all active:scale-95 w-full sm:w-auto whitespace-nowrap shadow-sm"
+            className="self-end bg-[var(--gold)] text-[var(--noir)] border-none rounded-[2px] px-5 py-2 font-bold font-body text-sm lg:text-sm cursor-pointer hover:bg-[var(--gold-dark)] hover:text-[var(--snow)] hover:scale-[1.02] transition-all active:scale-95 w-fit sm:w-auto whitespace-nowrap shadow-sm"
           >
             {textoBoton}
           </button>

@@ -63,8 +63,13 @@ export default function FormProveedores({ proveedor, esNuevo, onClose, onGuardar
   const tituloPersonalizado = esNuevo ? "Nuevo Proveedor" : "Editar Proveedor";
 
   const footerAcciones = (
-    <div className="flex justify-end gap-3 w-full">
-      <Boton variante="secundario" onClick={handleIntentarCerrar} tipo="button">
+    <div className="flex justify-between items-center gap-3 w-full">
+      <Boton
+        variante="secundario"
+        onClick={handleIntentarCerrar}
+        tipo="button"
+        className="border-[var(--border-gold-40)] bg-transparent text-[var(--gold-dark)] hover:bg-[var(--border-gold-25)] dark:border-[var(--border-gold-20)] dark:bg-transparent dark:text-[var(--ash)] dark:hover:bg-[var(--gold-15)] dark:hover:text-[var(--ash)]"
+      >
         <i className="bi bi-x-lg"></i> Cancelar
       </Boton>
       <Boton variante="claro" onClick={handleGuardarClick} tipo="button">

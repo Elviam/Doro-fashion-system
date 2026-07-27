@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Encabezado from "../components/Encabezado";
 import Etiquetas from "../components/Etiquetas";
 import ModalRecepciones from "../components/ModalRecepciones";
@@ -46,6 +47,7 @@ function estadoVisualPedido(pedido) {
 }
 
 export default function MisPedidos() {
+  const navigate = useNavigate();
   useTitulo("Mis pedidos");
   const { usuario } = useAuth();
   const puedeEnviar = canPerformAction(usuario?.permissions, "recepciones", "enviar");
@@ -56,11 +58,12 @@ export default function MisPedidos() {
   const [cargando, setCargando] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [enviandoId, setEnviandoId] = useState(null);
+  const [pedidoEnviadoExitosamente, setPedidoEnviadoExitosamente] = useState(false);
   const [accionPendiente, setAccionPendiente] = useState(null);
   const [procesandoAccion, setProcesandoAccion] = useState(false);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
   const [busqueda, setBusqueda] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("BORRADOR");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
   const [paginaActual, setPaginaActual] = useState(1);
@@ -78,6 +81,7 @@ export default function MisPedidos() {
     try {
       await enviarPedido(id);
       setRefreshKey((k) => k + 1);
+      setPedidoEnviadoExitosamente(true);
     } catch (err) {
       console.error("Error al marcar como enviado:", err);
     } finally {
@@ -135,17 +139,22 @@ export default function MisPedidos() {
           <div className="flex flex-col gap-3">
             <div className="relative flex-1"><i className="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--gold-dark)] dark:text-[var(--gold-light)]" /><input type="search" value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPaginaActual(1); }} placeholder="Buscar por nombre, fecha o proveedor..." className="h-11 w-full rounded-[2px] border py-2 pl-9 pr-3 text-sm outline-none bg-[var(--snow)] border-[var(--border-gold-40)] text-[var(--noir)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:text-[var(--snow)]" /></div>
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <label className="flex items-center gap-2 text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
-                Estado
-                <select value={filtroEstado} onChange={(e) => { setFiltroEstado(e.target.value); setPaginaActual(1); }} className="h-11 rounded-[2px] border px-3 text-sm normal-case font-body outline-none bg-[var(--snow)] border-[var(--border-gold-40)] text-[var(--noir)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:text-[var(--snow)]">
-                  <option value="">Todos</option>
-                  <option value="BORRADOR">En borrador</option>
-                  <option value="ENVIADA">Enviado</option>
-                  <option value="CONFIRMADA">Recibido</option>
-                </select>
-              </label>
               <FechaMexicoInput etiqueta="Desde" value={fechaDesde} onChange={(valor) => { setFechaDesde(valor); setPaginaActual(1); }} min={FECHA_MINIMA} max={fechaHasta || FECHA_MAXIMA} />
               <FechaMexicoInput etiqueta="Hasta" value={fechaHasta} onChange={(valor) => { setFechaHasta(valor); setPaginaActual(1); }} min={fechaDesde || FECHA_MINIMA} max={FECHA_MAXIMA} />
+            </div>
+            <div className="flex flex-wrap gap-4 border-b border-[var(--border-gold-25)] pt-1 dark:border-[var(--border-gold-20)]" role="tablist" aria-label="Estado de pedidos">
+              {[['BORRADOR', 'En borrador'], ['ENVIADA', 'Enviados'], ['CONFIRMADA', 'Recibidos'], ['CANCELADA', 'Cancelados']].map(([estado, etiqueta]) => (
+                <button
+                  key={estado}
+                  type="button"
+                  role="tab"
+                  aria-selected={filtroEstado === estado}
+                  onClick={() => { setFiltroEstado(estado); setPaginaActual(1); }}
+                  className={`border-b-2 pb-2 text-sm font-semibold transition ${filtroEstado === estado ? "border-[var(--gold-dark)] text-[var(--gold-dark)] dark:border-[var(--gold-light)] dark:text-[var(--gold-light)]" : "border-transparent text-[var(--noir-soft)] dark:text-[var(--ash)]"}`}
+                >
+                  {etiqueta}
+                </button>
+              ))}
             </div>
           </div>
           <div className="flex flex-col gap-3">
@@ -173,19 +182,6 @@ export default function MisPedidos() {
                 )}
                 <div className="flex flex-col items-stretch gap-2">
                   <Etiquetas contenido={estadoVisualPedido(pedido)} />
-                  {puedeEnviar && pedido.status === "BORRADOR" && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleMarcarEnviado(pedido.id);
-                      }}
-                      disabled={enviandoId === pedido.id}
-                      className="flex h-9 w-28 items-center justify-center gap-1.5 rounded-[2px] bg-[var(--gold)] px-2 text-center text-xs font-bold text-[var(--noir)] transition-all hover:bg-[var(--gold-dark)] hover:text-[var(--snow)] disabled:opacity-50 lg:w-32"
-                    >
-                      {enviandoId === pedido.id ? <i className="bi bi-arrow-repeat inline-block animate-spin" /> : <i className="bi bi-send" />}
-                      Marcar enviado
-                    </button>
-                  )}
                 </div>
               </div>
             </div>
@@ -214,6 +210,13 @@ export default function MisPedidos() {
         onClose={() => setPedidoSeleccionado(null)}
         soloLectura
         vistaMisPedidos
+        puedeEnviar={puedeEnviar}
+        enviando={enviandoId === pedidoSeleccionado?.id}
+        onEnviar={(pedido) => handleMarcarEnviado(pedido.id)}
+        onEditarPedido={(pedido) => {
+          setPedidoSeleccionado(null);
+          navigate("/reabastecimiento/generar-pedido", { state: { pedidoParaEditar: pedido } });
+        }}
         puedeEliminar={puedeEliminar}
         puedeCancelar={puedeCancelar}
         onEliminar={(pedido) => { setPedidoSeleccionado(null); setAccionPendiente({ tipo: "eliminar", pedido }); }}
@@ -235,6 +238,13 @@ export default function MisPedidos() {
           textoCargando={accionPendiente.tipo === "eliminar" ? "Eliminando..." : "Cancelando..."}
         />
       )}
+
+      <ModalConfirmacion
+        isOpen={pedidoEnviadoExitosamente}
+        tipo="exito"
+        titulo="Pedido enviado exitosamente"
+        onCancelar={() => setPedidoEnviadoExitosamente(false)}
+      />
     </div>
   );
 }

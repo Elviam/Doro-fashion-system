@@ -129,9 +129,16 @@ export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guar
   };
 
   const footerModal = (
-    <div className="w-full flex flex-row flex-wrap justify-end items-center gap-3">
-      <Boton variante="claro" onClick={onClose} tipo="button">Cancelar</Boton>
-      <Boton variante="oscuro" onClick={handleSubmit} tipo="button">
+    <div className="w-full flex flex-row flex-nowrap justify-between items-center gap-3">
+      <Boton
+        variante="fantasma"
+        onClick={onClose}
+        tipo="button"
+        className="border border-[var(--border-gold-40)] bg-transparent hover:bg-[var(--gold-08)] shrink-0"
+      >
+        <i className="bi bi-x-lg"></i> Cancelar
+      </Boton>
+      <Boton variante="claro" onClick={handleSubmit} tipo="button" className="shrink-0">
         {(guardando || subiendo)
           ? <><i className="bi bi-arrow-repeat animate-spin" /> Guardando…</>
           : <><i className="bi bi-check2" /> Aplicar Ajuste</>

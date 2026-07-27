@@ -3,7 +3,7 @@ import Etiquetas from "./Etiquetas";
 import Boton from "./Boton";
 import Modal from "./Modal";
 import AccionesTabla from "./AccionesTabla";
-import { exportarExcel, exportarPDF } from "../services/exportService";
+import MenuExportar from "./MenuExportar";
 import { uploadFileToCloudinary } from "../services/cloudinaryClient";
 import ModalFactura from "./ModalFactura";
 
@@ -26,7 +26,7 @@ function formatDate(iso) {
   return iso;
 }
 
-export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar, onEditar, onEliminar, onAdjuntarFactura, isOpen, soloLectura = false, modoChecklist = false, vistaMisPedidos = false, puedeEditar = false, puedeEliminar = false, puedeConfirmar = false, puedeCancelar = false }) {
+export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar, onEnviar, onEditar, onEditarPedido, onEliminar, onAdjuntarFactura, isOpen, soloLectura = false, modoChecklist = false, vistaMisPedidos = false, puedeEditar = false, puedeEliminar = false, puedeConfirmar = false, puedeCancelar = false, puedeEnviar = false, enviando = false }) {
   const [busquedaItems, setBusquedaItems] = useState("");
   const [itemsChecklist, setItemsChecklist] = useState([]);
   const [itemsMarcados, setItemsMarcados] = useState({});
@@ -359,12 +359,12 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
   const footerContenido = (
     <div className="flex w-full flex-row flex-nowrap items-center gap-3">
       {soloLectura && (
-        <div className="flex w-full flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+        <div className="flex w-full flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
             {esBorrador && puedeEliminar && (
-              <button type="button" onClick={() => onEliminar?.(row)} className="rounded-[2px] border border-rojo-dark/60 px-4 py-2 text-xs font-bold text-rojo-dark transition-colors hover:bg-rojo-dark hover:text-[var(--snow)] dark:border-rojo/60 dark:text-rojo dark:hover:bg-rojo">
-                <i className="bi bi-trash mr-2" />Eliminar pedido
-              </button>
+              <Boton variante="secundario" onClick={() => onEliminar?.(row)} className="border-red-700/30 bg-red-700/10 text-red-700 hover:bg-red-700 hover:text-[var(--snow)] dark:border-rojo/30 dark:bg-rojo/10 dark:text-rojo dark:hover:bg-rojo">
+                <i className="bi bi-trash3" /> Eliminar
+              </Boton>
             )}
             {esEnviada && puedeCancelar && (
               <button type="button" onClick={() => onCancelar?.(row)} className="rounded-[2px] border border-rojo-dark/60 px-4 py-2 text-xs font-bold text-rojo-dark transition-colors hover:bg-rojo-dark hover:text-[var(--snow)] dark:border-rojo/60 dark:text-rojo dark:hover:bg-rojo">
@@ -372,13 +372,12 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
               </button>
             )}
           </div>
-          <div className="flex flex-wrap justify-end gap-3">
-            <button type="button" onClick={() => exportarPDF(tituloExportacion, columnasExportacion, filasExportacion, esConfirmada ? { total: `Total ${formatMoney(totalCostoRecibido)}` } : undefined)} className="rounded-[2px] border border-red-700/40 bg-red-700/10 px-4 py-2 text-xs font-bold text-red-700 transition-colors hover:bg-red-700 hover:text-[var(--snow)] dark:border-rojo/40 dark:text-rojo dark:hover:bg-rojo">
-              <i className="bi bi-file-earmark-pdf mr-2" />Descargar PDF
-            </button>
-            <button type="button" onClick={() => exportarExcel(tituloExportacion, columnasExportacion, filasExportacion, esConfirmada ? { total: `Total ${formatMoney(totalCostoRecibido)}` } : undefined)} className="rounded-[2px] border border-green-700/40 bg-green-700/10 px-4 py-2 text-xs font-bold text-green-700 transition-colors hover:bg-green-700 hover:text-[var(--snow)] dark:border-verde/40 dark:text-verde dark:hover:bg-verde">
-              <i className="bi bi-file-earmark-excel mr-2" />Descargar Excel
-            </button>
+          <div className="flex justify-end gap-3">
+            {esBorrador && puedeEnviar && (
+              <Boton variante="claro" onClick={() => onEnviar?.(row)} disabled={enviando} className="shrink-0">
+                {enviando ? <><span>Enviando</span><i className="bi bi-arrow-repeat animate-spin" /></> : <><i className="bi bi-send" /> Marcar enviado</>}
+              </Boton>
+            )}
           </div>
         </div>
       )}
@@ -393,21 +392,11 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
       )}
 
       {!soloLectura && esEnviada && puedeConfirmar && (
-        <Boton variante="oscuro" onClick={() => modoChecklist ? confirmarChecklist() : onConfirmar(row)} disabled={confirmando || subiendoFactura || (modoChecklist && !checklistCompleto)} className="order-2 ml-auto shrink-0 px-3 justify-center border-[var(--gold)] bg-[var(--gold)] text-[var(--gold-dark)] shadow-md transition-shadow hover:bg-[var(--gold-dark)] hover:text-[var(--snow)] hover:shadow-lg dark:border-[var(--gold)] dark:bg-[var(--gold)] dark:text-[var(--gold-dark)]">
+        <Boton variante="claro" onClick={() => modoChecklist ? confirmarChecklist() : onConfirmar(row)} disabled={confirmando || subiendoFactura || (modoChecklist && !checklistCompleto)} className="order-2 ml-auto shrink-0 px-3 justify-center">
           <i className={`bi ${confirmando || subiendoFactura ? "bi-arrow-repeat animate-spin" : "bi-check-circle"}`} /> {subiendoFactura ? "Subiendo factura..." : confirmando ? "Confirmando..." : "Confirmar"}
         </Boton>
       )}
 
-      {!soloLectura && (esBorrador || esEnviada) && puedeCancelar && (
-        <button
-          onClick={() => onCancelar(row)}
-          className="order-1 shrink-0 cursor-pointer whitespace-nowrap rounded-[2px] border border-red-700/30 bg-red-700/10 px-3 py-2 font-tag text-sm font-bold text-red-700 transition-colors hover:bg-red-700 hover:text-[var(--snow)] dark:border-rojo/30 dark:bg-rojo/10 dark:text-rojo dark:hover:bg-rojo"
-        >
-          <i className="bi bi-slash-circle mr-1" />
-          <span className="min-[480px]:hidden">Cancelar</span>
-          <span className="hidden min-[480px]:inline">Cancelar recepción</span>
-        </button>
-      )}
     </div>
   );
 
@@ -541,6 +530,16 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
                   )))}
                 </tbody>
               </table>
+            </div>
+          )}
+          {soloLectura && (
+            <div className="mb-4 flex justify-start">
+              <MenuExportar
+                titulo={tituloExportacion}
+                columnas={columnasExportacion}
+                filas={filasExportacion}
+                resumen={esConfirmada ? { total: `Total ${formatMoney(totalCostoRecibido)}` } : undefined}
+              />
             </div>
           )}
           {!soloLectura && (
@@ -819,6 +818,13 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
             ))}
           </div>
         </div>
+        {soloLectura && esBorrador && onEditarPedido && (
+          <div className="mt-6 flex justify-center">
+            <Boton variante="claro" onClick={() => onEditarPedido(row)}>
+              <i className="bi bi-pencil-square" /> Editar
+            </Boton>
+          </div>
+        )}
 
       </div>
       <ModalFactura url={mostrarFactura ? row.facturaUrl : ""} onClose={() => setMostrarFactura(false)} />

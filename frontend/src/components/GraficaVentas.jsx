@@ -29,8 +29,8 @@ export default function GraficaVentas({ data }) {
   };
 
   return (
-    <div className="w-full overflow-x-auto bg-[var(--ivory-deep)] dark:bg-[var(--noir-soft)]" onMouseLeave={() => setActiveIndex(null)}>
-      <div className="relative h-[50vh] min-h-[320px] w-full">
+    <div className="w-full overflow-x-auto bg-[var(--ivory-deep)] dark:bg-[var(--noir-soft)] sm:overflow-visible" onMouseLeave={() => setActiveIndex(null)}>
+      <div className="relative h-[50vh] min-h-[320px] w-full min-w-[560px] sm:min-w-0">
       <svg className="w-full h-full" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" onMouseMove={seleccionarPunto} onTouchMove={seleccionarPunto} onTouchStart={seleccionarPunto}>
         <defs>
           {/* Gradiente Modo Claro */}
@@ -78,12 +78,12 @@ export default function GraficaVentas({ data }) {
 
         {activePoint && (
           <g pointerEvents="none">
-            <line x1={activePoint[0]} y1={pad.t} x2={activePoint[0]} y2={pad.t + iH} stroke="var(--gold-light)" strokeWidth="1" strokeDasharray="3 3" opacity="0.85" />
-            <line x1={pad.l} y1={activePoint[1]} x2={W - pad.r} y2={activePoint[1]} stroke="var(--gold-light)" strokeWidth="1" strokeDasharray="3 3" opacity="0.85" />
-            <circle cx={activePoint[0]} cy={activePoint[1]} r="7" fill="var(--gold-light)" opacity="0.25" />
-            <circle cx={activePoint[0]} cy={activePoint[1]} r="4" fill="var(--gold-light)" stroke="var(--noir)" strokeWidth="1.5" />
-            <text x={activePoint[0]} y={H - 6} textAnchor="middle" fontSize="10" fill="var(--gold-light)" fontWeight="600">{activeData.label}</text>
-            <text x={pad.l - 8} y={activePoint[1] + 4} textAnchor="end" fontSize="10" fill="var(--gold-light)" fontWeight="600">{activeData.monto >= 1000 ? `${(activeData.monto / 1000).toFixed(0)}k` : activeData.monto}</text>
+            <line x1={activePoint[0]} y1={pad.t} x2={activePoint[0]} y2={pad.t + iH} className="stroke-[var(--gold-dark)] dark:stroke-[var(--gold-light)]" strokeWidth="1" strokeDasharray="3 3" opacity="0.85" />
+            <line x1={pad.l} y1={activePoint[1]} x2={W - pad.r} y2={activePoint[1]} className="stroke-[var(--gold-dark)] dark:stroke-[var(--gold-light)]" strokeWidth="1" strokeDasharray="3 3" opacity="0.85" />
+            <circle cx={activePoint[0]} cy={activePoint[1]} r="7" className="fill-[var(--gold-dark)] dark:fill-[var(--gold-light)]" opacity="0.25" />
+            <circle cx={activePoint[0]} cy={activePoint[1]} r="4" className="fill-[var(--gold-dark)] dark:fill-[var(--gold-light)]" stroke="var(--noir)" strokeWidth="1.5" />
+            <text x={activePoint[0]} y={H - 6} textAnchor="middle" fontSize="10" className="fill-[var(--noir)] dark:fill-[var(--snow)]" fontWeight="600">{activeData.label}</text>
+            <text x={pad.l - 8} y={activePoint[1] + 4} textAnchor="end" fontSize="10" className="fill-[var(--noir)] dark:fill-[var(--snow)]" fontWeight="600">{activeData.monto >= 1000 ? `${(activeData.monto / 1000).toFixed(0)}k` : activeData.monto}</text>
           </g>
         )}
 
@@ -104,8 +104,8 @@ export default function GraficaVentas({ data }) {
         </g>
       </svg>
       {activePoint && (
-        <div className={`pointer-events-none absolute z-10 min-w-32 -translate-x-1/2 rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--noir)] px-3 py-2 text-xs text-[var(--snow)] shadow-xl ${tooltipAbove ? "-translate-y-full" : "translate-y-2"}`} style={{ left: `${(activePoint[0] / W) * 100}%`, top: `${(activePoint[1] / H) * 100}%` }}>
-          <p className="font-semibold text-[var(--gold-light)]">{activeData.label}</p>
+        <div className={`pointer-events-none absolute z-10 min-w-32 -translate-x-1/2 rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] px-3 py-2 text-xs text-[var(--noir)] shadow-xl dark:border-[var(--border-gold-20)] dark:bg-[var(--noir)] dark:text-[var(--snow)] ${tooltipAbove ? "-translate-y-full" : "translate-y-2"}`} style={{ left: `${(activePoint[0] / W) * 100}%`, top: `${(activePoint[1] / H) * 100}%` }}>
+          <p className="font-semibold text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{activeData.label}</p>
           <p>Ventas: {activeData.ventas ?? 0}</p>
           <p>Importe: ${Number(activeData.monto || 0).toLocaleString("es-MX", { maximumFractionDigits: 0 })}</p>
         </div>

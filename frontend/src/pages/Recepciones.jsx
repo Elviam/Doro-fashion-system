@@ -9,6 +9,7 @@ import { useAuth } from "../hooks/useAuth";
 import { canPerformAction } from "../utils/permissionMapper";
 
 const LIMIT = 100;
+const DIAS_VISIBLES_HISTORIAL = 10;
 
 const ESTADO_LABELS = { ENVIADA: "Por confirmar", CONFIRMADA: "Recibido", CANCELADA: "Cancelada" };
 
@@ -17,6 +18,17 @@ function formatDate(iso) {
   const fecha = new Date(iso);
   if (Number.isNaN(fecha.getTime())) return "—";
   return fecha.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function esDeLosUltimosDiezDias(recepcion) {
+  const fechaEstado = recepcion.status === "CONFIRMADA"
+    ? recepcion.confirmedAt || recepcion.updatedAt
+    : recepcion.canceledAt || recepcion.updatedAt;
+  const fecha = new Date(fechaEstado);
+  if (Number.isNaN(fecha.getTime())) return false;
+  const limite = new Date();
+  limite.setDate(limite.getDate() - DIAS_VISIBLES_HISTORIAL);
+  return fecha >= limite;
 }
 
 export default function Recepciones() {
@@ -48,7 +60,9 @@ export default function Recepciones() {
 
       api.get(`/recepciones?${params}`)
       .then((res) => {
-        const items = (res.items || []).filter((item) => item.status !== "BORRADOR");
+        const items = (res.items || [])
+          .filter((item) => item.status !== "BORRADOR")
+          .filter((item) => !["CONFIRMADA", "CANCELADA"].includes(filtro) || esDeLosUltimosDiezDias(item));
         setRows(items);
         setTotalRegistros(items.length);
       })
@@ -120,7 +134,7 @@ export default function Recepciones() {
               <h2 className="mt-3 font-display text-xl font-semibold text-[var(--noir)] dark:text-[var(--snow)]">
                 {filtro === "CONFIRMADA" ? "Recepciones recibidas" : filtro === "CANCELADA" ? "Recepciones canceladas" : "Recepciones por confirmar"}
               </h2>
-              <p className="mt-1 text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">{filtro === "CONFIRMADA" ? "Historial de mercancía de proveedores que ya fue recibida y confirmada." : filtro === "CANCELADA" ? "Historial de recepciones de mercancía que fueron canceladas." : "Confirma la mercancía recibida de tus proveedores."}</p>
+              <p className="mt-1 text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">{filtro === "CONFIRMADA" ? "Historial de mercancía que ya fue recibida y confirmada en los últimos 10 días." : filtro === "CANCELADA" ? "Historial de recepciones de mercancía que fueron canceladas en los últimos 10 días." : "Confirma la mercancía recibida de tus proveedores."}</p>
               <div className="relative mt-4 max-w-md">
                 <i className="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--gold-dark)] dark:text-[var(--gold-light)]" />
                 <input type="search" value={busquedaActiva} onChange={(event) => { const valor = event.target.value; setBusquedas((actuales) => ({ ...actuales, [filtro]: valor })); setPaginaActiva(1); }} placeholder="Buscar por folio, proveedor, factura o SKU..." className="h-10 w-full rounded-[2px] border py-2 pl-9 pr-3 text-sm outline-none bg-[var(--snow)] border-[var(--border-gold-40)] text-[var(--noir)] focus:ring-1 focus:ring-[var(--gold)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:text-[var(--snow)]" />

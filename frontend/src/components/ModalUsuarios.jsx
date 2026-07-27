@@ -3,6 +3,7 @@ import Etiquetas from "./Etiquetas";
 import Boton from "./Boton";
 import AvatarUser from "./AvatarUser";
 import { canPerformAction } from "../utils/permissionMapper";
+import { getPermissionLabel, RECURSOS_PERMISOS } from "./FormUsuarios";
 
 const formatFechaCreacion = (iso) => {
   if (!iso) return "—";
@@ -21,6 +22,17 @@ export default function ModalUsuarios({ data, usuarioLogeado, onClose, onEditar,
   
   const puedeEditar = canPerformAction(usuarioLogeado?.permissions, 'users', 'update');
   const puedeEliminar = canPerformAction(usuarioLogeado?.permissions, 'users', 'delete') && !esElMismoUsuario;
+  const permisosAgrupados = (data.permissions || []).reduce((grupos, permission) => {
+    const [recurso, accion] = permission.split(":");
+    // El backend conserva estos permisos bajo "recepciones"; visualmente
+    // separamos pedidos de recepción de mercancía por tipo de operación.
+    const modulo = recurso === "recepciones" && !["confirm", "cancel"].includes(accion)
+      ? "pedidos"
+      : recurso;
+    if (!grupos[modulo]) grupos[modulo] = [];
+    grupos[modulo].push(permission);
+    return grupos;
+  }, {});
 
   //Header
   const tituloPersonalizado = (
@@ -102,19 +114,22 @@ export default function ModalUsuarios({ data, usuarioLogeado, onClose, onEditar,
               <p className="font-tag text-[10px] lg:text-xs uppercase tracking-[0.2em] font-bold text-[var(--noir-soft)] dark:text-[var(--ash)] mb-4 flex items-center gap-2">
                 <i className="bi bi-shield-check text-sm"></i> Permisos Asignados ({data.permissions.length})
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                {data.permissions.map((permission, index) => (
-                  <div 
-                    key={index}
-                    className={`
-                      flex items-center gap-2 px-3 py-2 rounded-[2px] border transition-all
-                      bg-[var(--gold-08)] border-[var(--border-gold-25)] text-[var(--gold-dark)]
-                      dark:bg-[var(--gold-08)] dark:border-[var(--border-gold-20)] dark:text-[var(--gold-light)]
-                    `}
-                  >
-                    <i className="bi bi-check-circle-fill text-green-700 dark:text-verde text-[10px]"></i>
-                    <span className="font-tag text-xs lg:text-sm truncate">{permission}</span>
-                  </div>
+              <div className="space-y-2">
+                {Object.entries(permisosAgrupados).map(([recurso, permisos]) => (
+                  <details key={recurso} className="group rounded-[2px] border border-[var(--border-gold-25)] bg-[var(--gold-08)] dark:border-[var(--border-gold-20)]">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 font-tag text-xs font-bold uppercase tracking-wider text-[var(--gold-dark)] [&::-webkit-details-marker]:hidden dark:text-[var(--gold-light)]">
+                      <span className="flex items-center gap-2"><i className="bi bi-folder2-open text-sm"></i>{RECURSOS_PERMISOS[recurso] || recurso}</span>
+                      <span className="flex items-center gap-2"><span className="text-[10px] normal-case tracking-normal opacity-75">{permisos.length}</span><i className="bi bi-chevron-down text-xs transition-transform group-open:rotate-180"></i></span>
+                    </summary>
+                    <div className="grid grid-cols-1 gap-2 border-t border-[var(--border-gold-20)] p-2 sm:grid-cols-2">
+                      {permisos.map((permission) => (
+                        <div key={permission} className="flex items-center gap-2 rounded-[2px] border border-[var(--border-gold-25)] bg-[var(--snow)] px-3 py-2 text-[var(--gold-dark)] dark:border-[var(--border-gold-20)] dark:bg-[var(--noir)] dark:text-[var(--gold-light)]">
+                          <i className="bi bi-check-circle-fill text-[10px] text-green-700 dark:text-verde"></i>
+                          <span className="font-tag text-xs lg:text-sm truncate">{getPermissionLabel(permission)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
                 ))}
               </div>
             </div>

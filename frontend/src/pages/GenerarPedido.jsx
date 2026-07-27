@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import { fetchSuppliers } from "../services/suppliers.service";
 import { crearPedido, enviarPedido } from "../services/pedidos.service";
@@ -94,6 +94,7 @@ function puntajeCoincidenciaProducto(producto, termino) {
 export default function GenerarPedido() {
   useTitulo("Generar pedido");
   const navigate = useNavigate();
+  const location = useLocation();
   const { usuario } = useAuth();
   const puedeCrear = canPerformAction(usuario?.permissions, "recepciones", "create");
   const puedeEnviar = canPerformAction(usuario?.permissions, "recepciones", "enviar");
@@ -144,10 +145,36 @@ export default function GenerarPedido() {
         setCantidades(cantidadesIniciales);
 
         setProveedores(resultProveedores.items || []);
+
+        const pedidoParaEditar = location.state?.pedidoParaEditar;
+        if (pedidoParaEditar) {
+          const filasPedido = (pedidoParaEditar.items || []).map((item) => {
+            const producto = productosDisponibles.find((p) => p.id === item.productId);
+            const variante = obtenerInventario(producto || {}).find((v) => v.talla === item.talla);
+            return {
+              id: `${item.productId}-${item.talla}`,
+              productId: item.productId,
+              sku: producto?.sku || item.sku,
+              nombre: producto?.nombre || item.productNombre,
+              talla: item.talla,
+              stockActual: variante?.stock ?? 0,
+              stockRequerido: 0,
+              precioCompra: Number(item.costoUnitario ?? producto?.precioCompra ?? 0),
+              supplierId: pedidoParaEditar.supplierId || producto?.supplierId || "",
+              estadoStock: "manual",
+              sugerido: false,
+            };
+          });
+          const cantidadesPedido = Object.fromEntries((pedidoParaEditar.items || []).map((item) => [`${item.productId}-${item.talla}`, String(item.cantidad)]));
+          setFilas(filasPedido);
+          setSeleccionados(Object.fromEntries(filasPedido.map((fila) => [fila.id, true])));
+          setCantidades(cantidadesPedido);
+          setSupplierId(pedidoParaEditar.supplierId || "");
+        }
       })
       .catch((err) => console.error("Error al cargar datos:", err))
       .finally(() => setCargando(false));
-  }, []);
+  }, [location.state]);
 
   useEffect(() => {
     api.get("/recepciones/next-folio")
@@ -621,7 +648,7 @@ export default function GenerarPedido() {
           <button
             type="button"
             onClick={handleAgregarProducto}
-            className="h-11 w-full rounded-[2px] bg-[var(--gold)] px-4 text-[var(--noir)] text-xs font-bold font-body transition-opacity hover:opacity-90 sm:w-auto sm:min-w-[10rem] sm:ml-auto lg:ml-0 lg:flex-none lg:shrink-0 lg:min-w-[12rem]"
+            className="bg-[var(--gold)] text-[var(--noir)] border-none rounded-[2px] px-5 py-2 font-bold font-body text-sm cursor-pointer hover:bg-[var(--gold-dark)] hover:text-[var(--snow)] hover:scale-[1.02] transition-all active:scale-95 w-fit sm:w-auto whitespace-nowrap shadow-sm sm:ml-auto lg:ml-0 lg:flex-none lg:shrink-0"
           >
             <i className="bi bi-plus-lg mr-1" /> Agregar
           </button>
