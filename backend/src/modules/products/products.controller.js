@@ -2,13 +2,13 @@ import { productsService } from './products.service.js'
 
 export class ProductsController {
   async list(req, res) {
-    const result = await productsService.list(req.query)
+    const result = await productsService.list(req.query, req.user)
 
     return res.status(200).json(result)
   }
 
   async getById(req, res) {
-    const product = await productsService.getById(req.params.id)
+    const product = await productsService.getById(req.params.id, req.user)
 
     return res.status(200).json({
       item: product

@@ -1,466 +1,96 @@
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import nodemailer from 'nodemailer'
+import { OAuth2Client } from 'google-auth-library'
 import { signAccessToken } from '../../config/jwt.js'
 import { authRepository } from './auth.repository.js'
-import { OAuth2Client } from 'google-auth-library'
-import crypto from 'crypto'
+import { resolveEffectivePermissions } from '../../services/authorization.service.js'
 import { logAuditEvent } from '../../utils/audit.js'
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+const STAFF_ROLES = new Set(['ADMIN', 'BODEGUERO'])
+
+function unauthorized() { const error = new Error('Credenciales invÃ¡lidas'); error.statusCode = 401; return error }
 
 export class AuthService {
-  async login(payload) {
-    const { usuario, password } = payload
-
+  async staffLogin({ usuario, password }) {
+    // Staff authentication is intentionally User-only and username-only.
     const user = await authRepository.findByUsuario(usuario)
-
-    if (!user) {
-      const error = new Error('Credenciales inválidas')
-      error.statusCode = 401
-      throw error
-    }
-
-    if (user.activo === false) {
-      const error = new Error('Usuario inactivo')
-      error.statusCode = 403
-      throw error
-    }
-
-    const isValidPassword = await bcrypt.compare(password, user.passwordHash)
-
-    if (!isValidPassword) {
-      const error = new Error('Credenciales inválidas')
-      error.statusCode = 401
-      throw error
-    }
-
-    let userPermissions = []
-    if (user.roleId) {
-      try {
-        userPermissions = await authRepository.findPermissionsByRoleId(user.roleId, user.revokedPermissions, user.grantedPermissions)
-      } catch (err) {
-        console.error('Error obteniendo permisos del rol:', err)
-      }
-    }
-
-    const token = signAccessToken({
-      sub: user.id,
-      email: user.email,
-      usuario: user.usuario,
-      role: user.role || null,
-      roleId: user.roleId || null,
-      permissions: userPermissions,
-    })
-
-    return { token, user: this.sanitizeUser(user, userPermissions) }
+    if (!user || !STAFF_ROLES.has(user.role) || !user.activo || !await bcrypt.compare(password, user.passwordHash)) throw unauthorized()
+    const permissions = await resolveEffectivePermissions(user)
+    return { token: signAccessToken({ sub: user.id, accountType: 'STAFF' }), user: this.sanitizeStaff(user, permissions) }
   }
 
-  async staffLogin(payload) {
-    const result = await this.login(payload)
-
-    if (result.user.role === 'CLIENTE') {
-      const error = new Error('Credenciales inválidas')
-      error.statusCode = 401
-      throw error
-    }
-
-    return result
-  }
-  async clientLogin(payload) {
-    const { email, password } = payload
-
-    const user = await authRepository.findByEmail(email)
-
-    if (!user) {
-      const error = new Error('Credenciales inválidas')
-      error.statusCode = 401
-      throw error
-    }
-
-    if (user.role !== 'CLIENTE') {
-      const error = new Error('Credenciales inválidas')
-      error.statusCode = 401
-      throw error
-    }
-
-    if (user.activo === false) {
-      const error = new Error('Usuario inactivo')
-      error.statusCode = 403
-      throw error
-    }
-
-    const isValidPassword = await bcrypt.compare(password, user.passwordHash)
-
-    if (!isValidPassword) {
-      const error = new Error('Credenciales inválidas')
-      error.statusCode = 401
-      throw error
-    }
-
-    await authRepository.ensureClientProfile(user)
-
-    let userPermissions = []
-    if (user.roleId) {
-      try {
-        userPermissions = await authRepository.findPermissionsByRoleId(user.roleId, user.revokedPermissions, user.grantedPermissions)
-      } catch (err) {
-        console.error('Error obteniendo permisos del rol:', err)
-      }
-    }
-
-    const token = signAccessToken({
-      sub: user.id,
-      email: user.email,
-      usuario: user.usuario,
-      role: user.role || null,
-      roleId: user.roleId || null,
-      permissions: userPermissions,
-    })
-
-    return { token, user: this.sanitizeUser(user, userPermissions) }
+  async clientLogin({ email, password }) {
+    // Store authentication is intentionally Client-only and email-only.
+    const client = await authRepository.findClientByEmail(email)
+    if (!client || !client.passwordHash || !client.activo || !await bcrypt.compare(password, client.passwordHash)) throw unauthorized()
+    return { token: signAccessToken({ sub: client.id, accountType: 'CLIENT' }), user: this.sanitizeClient(client) }
   }
 
-  async me(userId) {
-    const user = await authRepository.findById(userId)
-
-    if (!user) {
-      const error = new Error('Usuario no encontrado')
-      error.statusCode = 404
-      throw error
+  async register({ nombre, email, password }) {
+    if (await authRepository.findClientByEmail(email)) {
+      const error = new Error('El correo ya estÃ¡ registrado'); error.statusCode = 409; error.field = 'email'; throw error
     }
-
-    if (user.activo === false) {
-      const error = new Error('Usuario inactivo')
-      error.statusCode = 403
-      throw error
-    }
-
-    let userPermissions = []
-    if (user.roleId) {
-      try {
-        userPermissions = await authRepository.findPermissionsByRoleId(user.roleId, user.revokedPermissions, user.grantedPermissions)
-      } catch (err) {
-        console.error('Error obteniendo permisos del rol:', err)
-      }
-    }
-
-    return this.sanitizeUser(user, userPermissions)
+    const client = await authRepository.createClient({ nombre, email, passwordHash: await bcrypt.hash(password, 10), activo: true })
+    return { token: signAccessToken({ sub: client.id, accountType: 'CLIENT' }), user: this.sanitizeClient(client) }
   }
 
-  async changePassword(userId, payload, currentUser = null) {
-    const user = await authRepository.findById(userId)
-
-    if (!user || user.activo === false) {
-      const error = new Error('No fue posible cambiar la contraseña')
-      error.statusCode = 400
-      throw error
-    }
-
-    const currentPasswordIsValid = await bcrypt.compare(payload.currentPassword, user.passwordHash)
-    if (!currentPasswordIsValid) {
-      const error = new Error('La contraseña actual es incorrecta')
-      error.statusCode = 400
-      throw error
-    }
-
-    const isSamePassword = await bcrypt.compare(payload.newPassword, user.passwordHash)
-    if (isSamePassword) {
-      const error = new Error('La nueva contraseña debe ser diferente a la actual')
-      error.statusCode = 400
-      throw error
-    }
-
-    await authRepository.updatePassword(user.id, await bcrypt.hash(payload.newPassword, 10))
-    await logAuditEvent({
-      action: 'CHANGE_PASSWORD',
-      resource: 'auth',
-      resourceId: user.id,
-      details: { usuario: user.usuario },
-      currentUser
-    })
-
-    return { message: 'Contraseña actualizada correctamente' }
+  async googleLogin({ credential }) {
+    let payload
+    try { payload = (await googleClient.verifyIdToken({ idToken: credential, audience: process.env.GOOGLE_CLIENT_ID })).getPayload() } catch { throw unauthorized() }
+    if (!payload?.email) { const error = new Error('No se pudo obtener el correo'); error.statusCode = 400; throw error }
+    let client = await authRepository.findClientByEmail(payload.email.toLowerCase())
+    if (client?.activo === false) { const error = new Error('Cliente inactivo'); error.statusCode = 403; throw error }
+    if (!client) client = await authRepository.createClient({ nombre: payload.name || payload.email.split('@')[0], email: payload.email.toLowerCase(), passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10), activo: true })
+    return { token: signAccessToken({ sub: client.id, accountType: 'CLIENT' }), user: this.sanitizeClient(client) }
   }
 
-  sanitizeUser(user, permissions = []) {
-    return {
-      id: user.id,
-      nombre: user.nombre || '',
-      apellido: user.apellido || '',
-      email: user.email || '',
-      usuario: user.usuario || '',
-      role: user.role || null,
-      roleId: user.roleId || null,
-      permissions,
-      activo: user.activo ?? true,
-      createdAt: user.createdAt
-    }
+  async me(currentAccount) {
+    if (currentAccount.accountType === 'STAFF') return this.sanitizeStaff(currentAccount, currentAccount.permissions || [])
+    if (currentAccount.accountType === 'CLIENT') return this.sanitizeClient(currentAccount)
+    throw unauthorized()
   }
 
-  // Self-registration only creates login credentials (User, role
-  // CLIENTE). The matching Client record is created later, on first
-  // purchase, via find-or-create by email — see ventas.service.js.
-  async register(payload) {
-  const { nombre, email, password } = payload
-
-  const existingEmail = await authRepository.findByEmail(email)
-  if (existingEmail) {
-    const error = new Error('El email ya está registrado')
-    error.statusCode = 409
-    error.field = 'email'
-    throw error
+  async changePassword(currentAccount, { currentPassword, newPassword }) {
+    const hash = currentAccount.passwordHash
+    if (!hash || !await bcrypt.compare(currentPassword, hash)) { const error = new Error('La contraseÃ±a actual es incorrecta'); error.statusCode = 400; throw error }
+    if (await bcrypt.compare(newPassword, hash)) { const error = new Error('La nueva contraseÃ±a debe ser diferente'); error.statusCode = 400; throw error }
+    const newHash = await bcrypt.hash(newPassword, 10)
+    if (currentAccount.accountType === 'STAFF') {
+      await authRepository.updatePassword(currentAccount.id, newHash)
+      await logAuditEvent({ action: 'CHANGE_PASSWORD', resource: 'auth', resourceId: currentAccount.id, details: { usuario: currentAccount.usuario }, currentUser: currentAccount })
+    } else {
+      await authRepository.updateClientPassword(currentAccount.id, newHash)
+    }
+    return { message: 'ContraseÃ±a actualizada correctamente' }
   }
 
-  const clienteRole = await authRepository.findRoleByCodigo('CLIENTE')
-  if (!clienteRole) {
-    const error = new Error('Rol CLIENTE no configurado en el sistema')
-    error.statusCode = 500
-    throw error
+  async requestPasswordReset({ email }) {
+    const client = await authRepository.findClientByEmail(email)
+    if (!client) return { message: 'Se ha enviado un cÃ³digo a tu correo electrÃ³nico' }
+    const code = Math.floor(100000 + Math.random() * 900000).toString()
+    await authRepository.upsertClientPasswordReset(client.id, { code, expiresAt: new Date(Date.now() + 15 * 60 * 1000) })
+    await this.sendPasswordResetEmail(client.email, code)
+    return { message: 'Se ha enviado un cÃ³digo a tu correo electrÃ³nico' }
   }
 
-  // Genera un "usuario" único derivado del email — el cliente nunca lo
-  // captura, pero la columna sigue siendo NOT NULL/UNIQUE en la BD.
-  const baseUsuario = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')
-  let usuario = baseUsuario
-  let intento = 0
-  while (await authRepository.findByUsuario(usuario)) {
-    intento++
-    usuario = `${baseUsuario}${Date.now().toString().slice(-4)}${intento}`
+  async validateAndResetPassword({ email, code, newPassword }) {
+    const client = await authRepository.findClientByEmail(email)
+    if (!client) throw unauthorized()
+    const reset = await authRepository.findClientPasswordReset(client.id)
+    if (!reset || reset.used || new Date() > new Date(reset.expiresAt) || reset.code !== code) { const error = new Error('CÃ³digo de recuperaciÃ³n invÃ¡lido o expirado'); error.statusCode = 400; throw error }
+    await authRepository.updateClientPassword(client.id, await bcrypt.hash(newPassword, 10))
+    await authRepository.markClientPasswordResetUsed(client.id)
+    return { message: 'ContraseÃ±a actualizada exitosamente' }
   }
 
-  const passwordHash = await bcrypt.hash(password, 10)
-
-  const { user: newUser } = await authRepository.createClientUserWithProfile({
-    nombre,
-    email,
-    usuario,
-    passwordHash,
-    roleId: clienteRole.id,
-    activo: true,
-  })
-
-  const userPermissions = await authRepository.findPermissionsByRoleId(newUser.roleId)
-
-  const token = signAccessToken({
-    sub: newUser.id,
-    email: newUser.email,
-    usuario: newUser.usuario,
-    role: newUser.role,
-    roleId: newUser.roleId,
-    permissions: userPermissions,
-  })
-
-  return { token, user: this.sanitizeUser(newUser, userPermissions) }
-}
-  async googleLogin(payload) {
-    const { credential } = payload
-
-    let googlePayload
-    try {
-      const ticket = await googleClient.verifyIdToken({
-        idToken: credential,
-        audience: process.env.GOOGLE_CLIENT_ID,
-      })
-      googlePayload = ticket.getPayload()
-    } catch (err) {
-      const error = new Error('Token de Google inválido')
-      error.statusCode = 401
-      throw error
-    }
-
-    const { email, name } = googlePayload
-
-    if (!email) {
-      const error = new Error('No se pudo obtener el email de Google')
-      error.statusCode = 400
-      throw error
-    }
-
-    let user = await authRepository.findByEmail(email)
-
-    if (user && user.activo === false) {
-      const error = new Error('Usuario inactivo')
-      error.statusCode = 403
-      throw error
-    }
-
-    if (!user) {
-      const clienteRole = await authRepository.findRoleByCodigo('CLIENTE')
-      if (!clienteRole) {
-        const error = new Error('Rol CLIENTE no configurado en el sistema')
-        error.statusCode = 500
-        throw error
-      }
-
-      // Genera un "usuario" único derivado del email, ya que el login
-      // con Google no define uno manualmente.
-      const baseUsuario = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')
-      const usuario = `${baseUsuario}${Date.now().toString().slice(-4)}`
-
-      // Password aleatoria: este usuario solo entra vía Google, nunca
-      // usará login usuario/password, pero passwordHash es requerido.
-      const randomPassword = crypto.randomBytes(32).toString('hex')
-      const passwordHash = await bcrypt.hash(randomPassword, 10)
-
-      const created = await authRepository.createClientUserWithProfile({
-        nombre: name || baseUsuario,
-        apellido: '',
-        email,
-        usuario,
-        passwordHash,
-        roleId: clienteRole.id,
-        activo: true,
-      })
-      user = created.user
-    }
-
-    if (user.role === 'CLIENTE') {
-      await authRepository.ensureClientProfile(user)
-    }
-
-    let userPermissions = []
-    if (user.roleId) {
-      try {
-        userPermissions = await authRepository.findPermissionsByRoleId(user.roleId, user.revokedPermissions, user.grantedPermissions)
-      } catch (err) {
-        console.error('Error obteniendo permisos del rol:', err)
-      }
-    }
-
-    const token = signAccessToken({
-      sub: user.id,
-      email: user.email,
-      usuario: user.usuario,
-      role: user.role || null,
-      roleId: user.roleId || null,
-      permissions: userPermissions,
-    })
-
-    return { token, user: this.sanitizeUser(user, userPermissions) }
-  }
-  async requestPasswordReset(payload) {
-    const { usuario } = payload
-
-    const user = await authRepository.findByUsuario(usuario)
-    if (!user) {
-      const error = new Error('Usuario no encontrado')
-      error.statusCode = 404
-      throw error
-    }
-
-    // Only self-service customers reset via email code; staff go through an admin.
-    if (user.role !== 'CLIENTE') {
-      const error = new Error('ADMIN_REQUIRED')
-      error.statusCode = 403
-      throw error
-    }
-
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString()
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000)
-
-    await authRepository.upsertPasswordReset(user.id, { code: resetCode, expiresAt })
-    await this.sendPasswordResetEmail(user.email, resetCode)
-
-    return { message: 'Se ha enviado un código a tu correo electrónico' }
-  }
-
-  async validateAndResetPassword(payload) {
-    const { usuario, code, newPassword } = payload
-
-    const user = await authRepository.findByUsuario(usuario)
-    if (!user) {
-      const error = new Error('Usuario no encontrado')
-      error.statusCode = 404
-      throw error
-    }
-
-    if (user.role !== 'CLIENTE') {
-      const error = new Error('No autorizado para esta operación')
-      error.statusCode = 403
-      throw error
-    }
-
-    const reset = await authRepository.findPasswordResetByUserId(user.id)
-    if (!reset) {
-      const error = new Error('No hay solicitud de cambio de contraseña activa')
-      error.statusCode = 400
-      throw error
-    }
-
-    if (new Date() > new Date(reset.expiresAt)) {
-      await authRepository.deletePasswordReset(user.id)
-      const error = new Error('El código ha expirado')
-      error.statusCode = 400
-      throw error
-    }
-
-    if (reset.code !== code) {
-      const error = new Error('Código incorrecto')
-      error.statusCode = 400
-      throw error
-    }
-
-    if (reset.used) {
-      const error = new Error('Este código ya fue utilizado')
-      error.statusCode = 400
-      throw error
-    }
-
-    const passwordHash = await bcrypt.hash(newPassword, 10)
-    await authRepository.updatePassword(user.id, passwordHash)
-    await authRepository.markPasswordResetUsed(user.id)
-
-    return { message: 'Contraseña actualizada exitosamente' }
-  }
+  sanitizeStaff(user, permissions) { return { id: user.id, nombre: user.nombre || '', apellido: user.apellido || '', email: user.email || '', usuario: user.usuario, role: user.role, roleId: user.roleId, isPrimaryAdmin: user.isPrimaryAdmin === true, permissions, activo: user.activo, accountType: 'STAFF', createdAt: user.createdAt } }
+  sanitizeClient(client) { return { id: client.id, nombre: client.nombre || '', email: client.email, role: 'CLIENTE', activo: client.activo, accountType: 'CLIENT', createdAt: client.createdAt } }
 
   async sendPasswordResetEmail(email, code) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: process.env.MAIL_HOST || 'smtp.gmail.com',
-        port: process.env.MAIL_PORT || 587,
-        secure: false,
-        auth: {
-          user: process.env.MAIL_USER || 'doroclothes@gmail.com',
-          pass: process.env.MAIL_PASSWORD,
-        },
-      })
-
-      await transporter.sendMail({
-        from: process.env.MAIL_USER || 'doroclothes@gmail.com',
-        to: email,
-        subject: "Código para restablecer tu contraseña - DORO",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background-color: #221E3A; padding: 20px; text-align: center; color: #B8A7E2;">
-              <h1 style="margin: 0; font-size: 32px; letter-spacing: 2px;">D'ORO</h1>
-              <p style="margin: 5px 0; font-size: 12px; letter-spacing: 1px;">Tienda en línea</p>
-            </div>
-            <div style="padding: 40px 20px;">
-              <h2 style="color: #B8A7E2; text-align: center; margin-bottom: 20px;">Restablecer Contraseña</h2>
-              <p style="color: #666; text-align: center; line-height: 1.6;">
-                Hemos recibido una solicitud para restablecer tu contraseña.
-                Utiliza el siguiente código para completar el proceso:
-              </p>
-              <div style="background-color: #f5f5f5; padding: 20px; text-align: center; margin: 30px 0; border-radius: 8px;">
-                <p style="font-size: 12px; color: #999; margin: 0 0 10px 0;">Tu código de verificación</p>
-                <p style="font-size: 36px; font-weight: bold; color: #B8A7E2; margin: 0; letter-spacing: 4px;">${code}</p>
-              </div>
-              <p style="color: #666; text-align: center; font-size: 12px; line-height: 1.6;">
-                Este código expirará en 15 minutos. Si no solicitaste este cambio, ignora este mensaje.
-              </p>
-            </div>
-            <div style="background-color: #f9f9f9; padding: 20px; text-align: center; color: #999; font-size: 11px;">
-              <p style="margin: 0;">© 2026 D'ORO · Todos los derechos reservados</p>
-            </div>
-          </div>
-        `,
-      })
-    } catch (error) {
-      console.error('Error enviando email:', error)
-      const err = new Error('Error al enviar el correo electrónico')
-      err.statusCode = 500
-      throw err
-    }
+    const transporter = nodemailer.createTransport({ host: process.env.MAIL_HOST || 'smtp.gmail.com', port: process.env.MAIL_PORT || 587, secure: false, auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASSWORD } })
+    await transporter.sendMail({ from: process.env.MAIL_USER || 'doroclothes@gmail.com', to: email, subject: 'CÃ³digo para restablecer tu contraseÃ±a - DORO', text: `Tu cÃ³digo de verificaciÃ³n es ${code}. Expira en 15 minutos.` })
   }
 }
 

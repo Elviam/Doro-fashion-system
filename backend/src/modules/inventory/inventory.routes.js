@@ -14,6 +14,13 @@ import {
 const router = Router()
 
 router.get(
+  '/summary',
+  authenticate,
+  requirePermissions(['inventory:read']),
+  asyncHandler(inventoryController.summary.bind(inventoryController))
+)
+
+router.get(
   '/',
   authenticate,
   requirePermissions(['inventory:read']),

@@ -2,13 +2,13 @@ import { usersService } from './users.service.js'
 
 export class UsersController {
   async list(req, res) {
-    const result = await usersService.list(req.query)
+    const result = await usersService.list(req.query, req.user)
 
     return res.status(200).json(result)
   }
 
   async getById(req, res) {
-    const user = await usersService.getById(req.params.id)
+    const user = await usersService.getById(req.params.id, req.user)
 
     return res.status(200).json({
       item: user

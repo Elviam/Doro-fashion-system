@@ -40,15 +40,11 @@ export const registerSchema = z.object({
 })
 
 export const passwordResetSchema = z.object({
-  usuario: z
-    .string({ required_error: 'El usuario es obligatorio' })
-    .min(3, 'El usuario debe tener al menos 3 caracteres')
+  email: z.string({ required_error: 'El correo es obligatorio' }).email().trim().toLowerCase()
 })
 
 export const validateResetPasswordSchema = z.object({
-  usuario: z
-    .string({ required_error: 'El usuario es obligatorio' })
-    .min(3, 'El usuario debe tener al menos 3 caracteres'),
+  email: z.string({ required_error: 'El correo es obligatorio' }).email().trim().toLowerCase(),
   code: z
     .string({ required_error: 'El código es obligatorio' })
     .length(6, 'El código debe tener 6 dígitos'),

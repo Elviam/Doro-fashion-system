@@ -20,9 +20,7 @@ export class AuthController {
 }
 
   async me(req, res) {
-    const userId = req.user?.sub
-
-    const user = await authService.me(userId)
+    const user = await authService.me(req.user)
 
     return res.status(200).json({
       user
@@ -30,7 +28,7 @@ export class AuthController {
   }
 
   async changePassword(req, res) {
-    const result = await authService.changePassword(req.user?.sub, req.body, req.user)
+    const result = await authService.changePassword(req.user, req.body)
     return res.status(200).json(result)
   }
 

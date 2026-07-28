@@ -22,8 +22,8 @@ model Role {
 }
 
 model Permission {
-  id          String           @id @default(cuid())
-  code        String           @unique
+  id          String                     @id @default(cuid())
+  code        String                     @unique
   description String?
   roles       RolePermission[]
   revocations UserPermissionRevocation[]
@@ -43,22 +43,23 @@ model RolePermission {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  usuario      String   @unique
-  passwordHash String   @map("password_hash")
-  nombre       String
-  apellido     String?
-  email        String   @unique
-  roleId       String   @map("role_id")
-  role         Role     @relation(fields: [roleId], references: [id])
-  clientProfile Client?
-  activo       Boolean  @default(true)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(cuid())
+  usuario        String   @unique
+  passwordHash   String   @map("password_hash")
+  nombre         String
+  apellido       String?
+  email          String   @unique
+  roleId         String   @map("role_id")
+  role           Role     @relation(fields: [roleId], references: [id])
+  isPrimaryAdmin Boolean  @default(false) @map("is_primary_admin")
+  clientProfile  Client?
+  activo         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  sales         Sale[]
-  auditLogs     AuditLog[]
-  passwordReset PasswordReset?
+  sales              Sale[]
+  auditLogs          AuditLog[]
+  passwordReset      PasswordReset?
   revokedPermissions UserPermissionRevocation[]
   grantedPermissions UserPermissionGrant[]
 
@@ -79,27 +80,27 @@ model PasswordReset {
 
 // ── Catálogo ─────────────────────────────────────────────
 model Product {
-  id           String   @id @default(cuid())
-  nombre       String
-  sku          String   @unique
-  descripcion  String?
-  categoria    String?
-  departamento String?
-  unidad       String?
-  precioCompra Decimal  @default(0) @db.Decimal(10, 2) @map("precio_compra")
-  precioCompraAnterior Decimal? @db.Decimal(10, 2) @map("precio_compra_anterior")
-  pendingPriceReview Boolean @default(false) @map("pending_price_review")
+  id                     String    @id @default(cuid())
+  nombre                 String
+  sku                    String    @unique
+  descripcion            String?
+  categoria              String?
+  departamento           String?
+  unidad                 String?
+  precioCompra           Decimal   @default(0) @map("precio_compra") @db.Decimal(10, 2)
+  precioCompraAnterior   Decimal?  @map("precio_compra_anterior") @db.Decimal(10, 2)
+  pendingPriceReview     Boolean   @default(false) @map("pending_price_review")
   purchasePriceChangedAt DateTime? @map("purchase_price_changed_at")
-  precioVenta  Decimal  @default(0) @db.Decimal(10, 2) @map("precio_venta")
-  stockMinimo  Int      @default(5) @map("stock_minimo")
-  stockIdeal   Int      @default(0) @map("stock_ideal")
-  stockMaximo  Int      @default(0) @map("stock_maximo")
-  imagenes String[] @default([])
-  activo       Boolean  @default(true)
-  supplierId   String?   @map("supplier_id")
-  supplier     Supplier? @relation(fields: [supplierId], references: [id])
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  precioVenta            Decimal   @default(0) @map("precio_venta") @db.Decimal(10, 2)
+  stockMinimo            Int       @default(5) @map("stock_minimo")
+  stockIdeal             Int       @default(0) @map("stock_ideal")
+  stockMaximo            Int       @default(0) @map("stock_maximo")
+  imagenes               String[]  @default([])
+  activo                 Boolean   @default(true)
+  supplierId             String?   @map("supplier_id")
+  supplier               Supplier? @relation(fields: [supplierId], references: [id])
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
 
   variants           ProductVariant[]
   saleItems          SaleItem[]
@@ -108,6 +109,7 @@ model Product {
 
   @@map("products")
 }
+
 model ProductVariant {
   id        String   @id @default(cuid())
   productId String   @map("product_id")
@@ -122,48 +124,62 @@ model ProductVariant {
 }
 
 model Client {
-  id        String   @id @default(cuid())
-  userId    String?  @unique @map("user_id")
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  nombre    String
-  rfc       String?
-  email     String   @unique
-  telefono  String?
-  direccion String?
-  contacto  String?
-  notas     String?
-  activo    Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(cuid())
+  userId       String?  @unique @map("user_id")
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  passwordHash String?  @map("password_hash")
+  nombre       String
+  rfc          String?
+  email        String   @unique
+  telefono     String?
+  direccion    String?
+  contacto     String?
+  notas        String?
+  activo       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-  sales Sale[]
-  addresses ClientAddress[]
+  sales         Sale[]
+  addresses     ClientAddress[]
+  passwordReset ClientPasswordReset?
 
   @@map("clients")
 }
 
 model ClientAddress {
-  id              String   @id @default(cuid())
-  clientId        String   @map("client_id")
-  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  alias           String   @default("Dirección")
-  country         String   @default("México")
-  state           String
-  city            String
-  neighborhood    String
-  postalCode      String   @map("postal_code")
-  street          String
-  exteriorNumber  String   @map("exterior_number")
-  interiorNumber  String?  @map("interior_number")
-  references      String?
-  phone           String
-  isDefault       Boolean  @default(false) @map("is_default")
-  active          Boolean  @default(true)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(cuid())
+  clientId       String   @map("client_id")
+  client         Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  alias          String   @default("Dirección")
+  country        String   @default("México")
+  state          String
+  city           String
+  neighborhood   String
+  postalCode     String   @map("postal_code")
+  street         String
+  exteriorNumber String   @map("exterior_number")
+  interiorNumber String?  @map("interior_number")
+  references     String?
+  phone          String
+  isDefault      Boolean  @default(false) @map("is_default")
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@index([clientId, active])
   @@map("client_addresses")
+}
+
+model ClientPasswordReset {
+  id        String   @id @default(cuid())
+  clientId  String   @unique @map("client_id")
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  code      String
+  used      Boolean  @default(false)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("client_password_resets")
 }
 
 model Supplier {
@@ -185,59 +201,60 @@ model Supplier {
 
   @@map("suppliers")
 }
+
 // ── Ventas ───────────────────────────────────────────────
 model Sale {
-  id           String   @id @default(cuid())
-  numeroPedido String   @unique @map("numero_pedido")
-  clientId     String   @map("client_id")
-  cliente      Client   @relation(fields: [clientId], references: [id])
-  vendedorId   String?  @map("vendedor_id")
-  vendedor     User?    @relation(fields: [vendedorId], references: [id])
-  metodoPago   String   @map("metodo_pago")
-  subtotal     Decimal  @default(0) @db.Decimal(10, 2)
-  envio        Decimal  @default(0) @db.Decimal(10, 2)
-  total        Decimal  @db.Decimal(10, 2)
-  estado       String   @default("PENDIENTE")
-  cancellationReason String? @map("cancellation_reason")
-  fulfillmentStatus String @default("PENDIENTE") @map("fulfillment_status")
-  preparedAt   DateTime? @map("prepared_at")
-  preparedBy   String?  @map("prepared_by")
-  shippingGuide String? @map("shipping_guide")
-  shippedAt    DateTime? @map("shipped_at")
-  shippedBy    String?  @map("shipped_by")
-  shippingStatus String @default("PENDIENTE") @map("shipping_status")
-  shippingCarrier String @default("D'ORO Envíos (simulado)") @map("shipping_carrier")
-  shippingCountry String? @map("shipping_country")
-  shippingState String? @map("shipping_state")
-  shippingCity String? @map("shipping_city")
-  shippingNeighborhood String? @map("shipping_neighborhood")
-  shippingPostalCode String? @map("shipping_postal_code")
-  shippingStreet String? @map("shipping_street")
-  shippingExteriorNumber String? @map("shipping_exterior_number")
-  shippingInteriorNumber String? @map("shipping_interior_number")
-  shippingReferences String? @map("shipping_references")
-  shippingPhone String? @map("shipping_phone")
-  deliveredAt  DateTime? @map("delivered_at")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id                     String    @id @default(cuid())
+  numeroPedido           String    @unique @map("numero_pedido")
+  clientId               String    @map("client_id")
+  cliente                Client    @relation(fields: [clientId], references: [id])
+  vendedorId             String?   @map("vendedor_id")
+  vendedor               User?     @relation(fields: [vendedorId], references: [id])
+  metodoPago             String    @map("metodo_pago")
+  subtotal               Decimal   @default(0) @db.Decimal(10, 2)
+  envio                  Decimal   @default(0) @db.Decimal(10, 2)
+  total                  Decimal   @db.Decimal(10, 2)
+  estado                 String    @default("PENDIENTE")
+  cancellationReason     String?   @map("cancellation_reason")
+  fulfillmentStatus      String    @default("PENDIENTE") @map("fulfillment_status")
+  preparedAt             DateTime? @map("prepared_at")
+  preparedBy             String?   @map("prepared_by")
+  shippingGuide          String?   @map("shipping_guide")
+  shippedAt              DateTime? @map("shipped_at")
+  shippedBy              String?   @map("shipped_by")
+  shippingStatus         String    @default("PENDIENTE") @map("shipping_status")
+  shippingCarrier        String    @default("D'ORO Envíos (simulado)") @map("shipping_carrier")
+  shippingCountry        String?   @map("shipping_country")
+  shippingState          String?   @map("shipping_state")
+  shippingCity           String?   @map("shipping_city")
+  shippingNeighborhood   String?   @map("shipping_neighborhood")
+  shippingPostalCode     String?   @map("shipping_postal_code")
+  shippingStreet         String?   @map("shipping_street")
+  shippingExteriorNumber String?   @map("shipping_exterior_number")
+  shippingInteriorNumber String?   @map("shipping_interior_number")
+  shippingReferences     String?   @map("shipping_references")
+  shippingPhone          String?   @map("shipping_phone")
+  deliveredAt            DateTime? @map("delivered_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
 
-  items SaleItem[]
+  items          SaleItem[]
   shippingEvents ShippingEvent[]
 
   @@map("sales")
 }
 
 model SaleItem {
-  id              String  @id @default(cuid())
-  saleId          String  @map("sale_id")
-  sale            Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  productId       String  @map("product_id")
-  product         Product @relation(fields: [productId], references: [id])
-  nombreProducto  String  @map("nombre_producto")
-  imagenProducto  String? @map("imagen_producto")
-  talla           String
-  cantidad        Int
-  precioUnitario  Decimal @db.Decimal(10, 2) @map("precio_unitario")
+  id             String  @id @default(cuid())
+  saleId         String  @map("sale_id")
+  sale           Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId      String  @map("product_id")
+  product        Product @relation(fields: [productId], references: [id])
+  nombreProducto String  @map("nombre_producto")
+  imagenProducto String? @map("imagen_producto")
+  talla          String
+  cantidad       Int
+  precioUnitario Decimal @map("precio_unitario") @db.Decimal(10, 2)
 
   @@map("sale_items")
 }
@@ -266,19 +283,21 @@ model Reception {
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
   items ReceptionItem[]
+
   @@map("receptions")
 }
+
 model ReceptionItem {
-  id            String    @id @default(cuid())
-  receptionId   String    @map("reception_id")
-  reception     Reception @relation(fields: [receptionId], references: [id], onDelete: Cascade)
-  productId     String    @map("product_id")
-  product       Product   @relation(fields: [productId], references: [id])
-  talla         String?
-  cantidad      Int
-  cantidadRecibida Int? @map("cantidad_recibida")
-  costoUnitario Decimal   @db.Decimal(10, 2) @map("costo_unitario")
-  costoUnitarioReal Decimal? @db.Decimal(10, 2) @map("costo_unitario_real")
+  id                String    @id @default(cuid())
+  receptionId       String    @map("reception_id")
+  reception         Reception @relation(fields: [receptionId], references: [id], onDelete: Cascade)
+  productId         String    @map("product_id")
+  product           Product   @relation(fields: [productId], references: [id])
+  talla             String?
+  cantidad          Int
+  cantidadRecibida  Int?      @map("cantidad_recibida")
+  costoUnitario     Decimal   @map("costo_unitario") @db.Decimal(10, 2)
+  costoUnitarioReal Decimal?  @map("costo_unitario_real") @db.Decimal(10, 2)
 
   @@map("reception_items")
 }

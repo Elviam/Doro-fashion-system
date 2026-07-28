@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { productsController } from './products.controller.js'
-import { authenticate } from '../../middlewares/auth.js'
+import { authenticate, optionalAuthenticate } from '../../middlewares/auth.js'
 import { requirePermissions } from '../../middlewares/requirePermissions.js'
 import { validate } from '../../middlewares/validate.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
@@ -19,12 +19,14 @@ const router = Router()
 // son lectura de un catálogo abierto, igual que en cualquier tienda en línea.
 router.get(
   '/',
+  optionalAuthenticate,
   validate(listProductsQuerySchema, 'query'),
   asyncHandler(productsController.list.bind(productsController))
 )
 
 router.get(
   '/:id',
+  optionalAuthenticate,
   validate(productIdParamSchema, 'params'),
   asyncHandler(productsController.getById.bind(productsController))
 )

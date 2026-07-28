@@ -142,6 +142,10 @@ export default function Usuarios() {
   const puedeAgregar = canPerformAction(usuarioLogeado?.permissions, 'users', 'create');
   const puedeEditar = canPerformAction(usuarioLogeado?.permissions, 'users', 'update');
   const puedeBorrar = canPerformAction(usuarioLogeado?.permissions, 'users', 'delete');
+  const puedeGestionar = (cuenta) => {
+    if (!cuenta || cuenta.id === usuarioLogeado?.id || cuenta.isPrimaryAdmin) return false;
+    return cuenta.role !== 'ADMIN' || usuarioLogeado?.isPrimaryAdmin === true;
+  };
   const handleVerDetalles = (usuario) => {
     setUsuarioSeleccionado(usuario);
     setIsModalVerAbierto(true);
@@ -157,6 +161,10 @@ export default function Usuarios() {
       mostrarToast("No tienes permisos para editar usuarios", "error");
       return;
     }
+    if (!puedeGestionar(usuario)) {
+      mostrarToast("No puedes modificar tu propia cuenta ni una cuenta protegida", "error");
+      return;
+    }
     setUsuarioAEditar(usuario);
     setIsModalFormAbierto(true);
   };
@@ -166,8 +174,8 @@ export default function Usuarios() {
       mostrarToast("No tienes permisos para eliminar usuarios", "error");
       return;
     }
-    if (usuario.id === usuarioLogeado?.id) {
-      mostrarToast("No puedes eliminar tu propio usuario", "error");
+    if (!puedeGestionar(usuario)) {
+      mostrarToast("No puedes eliminar una cuenta protegida ni tu propia cuenta", "error");
       return;
     }
     
@@ -254,13 +262,18 @@ export default function Usuarios() {
       <td className="p-4 text-center text-sm font-medium text-[var(--noir)] dark:text-[var(--snow)]">{row.usuario || "-"}</td>
       <td className="p-4 text-center text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">{row.nombre} {row.apellido || ""}</td>
       <td className="p-4 text-center text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">{row.email || "-"}</td>
-      <td className="p-4 text-center"><Etiquetas contenido={row.role || row.roleId || "Sin rol"} /></td>
+      <td className="p-4 text-center">
+        <div className="flex flex-wrap justify-center gap-2">
+          <Etiquetas contenido={row.role || row.roleId || "Sin rol"} />
+          {row.isPrimaryAdmin && <Etiquetas contenido="Administrador principal" />}
+        </div>
+      </td>
       <td className="p-4 text-center"><Etiquetas contenido={row.activo !== false ? "Activo" : "Inactivo"} /></td>
       <td className="p-4 align-middle" onClick={(e) => e.stopPropagation()}>
         <AccionesTabla 
           onVer={() => handleVerDetalles(row)}
-          onEditar={puedeEditar ? () => handleAbrirFormEditar(row) : null}
-          onEliminar={puedeBorrar && row.id !== usuarioLogeado?.id ? () => handleAbrirConfirmacionBorrar(row) : null}
+          onEditar={puedeEditar && puedeGestionar(row) ? () => handleAbrirFormEditar(row) : null}
+          onEliminar={puedeBorrar && puedeGestionar(row) ? () => handleAbrirConfirmacionBorrar(row) : null}
         />
       </td>
     </tr>

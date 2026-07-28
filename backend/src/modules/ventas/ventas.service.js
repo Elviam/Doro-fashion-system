@@ -44,23 +44,18 @@ function shippingAddressData(address) {
   }
 }
 
-async function findOrCreateClient(clienteInfo, currentUser) {
+async function resolveCheckoutClient(clienteInfo, currentUser) {
   const email = String(clienteInfo.email).trim().toLowerCase()
   const direccion = formatShippingAddress(clienteInfo)
   const defaultAddress = { nombre: clienteInfo.nombre.trim(), email, direccion }
 
-  const linkedClient = await clientsRepository.findByUserId(currentUser.sub)
-  if (linkedClient) return clientsRepository.update(linkedClient.id, defaultAddress)
-
-  const existing = await clientsRepository.findByEmail(email)
-  if (existing) {
-    return clientsRepository.update(existing.id, { ...defaultAddress, userId: currentUser.sub })
+  const client = await clientsRepository.findById(currentUser.sub)
+  if (!client || client.activo === false || client.email.toLowerCase() !== email) {
+    const error = new Error('Cliente no autorizado para realizar esta compra')
+    error.statusCode = 403
+    throw error
   }
-
-  return clientsRepository.create({
-    userId: currentUser.sub,
-    ...defaultAddress,
-  })
+  return clientsRepository.update(client.id, defaultAddress)
 }
 
 export class VentasService {
@@ -71,8 +66,7 @@ export class VentasService {
       throw error
     }
 
-    const clientEmail = currentUser.email
-    if (!clientEmail) {
+    if (currentUser.accountType !== 'CLIENT') {
       const error = new Error('No se pudo identificar al usuario')
       error.statusCode = 401
       throw error
@@ -81,7 +75,7 @@ export class VentasService {
     await fulfillmentService.completeSimulatedDeliveries()
     const all = await ventasRepository.findAll()
     const myVentas = all
-      .filter((v) => v.cliente?.email === clientEmail)
+      .filter((v) => v.clientId === currentUser.sub)
       .map((v) => this.sanitize(v))
 
     return { items: myVentas, total: myVentas.length }
@@ -139,13 +133,13 @@ export class VentasService {
       throw error
     }
 
-    if (currentUser.role !== 'CLIENTE') {
+    if (currentUser.accountType !== 'CLIENT' || currentUser.role !== 'CLIENTE') {
       const error = new Error('Solo una cuenta de cliente puede realizar compras en la tienda')
       error.statusCode = 403
       throw error
     }
 
-    const cliente = await findOrCreateClient({
+    const cliente = await resolveCheckoutClient({
       ...payload.cliente,
       email: currentUser.email,
     }, currentUser)

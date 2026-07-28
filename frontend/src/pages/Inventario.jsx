@@ -30,7 +30,7 @@ export default function Inventario() {
   const { usuario } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const puedeAjustar = canPerformAction(usuario?.permissions, "inventory", "update");
-  const puedeVerValores = canPerformAction(usuario?.permissions, "products", "read");
+  const puedeVerValores = usuario?.role === "ADMIN";
 
   const [productosDB, setProductosDB] = useState([]);
   const [refreshKey,  setRefreshKey]  = useState(0);
@@ -77,21 +77,14 @@ export default function Inventario() {
   const [valoresInventario, setValoresInventario] = useState({ costo: 0, venta: 0 });
 
   useEffect(() => {
-    if (!puedeVerValores) {
-      setValoresInventario({ costo: 0, venta: 0 });
-      return;
-    }
-
-    api.get("/products")
-      .then((result) => {
-        const productos = result.items || result.data?.items || (Array.isArray(result) ? result : []);
-        setValoresInventario({
-          costo: productos.reduce((acc, p) => acc + calcularStockTotal(p.inventario) * (Number(p.precioCompra) || 0), 0),
-          venta: productos.reduce((acc, p) => acc + calcularStockTotal(p.inventario) * (Number(p.precioVenta || p.pVenta) || 0), 0),
-        });
-      })
+    if (!usuario?.permissions?.includes("inventory:read")) return;
+    api.get("/inventory/summary")
+      .then((summary) => setValoresInventario({
+        costo: Number(summary.valorInventarioCosto || 0),
+        venta: Number(summary.valorPotencialVenta || 0),
+      }))
       .catch(() => setValoresInventario({ costo: 0, venta: 0 }));
-  }, [puedeVerValores, refreshKey]);
+  }, [usuario?.permissions, refreshKey]);
   const articulosTotales = productosDB.reduce(
     (acc, p) => acc + calcularStockTotal(p.inventario), 0);
   const alertasCriticas = productosDB.filter((p) => {
@@ -138,12 +131,12 @@ export default function Inventario() {
 
       <div className={`grid grid-cols-2 ${puedeVerValores ? "lg:grid-cols-4" : "lg:grid-cols-2"} gap-4`}>
         {puedeVerValores && <>
-          <Tarjetas label="Valor Inventario (Costo)"
+          <Tarjetas label="Valor del inventario a costo"
             value={`$${valoresInventario.costo.toLocaleString("es-MX", { maximumFractionDigits: 0 })}`}
-            sub="Capital invertido" accent="#C9A84C" icon="bi bi-currency-dollar" />
-          <Tarjetas label="Valor Inventario (Venta)"
+            sub="Valor administrativo" accent="#C9A84C" icon="bi bi-currency-dollar" />
+          <Tarjetas label="Valor potencial de venta"
             value={`$${valoresInventario.venta.toLocaleString("es-MX", { maximumFractionDigits: 0 })}`}
-            sub="Ganancia potencial" accent="#84B140" icon="bi bi-graph-up-arrow" />
+            sub="No representa ingresos realizados" accent="#84B140" icon="bi bi-graph-up-arrow" />
         </>}
         <Tarjetas label="Artículos Totales"
           value={articulosTotales.toLocaleString("es-MX")}

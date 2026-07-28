@@ -26,6 +26,7 @@ function mapUser(user) {
   return {
     ...rest,
     role: role?.codigo ?? null,
+    isPrimaryAdmin: rest.isPrimaryAdmin ?? false,
     permissions: [...new Set([...rolePermissions.filter((code) => !revokedCodes.includes(code)), ...grantedCodes])],
     revokedPermissions: revokedCodes,
     grantedPermissions: grantedCodes
@@ -149,6 +150,14 @@ export class UsersRepository {
   async remove(id) {
     await prisma.user.delete({ where: { id } })
     return true
+  }
+
+  async hasHistoricalRelations(id) {
+    const [sales, auditLogs] = await Promise.all([
+      prisma.sale.count({ where: { vendedorId: id } }),
+      prisma.auditLog.count({ where: { userId: id } })
+    ])
+    return sales > 0 || auditLogs > 0
   }
 }
 

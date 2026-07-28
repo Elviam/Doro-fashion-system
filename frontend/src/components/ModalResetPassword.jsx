@@ -2,15 +2,16 @@ import { useState } from 'react';
 import Toast from './Toast';
 
 export default function ModalResetPassword({ onClose, onUserSubmitted }) {
-  const [usuario, setUsuario] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ message: '', type: 'error' });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!usuario.trim()) {
-      setToast({ message: 'Ingresa tu usuario', type: 'error' });
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      setToast({ message: 'Ingresa tu correo electr\u00f3nico', type: 'error' });
       return;
     }
 
@@ -21,23 +22,20 @@ export default function ModalResetPassword({ onClose, onUserSubmitted }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ usuario: usuario.trim() })
+        body: JSON.stringify({ email: normalizedEmail })
       });
 
       const result = await response.json();
 
       if (!response.ok) {
         if (response.status === 404) {
-          setToast({ message: 'Usuario no encontrado', type: 'error' });
-        } else if (response.status === 403) {
-          // Es un usuario no-cliente, mostrar modal de admin
-          onUserSubmitted(null, 'ADMIN_REQUIRED');
+          setToast({ message: 'Correo no encontrado', type: 'error' });
         } else {
           setToast({ message: result.message || 'Error al procesar la solicitud', type: 'error' });
         }
       } else {
         // Usuario cliente, mostrar modal para código
-        onUserSubmitted(usuario.trim(), 'CLIENTE');
+        onUserSubmitted(normalizedEmail, 'CLIENTE');
       }
     } catch (error) {
       setToast({ message: error.message || 'Error al procesar la solicitud', type: 'error' });
@@ -77,15 +75,15 @@ export default function ModalResetPassword({ onClose, onUserSubmitted }) {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="flex flex-col gap-2">
-              <label htmlFor="usuario" className="text-sm lg:text-base font-tag uppercase text-[var(--ash)]">
-                Ingresa tu usuario
+              <label htmlFor="email" className="text-sm lg:text-base font-tag uppercase text-[var(--ash)]">
+                Ingresa tu correo electr\u00f3nico
               </label>
               <input
-                id="usuario"
-                type="text"
-                value={usuario}
-                onChange={(e) => setUsuario(e.target.value)}
-                placeholder="tu_usuario"
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@correo.com"
                 disabled={loading}
                 className="w-full bg-[var(--noir)] text-[var(--gold-light)] border border-[var(--border-gold-40)] rounded-[2px] px-4 py-2.5 text-sm lg:text-base font-body outline-none placeholder-[var(--gold)]/30 focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--border-gold-20)] transition-all"
               />

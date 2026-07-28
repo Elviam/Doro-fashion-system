@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Toast from './Toast';
 
-export default function ModalValidateCode({ usuario, onClose, onSuccess }) {
+export default function ModalValidateCode({ email, onClose, onSuccess }) {
   const [code, setCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -40,7 +40,7 @@ export default function ModalValidateCode({ usuario, onClose, onSuccess }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          usuario,
+          email,
           code: code.trim(),
           newPassword
         })

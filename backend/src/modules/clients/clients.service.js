@@ -12,18 +12,13 @@ function normalizeOptionalText(value) {
 
 export class ClientsService {
   async getCurrentClient(currentUser) {
-    let client = await clientsRepository.findByUserId(currentUser.sub)
-    if (client) return client
-
-    const user = await prisma.user.findUnique({ where: { id: currentUser.sub } })
-    if (!user) {
-      const error = new Error('Usuario no encontrado')
+    const client = await clientsRepository.findById(currentUser.sub)
+    if (!client || client.activo === false) {
+      const error = new Error('Cliente no encontrado o inactivo')
       error.statusCode = 404
       throw error
     }
-    client = await clientsRepository.findByEmail(user.email)
-    if (client) return clientsRepository.update(client.id, { userId: user.id })
-    return clientsRepository.create({ userId: user.id, nombre: user.nombre || 'Cliente', email: user.email, activo: true })
+    return client
   }
 
   sanitizeAddress(address) {

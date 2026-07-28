@@ -64,6 +64,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
   const getRolesDisponibles = () => {
     return rolesDispProp
       .filter((rol) => ['ADMIN', 'BODEGUERO'].includes(rol.codigo || rol.id))
+      .filter((rol) => usuarioLogeado?.isPrimaryAdmin || rol.codigo !== 'ADMIN')
       .map((rol) => ({
         id: rol.id,
         codigo: rol.codigo,
@@ -155,6 +156,18 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
       if (!esNuevo && !datosAEnviar.password) {
         delete datosAEnviar.password;
       }
+      const esPropiaCuenta = data?.id === usuarioLogeado?.id;
+      const esAdministrador = (data?.role || rolSeleccionado?.codigo) === 'ADMIN';
+      if (esPropiaCuenta) {
+        delete datosAEnviar.roleId;
+        delete datosAEnviar.activo;
+        delete datosAEnviar.revokedPermissions;
+        delete datosAEnviar.grantedPermissions;
+      }
+      if (esAdministrador) {
+        delete datosAEnviar.revokedPermissions;
+        delete datosAEnviar.grantedPermissions;
+      }
       
       onGuardar(datosAEnviar);
     }
@@ -162,6 +175,9 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
 
   const puedeEditar = usuarioLogeado?.role === "ADMIN";
   const rolSeleccionado = rolesOpciones.find((rol) => rol.id === formData.roleId);
+  const esPropiaCuenta = data?.id === usuarioLogeado?.id;
+  const esCuentaAdmin = (data?.role || rolSeleccionado?.codigo) === "ADMIN";
+  const puedeAdministrarCuentaAdmin = usuarioLogeado?.isPrimaryAdmin === true;
   const permisosConfigurables = permisosDisponibles.length > 0
     ? permisosDisponibles
     : (rolSeleccionado?.permissions || []).map((code) => ({ code }));
@@ -174,7 +190,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
     ...(rolSeleccionado?.permissions || []).filter((code) => !formData.revokedPermissions.includes(code)),
     ...formData.grantedPermissions
   ].filter((code, index, permisos) => permisos.indexOf(code) === index);
-  const puedeModificarPermisos = usuarioLogeado?.role === "ADMIN" && (esNuevo || data?.id !== usuarioLogeado?.id);
+  const puedeModificarPermisos = usuarioLogeado?.role === "ADMIN" && !esCuentaAdmin && !esPropiaCuenta;
 
   const togglePermiso = (code) => {
     if (!puedeModificarPermisos) return;
@@ -206,7 +222,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
     setPermisoPendiente(null);
   };
   
-  if (!puedeEditar && !esNuevo) {
+  if ((!puedeEditar && !esNuevo) || (esCuentaAdmin && !esPropiaCuenta && !puedeAdministrarCuentaAdmin)) {
     return (
       <Modal isOpen={isOpen} onClose={onClose} ancho="max-w-md" titulo={<span className="text-xl font-display font-bold text-[var(--noir)] dark:text-[var(--snow)] block m-0">Acceso Denegado</span>}>
         <div className="p-6 text-center text-[var(--noir-soft)] dark:text-[var(--ash)]">
@@ -346,7 +362,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
                   opciones={rolesOpciones.map((rol) => ({ value: rol.id, label: rol.nombre }))}
                   value={formData.roleId} 
                   onChange={handleChange} 
-                  deshabilitado={!esNuevo && data?.id === usuarioLogeado?.id}
+                  deshabilitado={esPropiaCuenta || (esCuentaAdmin && !puedeAdministrarCuentaAdmin)}
                   abrirHaciaArriba={true}
                 />
                 <Input 
@@ -356,6 +372,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
                   opciones={["Activo", "Inactivo"]}
                   value={formData.activo ? "Activo" : "Inactivo"} 
                   onChange={(e) => handleChange({ target: { name: 'activo', type: 'checkbox', checked: e.target.value === "Activo" } })} 
+                  deshabilitado={esPropiaCuenta || data?.isPrimaryAdmin === true || (esCuentaAdmin && !puedeAdministrarCuentaAdmin)}
                   abrirHaciaArriba={true}
                 />
               </div>
@@ -366,7 +383,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
                     <div>
                       <p className="font-tag text-xs font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Permisos del integrante</p>
                       <p className="mt-1 text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">
-                        {rolSeleccionado.codigo === "ADMIN" ? "Administrador: todos los permisos del sistema." : "Bodeguero: permisos operativos de almacén."}
+                        {rolSeleccionado.codigo === "ADMIN" ? "Administrador: los permisos se heredan del rol y no se editan individualmente." : "Bodeguero: permisos operativos de almacén."}
                       </p>
                     </div>
                     <span className="w-fit rounded-[2px] border border-[var(--border-gold-30)] bg-[var(--snow)] px-2.5 py-1 font-tag text-xs font-semibold text-[var(--gold-dark)] dark:border-[var(--border-gold-20)] dark:bg-[var(--noir)] dark:text-[var(--gold-light)]">{permisosActivos.length} activos</span>
@@ -380,7 +397,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
                     </div>
                   )}
 
-                  <div className="mt-4 flex justify-center border-t border-[var(--border-gold-25)] pt-4 dark:border-[var(--border-gold-20)]">
+                  {rolSeleccionado.codigo !== "ADMIN" && <div className="mt-4 flex justify-center border-t border-[var(--border-gold-25)] pt-4 dark:border-[var(--border-gold-20)]">
                     <Boton
                       variante="claro"
                       onClick={() => setMostrarAjustesPermisos(true)}
@@ -389,7 +406,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
                     >
                       <i className="bi bi-shield-gear" /> Ajustar permisos
                     </Boton>
-                  </div>
+                  </div>}
                 </div>
               )}
             </div>

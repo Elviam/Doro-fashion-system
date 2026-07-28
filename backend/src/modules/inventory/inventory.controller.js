@@ -1,6 +1,9 @@
 import { inventoryService } from './inventory.service.js'
 
 export class InventoryController {
+  async summary(req, res) {
+    return res.status(200).json(await inventoryService.summary(req.user))
+  }
   async list(req, res) {
     const result = await inventoryService.list(req.query)
 

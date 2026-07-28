@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { rolesController } from './roles.controller.js'
 import { authenticate } from '../../middlewares/auth.js'
-import { requirePermissions } from '../../middlewares/requirePermissions.js'
+import { requirePermissions, requirePrimaryAdmin } from '../../middlewares/requirePermissions.js'
 import { validate } from '../../middlewares/validate.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
 import {
@@ -33,6 +33,7 @@ router.post(
   '/',
   authenticate,
   requirePermissions(['roles:create']),
+  requirePrimaryAdmin,
   validate(createRoleSchema),
   asyncHandler(rolesController.create.bind(rolesController))
 )
@@ -41,6 +42,7 @@ router.patch(
   '/:id',
   authenticate,
   requirePermissions(['roles:update']),
+  requirePrimaryAdmin,
   validate(roleIdParamSchema, 'params'),
   validate(updateRoleSchema),
   asyncHandler(rolesController.update.bind(rolesController))
@@ -50,6 +52,7 @@ router.delete(
   '/:id',
   authenticate,
   requirePermissions(['roles:delete']),
+  requirePrimaryAdmin,
   validate(roleIdParamSchema, 'params'),
   asyncHandler(rolesController.remove.bind(rolesController))
 )

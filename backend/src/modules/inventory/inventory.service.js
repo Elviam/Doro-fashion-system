@@ -3,6 +3,19 @@ import { logAuditEvent } from '../../utils/audit.js'
 import { prisma } from '../../lib/prisma.js'
 
 export class InventoryService {
+  async summary(currentUser = null) {
+    const products = await inventoryRepository.findAllProducts()
+    const activeProducts = products.filter((product) => product.activo !== false)
+    const unitsAvailable = activeProducts.reduce((total, product) => total + product.variants.reduce((sum, variant) => sum + Number(variant.stock || 0), 0), 0)
+    const lowStock = activeProducts.filter((product) => product.variants.some((variant) => Number(variant.stock || 0) <= Number(product.stockMinimo || 0))).length
+    const exhausted = activeProducts.filter((product) => product.variants.length > 0 && product.variants.every((variant) => Number(variant.stock || 0) === 0)).length
+    const summary = { unidadesDisponibles: unitsAvailable, productosStockBajo: lowStock, productosAgotados: exhausted }
+    if (currentUser?.role === 'ADMIN') {
+      summary.valorInventarioCosto = activeProducts.reduce((total, product) => total + product.variants.reduce((sum, variant) => sum + Number(variant.stock || 0) * Number(product.precioCompra || 0), 0), 0)
+      summary.valorPotencialVenta = activeProducts.reduce((total, product) => total + product.variants.reduce((sum, variant) => sum + Number(variant.stock || 0) * Number(product.precioVenta || 0), 0), 0)
+    }
+    return summary
+  }
   async list(query) {
     const {
       q = '',

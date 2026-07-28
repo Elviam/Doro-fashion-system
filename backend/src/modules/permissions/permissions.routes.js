@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { permissionsController } from './permissions.controller.js'
 import { authenticate } from '../../middlewares/auth.js'
-import { requirePermissions } from '../../middlewares/requirePermissions.js'
+import { requirePermissions, requirePrimaryAdmin } from '../../middlewares/requirePermissions.js'
 import { validate } from '../../middlewares/validate.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
 import {
@@ -33,6 +33,7 @@ router.post(
   '/',
   authenticate,
   requirePermissions(['permissions:create']),
+  requirePrimaryAdmin,
   validate(createPermissionSchema),
   asyncHandler(permissionsController.create.bind(permissionsController))
 )
@@ -41,6 +42,7 @@ router.post(
   '/seed',
   authenticate,
   requirePermissions(['permissions:seed']),
+  requirePrimaryAdmin,
   asyncHandler(permissionsController.seed.bind(permissionsController))
 )
 
@@ -48,6 +50,7 @@ router.patch(
   '/:id',
   authenticate,
   requirePermissions(['permissions:update']),
+  requirePrimaryAdmin,
   validate(permissionIdParamSchema, 'params'),
   validate(updatePermissionSchema),
   asyncHandler(permissionsController.update.bind(permissionsController))
@@ -57,6 +60,7 @@ router.delete(
   '/:id',
   authenticate,
   requirePermissions(['permissions:delete']),
+  requirePrimaryAdmin,
   validate(permissionIdParamSchema, 'params'),
   asyncHandler(permissionsController.remove.bind(permissionsController))
 )

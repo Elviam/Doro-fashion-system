@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { clientsController } from './clients.controller.js'
 import { authenticate } from '../../middlewares/auth.js'
-import { requirePermissions } from '../../middlewares/requirePermissions.js'
+import { requirePermissions, requireClientAccount } from '../../middlewares/requirePermissions.js'
 import { validate } from '../../middlewares/validate.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
 import {
@@ -14,10 +14,10 @@ import {
 
 const router = Router()
 
-router.get('/me/addresses', authenticate, asyncHandler(clientsController.listMyAddresses.bind(clientsController)))
-router.post('/me/addresses', authenticate, validate(addressSchema), asyncHandler(clientsController.createMyAddress.bind(clientsController)))
-router.patch('/me/addresses/:addressId', authenticate, validate(addressIdParamSchema, 'params'), validate(addressSchema), asyncHandler(clientsController.updateMyAddress.bind(clientsController)))
-router.delete('/me/addresses/:addressId', authenticate, validate(addressIdParamSchema, 'params'), asyncHandler(clientsController.removeMyAddress.bind(clientsController)))
+router.get('/me/addresses', authenticate, requireClientAccount, asyncHandler(clientsController.listMyAddresses.bind(clientsController)))
+router.post('/me/addresses', authenticate, requireClientAccount, validate(addressSchema), asyncHandler(clientsController.createMyAddress.bind(clientsController)))
+router.patch('/me/addresses/:addressId', authenticate, requireClientAccount, validate(addressIdParamSchema, 'params'), validate(addressSchema), asyncHandler(clientsController.updateMyAddress.bind(clientsController)))
+router.delete('/me/addresses/:addressId', authenticate, requireClientAccount, validate(addressIdParamSchema, 'params'), asyncHandler(clientsController.removeMyAddress.bind(clientsController)))
 
 router.get(
   '/',

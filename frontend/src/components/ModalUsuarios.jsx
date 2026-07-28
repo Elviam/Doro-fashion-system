@@ -89,6 +89,7 @@ export default function ModalUsuarios({ data, usuarioLogeado, onClose, onEditar,
           </p>
           <div className="flex gap-2">
             <Etiquetas contenido={data.role || data.roleId || "Sin rol"} />
+            {data.isPrimaryAdmin && <Etiquetas contenido="Administrador principal" />}
             <Etiquetas contenido={estadoTexto} />
           </div>
         </div>

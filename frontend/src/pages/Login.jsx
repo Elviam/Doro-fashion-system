@@ -328,7 +328,7 @@ export default function Login() {
   const [loadingGoogle,      setLoadingGoogle]      = useState(false);
   const [toast,              setToast]              = useState({ message: '', type: 'error' });
   const [usuarioLogeado,     setUsuarioLogeado]     = useState(null);
-  const [resetPasswordState, setResetPasswordState] = useState({ step: null, usuario: null });
+  const [resetPasswordState, setResetPasswordState] = useState({ step: null, email: null });
 
   const {
     register,
@@ -438,30 +438,26 @@ export default function Login() {
   // ── Password reset flow ───────────────────────────────────────────────────
   const openResetModal = (e) => {
     e.preventDefault();
-    setResetPasswordState({ step: null, usuario: null });
+    setResetPasswordState({ step: null, email: null });
     document.getElementById('reset_password_usuario_modal').showModal();
   };
 
-  const handleResetPasswordFlow = (usuario, step) => {
-    if (step === 'ADMIN_REQUIRED') {
-      document.getElementById('reset_password_usuario_modal').close();
-      document.getElementById('forgot_password_modal').showModal();
-      setResetPasswordState({ step: 'ADMIN_REQUIRED', usuario: null });
-    } else if (step === 'CLIENTE' && usuario) {
-      setResetPasswordState({ step: 'CLIENTE', usuario });
+  const handleResetPasswordFlow = (email, step) => {
+    if (step === 'CLIENTE' && email) {
+      setResetPasswordState({ step: 'CLIENTE', email });
       document.getElementById('reset_password_usuario_modal').close();
       document.getElementById('validate_code_modal').showModal();
-    } else if (!usuario) {
+    } else if (!email) {
       document.getElementById('reset_password_usuario_modal').close();
       document.getElementById('user_not_found_modal').showModal();
-      setResetPasswordState({ step: 'NOT_FOUND', usuario: null });
+      setResetPasswordState({ step: 'NOT_FOUND', email: null });
     }
   };
 
   const closeResetPasswordModals = () => {
     ['reset_password_usuario_modal', 'validate_code_modal', 'forgot_password_modal', 'user_not_found_modal']
       .forEach((id) => document.getElementById(id)?.close());
-    setResetPasswordState({ step: null, usuario: null });
+    setResetPasswordState({ step: null, email: null });
   };
 
   const handleResetSuccess = () => {
@@ -483,7 +479,7 @@ export default function Login() {
       />
 
       <ModalResetPassword onClose={closeResetPasswordModals} onUserSubmitted={handleResetPasswordFlow} />
-      <ModalValidateCode usuario={resetPasswordState.usuario} onClose={closeResetPasswordModals} onSuccess={handleResetSuccess} />
+      <ModalValidateCode email={resetPasswordState.email} onClose={closeResetPasswordModals} onSuccess={handleResetSuccess} />
       <ModalUserNotFound onClose={closeResetPasswordModals} />
 
       <div className="login-root">

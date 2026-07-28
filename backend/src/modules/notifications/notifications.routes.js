@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { notificationsController } from './notifications.controller.js'
 import { authenticate } from '../../middlewares/auth.js'
+import { requireStaffAccount } from '../../middlewares/requirePermissions.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
 
 const router = Router()
@@ -8,6 +9,7 @@ const router = Router()
 router.get(
   '/',
   authenticate,
+  requireStaffAccount,
   asyncHandler(notificationsController.list.bind(notificationsController))
 )
 

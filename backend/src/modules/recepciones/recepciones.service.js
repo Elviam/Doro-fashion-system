@@ -65,7 +65,7 @@ export class RecepcionesService {
     return `RCP-${String(siguiente).padStart(3, '0')}`
   }
 
-  async list(query) {
+  async list(query, currentUser = null) {
     const { q = '', status, origen, fechaDesde, page = 1, limit = 10 } = query
 
     const all = await recepcionesRepository.findAll()
@@ -95,12 +95,13 @@ export class RecepcionesService {
     const total = filtered.length
     const start = (page - 1) * limit
     const pageItems = filtered.slice(start, start + limit)
-    const items = (await this.attachAuditUsers(pageItems)).map((r) => this.sanitizeRecepcion(r))
+    const includeFinancial = currentUser?.role !== 'BODEGUERO'
+    const items = (await this.attachAuditUsers(pageItems)).map((r) => this.sanitizeRecepcion(r, { includeFinancial }))
 
     return { items, total, page, limit }
   }
 
-  async getById(id) {
+  async getById(id, currentUser = null) {
     const recepcion = await recepcionesRepository.findById(id)
     if (!recepcion) {
       const error = new Error('Recepción no encontrada')
@@ -108,7 +109,7 @@ export class RecepcionesService {
       throw error
     }
     const [recepcionWithUser] = await this.attachAuditUsers([recepcion])
-    return this.sanitizeRecepcion(recepcionWithUser)
+    return this.sanitizeRecepcion(recepcionWithUser, { includeFinancial: currentUser?.role !== 'BODEGUERO' })
   }
 
   async create(payload, currentUser = null) {
@@ -419,20 +420,24 @@ export class RecepcionesService {
       }
 
       const purchasePriceChanges = []
-      for (const [productId, { product, costoNuevo }] of receivedCostsByProduct) {
-        const costoAnterior = Number(product?.precioCompra ?? 0)
-        if (costoAnterior === costoNuevo) continue
+      // Confirming physical quantities is an operational action. Only an
+      // ADMIN may let a reception alter product purchase prices.
+      if (currentUser?.role !== 'BODEGUERO') {
+        for (const [productId, { product, costoNuevo }] of receivedCostsByProduct) {
+          const costoAnterior = Number(product?.precioCompra ?? 0)
+          if (costoAnterior === costoNuevo) continue
 
-        await tx.product.update({
-          where: { id: productId },
-          data: {
-            precioCompra: costoNuevo,
-            precioCompraAnterior: costoAnterior,
-            pendingPriceReview: true,
-            purchasePriceChangedAt: new Date(),
-          },
-        })
-        purchasePriceChanges.push({ productId, costoAnterior, costoNuevo })
+          await tx.product.update({
+            where: { id: productId },
+            data: {
+              precioCompra: costoNuevo,
+              precioCompraAnterior: costoAnterior,
+              pendingPriceReview: true,
+              purchasePriceChangedAt: new Date(),
+            },
+          })
+          purchasePriceChanges.push({ productId, costoAnterior, costoNuevo })
+        }
       }
 
       const updated = await tx.reception.update({
@@ -455,7 +460,8 @@ export class RecepcionesService {
     })
 
     const [updatedWithUsers] = await this.attachAuditUsers([result.updated])
-    const item = this.sanitizeRecepcion(updatedWithUsers)
+    const includeFinancial = currentUser?.role !== 'BODEGUERO'
+    const item = this.sanitizeRecepcion(updatedWithUsers, { includeFinancial })
     const itemsFaltantes = item.items
       .filter((item) => item.cantidadRecibida < item.cantidad)
       .map((item) => ({
@@ -492,7 +498,7 @@ export class RecepcionesService {
       item,
       movements: result.movements,
       itemsFaltantes,
-      diferenciasCosto,
+      diferenciasCosto: includeFinancial ? diferenciasCosto : [],
       purchasePriceChanges: result.purchasePriceChanges,
     }
   }
@@ -529,7 +535,7 @@ export class RecepcionesService {
     })
 
     const [updatedWithUsers] = await this.attachAuditUsers([updated])
-    return this.sanitizeRecepcion(updatedWithUsers)
+    return this.sanitizeRecepcion(updatedWithUsers, { includeFinancial: currentUser?.role !== 'BODEGUERO' })
   }
 
   async cancelar(id, currentUser = null) {
@@ -596,7 +602,7 @@ export class RecepcionesService {
     return { success: true }
   }
 
-  sanitizeRecepcion(recepcion) {
+  sanitizeRecepcion(recepcion, { includeFinancial = true } = {}) {
     const piezasTotales = (recepcion.items || []).reduce((sum, i) => sum + Number(i.cantidad || 0), 0)
     const confirmedByNombre = formatUserName(recepcion.confirmedByUser)
     const sentByNombre = formatUserName(recepcion.sentByUser)
@@ -625,14 +631,16 @@ export class RecepcionesService {
         cantidadRecibida: item.cantidadRecibida === null || item.cantidadRecibida === undefined
           ? null
           : Number(item.cantidadRecibida),
-        costoUnitario: Number(item.costoUnitario || 0),
-        costoUnitarioReal: item.costoUnitarioReal === null || item.costoUnitarioReal === undefined
-          ? null
-          : Number(item.costoUnitarioReal),
-        subtotal: round2(Number(item.cantidad || 0) * Number(item.costoUnitario || 0)),
+        ...(includeFinancial ? {
+          costoUnitario: Number(item.costoUnitario || 0),
+          costoUnitarioReal: item.costoUnitarioReal === null || item.costoUnitarioReal === undefined
+            ? null
+            : Number(item.costoUnitarioReal),
+          subtotal: round2(Number(item.cantidad || 0) * Number(item.costoUnitario || 0)),
+        } : {}),
       })),
       piezasTotales,
-      total: Number(recepcion.total || 0),
+      ...(includeFinancial ? { total: Number(recepcion.total || 0) } : {}),
       sentAt: recepcion.sentAt || null,
       sentBy: recepcion.sentBy || '',
       sentByNombre,

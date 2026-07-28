@@ -99,7 +99,7 @@ function construirCambiosProducto(anterior, datosActualizados, inventarioNuevo) 
 }
 
 export class ProductsService {
-  async list(query) {
+  async list(query, currentUser = null) {
     const { q = '', activo, page = 1, limit = 10 } = query
 
     const allProducts = await productsRepository.findAll()
@@ -125,19 +125,19 @@ export class ProductsService {
 
     const total = filtered.length
     const start = (page - 1) * limit
-    const items = filtered.slice(start, start + limit).map((p) => this.sanitizeProduct(p))
+    const items = filtered.slice(start, start + limit).map((p) => this.sanitizeProduct(p, { includeFinancial: currentUser?.role === 'ADMIN' }))
 
     return { items, total, page, limit }
   }
 
-  async getById(id) {
+  async getById(id, currentUser = null) {
     const product = await productsRepository.findById(id)
     if (!product) {
       const error = new Error('Producto no encontrado')
       error.statusCode = 404
       throw error
     }
-    return this.sanitizeProduct(product)
+    return this.sanitizeProduct(product, { includeFinancial: currentUser?.role === 'ADMIN' })
   }
 
   async create(payload, currentUser = null) {
@@ -375,7 +375,7 @@ export class ProductsService {
     return { success: true }
   }
 
-  sanitizeProduct(product) {
+  sanitizeProduct(product, { includeFinancial = true } = {}) {
     const inventario = (product.variants || []).map((v) => ({
       id: v.id,
       talla: v.talla,
@@ -390,14 +390,15 @@ export class ProductsService {
       categoria: product.categoria || '',
       departamento: product.departamento || '',
       unidad: product.unidad || '',
-      supplierId: product.supplierId || '',
-      supplierNombre: product.supplier?.nombre || '',
-      precioCompra: Number(product.precioCompra || 0),
-      precioCompraAnterior: product.precioCompraAnterior === null || product.precioCompraAnterior === undefined
-        ? null
-        : Number(product.precioCompraAnterior),
-      pendingPriceReview: product.pendingPriceReview ?? false,
-      purchasePriceChangedAt: product.purchasePriceChangedAt || null,
+      ...(includeFinancial ? { supplierId: product.supplierId || '', supplierNombre: product.supplier?.nombre || '' } : {}),
+      ...(includeFinancial ? {
+        precioCompra: Number(product.precioCompra || 0),
+        precioCompraAnterior: product.precioCompraAnterior === null || product.precioCompraAnterior === undefined
+          ? null
+          : Number(product.precioCompraAnterior),
+        pendingPriceReview: product.pendingPriceReview ?? false,
+        purchasePriceChangedAt: product.purchasePriceChangedAt || null,
+      } : {}),
       precioVenta: Number(product.precioVenta || 0),
       stock: computeTotalStock(product.variants || []),
       stockMinimo: Number(product.stockMinimo ?? 0),
