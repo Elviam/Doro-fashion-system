@@ -5,7 +5,7 @@ import Etiquetas from "../components/Etiquetas";
 import ModalRecepciones from "../components/ModalRecepciones";
 import ModalConfirmacion from "../components/ModalConfirmacion";
 import Paginacion from "../components/Paginacion";
-import { cancelarPedido, eliminarPedido, fetchPedidos, enviarPedido, ESTADO_PEDIDO_LABELS } from "../services/pedidos.service";
+import { fetchPedidos, enviarPedido, ESTADO_PEDIDO_LABELS } from "../services/pedidos.service";
 import useTitulo from "../hooks/useTitulo";
 import { useAuth } from "../hooks/useAuth";
 import { canPerformAction } from "../utils/permissionMapper";
@@ -50,17 +50,13 @@ export default function MisPedidos() {
   const navigate = useNavigate();
   useTitulo("Mis pedidos");
   const { usuario } = useAuth();
-  const puedeEnviar = canPerformAction(usuario?.permissions, "recepciones", "enviar");
-  const puedeCancelar = usuario?.role === "ADMIN" && canPerformAction(usuario?.permissions, "recepciones", "cancel");
-  const puedeEliminar = canPerformAction(usuario?.permissions, "recepciones", "delete");
+  const puedeEnviar = canPerformAction(usuario, "pedidos_proveedor", "send");
 
   const [pedidos, setPedidos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [enviandoId, setEnviandoId] = useState(null);
   const [pedidoEnviadoExitosamente, setPedidoEnviadoExitosamente] = useState(false);
-  const [accionPendiente, setAccionPendiente] = useState(null);
-  const [procesandoAccion, setProcesandoAccion] = useState(false);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("BORRADOR");
@@ -86,26 +82,6 @@ export default function MisPedidos() {
       console.error("Error al marcar como enviado:", err);
     } finally {
       setEnviandoId(null);
-    }
-  };
-
-  const handleConfirmarAccion = async () => {
-    if (!accionPendiente) return;
-    setProcesandoAccion(true);
-    try {
-      if (accionPendiente.tipo === "eliminar") {
-        await eliminarPedido(accionPendiente.pedido.id);
-      } else {
-        await cancelarPedido(accionPendiente.pedido.id);
-      }
-      setPedidoSeleccionado((actual) => actual?.id === accionPendiente.pedido.id ? null : actual);
-      setAccionPendiente(null);
-      setPaginaActual(1);
-      setRefreshKey((k) => k + 1);
-    } catch (err) {
-      window.alert(err.message || "No se pudo actualizar el pedido.");
-    } finally {
-      setProcesandoAccion(false);
     }
   };
 
@@ -217,13 +193,9 @@ export default function MisPedidos() {
           setPedidoSeleccionado(null);
           navigate("/reabastecimiento/generar-pedido", { state: { pedidoParaEditar: pedido } });
         }}
-        puedeEliminar={puedeEliminar}
-        puedeCancelar={puedeCancelar}
-        onEliminar={(pedido) => { setPedidoSeleccionado(null); setAccionPendiente({ tipo: "eliminar", pedido }); }}
-        onCancelar={(pedido) => { setPedidoSeleccionado(null); setAccionPendiente({ tipo: "cancelar", pedido }); }}
       />
 
-      {accionPendiente && (
+      {/* Cancelar/eliminar pertenecen a Recepción y no se exponen como acciones de pedidos a proveedor.
         <ModalConfirmacion
           isOpen
           tipo="eliminar"
@@ -237,7 +209,7 @@ export default function MisPedidos() {
           cargando={procesandoAccion}
           textoCargando={accionPendiente.tipo === "eliminar" ? "Eliminando..." : "Cancelando..."}
         />
-      )}
+      */}
 
       <ModalConfirmacion
         isOpen={pedidoEnviadoExitosamente}

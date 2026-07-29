@@ -58,7 +58,7 @@ export default function Recepciones() {
     if (filtro) params.set("status", filtro);
     if (busquedaActiva) params.set("q", busquedaActiva);
 
-      api.get(`/recepciones?${params}`)
+      api.get(`/recepciones/pendientes?${params}`)
       .then((res) => {
         const items = (res.items || [])
           .filter((item) => item.status !== "BORRADOR")

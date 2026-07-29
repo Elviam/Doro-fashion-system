@@ -1,45 +1,40 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, ClipboardList, Users, Truck, UserCog, ShieldCheck, ShoppingCart, ChevronLeft, ChevronRight, ChevronDown, Book, RefreshCw, PackageCheck } from "lucide-react";
+import { LayoutDashboard, Package, ClipboardList, Users, Truck, UserCog, ShieldCheck, ShoppingCart, ChevronLeft, ChevronRight, ChevronDown, Book, RefreshCw, PackageCheck, Settings } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { hasAnyPermission, hasPermission } from "../utils/accessControl";
 
 const navItems = [
-  {
-    section: "GENERAL",
-    items: [
-      { label: "Dashboard",   ruta: "/dashboard",   icon: LayoutDashboard, permiso: "dashboard:read" },
-      
-    ],
-  },
- {
-  section: "GESTIÓN",
-  items: [
-    { label: "Ventas",           ruta: "/ventas",           icon: ShoppingCart, permiso: "ventas:read" },
-    { label: "Productos",        ruta: "/productos",        icon: Package,      permiso: "products:read" },
-    { label: "Inventario",       ruta: "/inventario",        icon: Book,         permiso: "inventory:read" },
-    { label: "Preparar pedidos", ruta: "/preparar-pedidos",  icon: PackageCheck, permiso: "fulfillment:read" },
+  { section: "GENERAL", items: [
+    { label: "Dashboard", ruta: "/dashboard", icon: LayoutDashboard, permiso: "dashboard:read" },
+  ] },
+  { section: "VENTAS Y CATÁLOGO", items: [
+    { label: "Ventas", ruta: "/ventas", icon: ShoppingCart, permiso: "ventas:read" },
+    { label: "Productos", ruta: "/productos", icon: Package, permiso: "products:read" },
+    { label: "Clientes", ruta: "/clientes", icon: Users, permiso: "clients:read" },
+  ] },
+  { section: "OPERACIÓN DE ALMACÉN", items: [
+    { label: "Inventario", ruta: "/inventario", icon: Book, permiso: "inventory:read" },
+    { label: "Preparación de pedidos", ruta: "/preparar-pedidos", icon: PackageCheck, permiso: "fulfillment:read", descripcion: "Pedidos realizados en la tienda online" },
+    { label: "Recepción de mercancía", ruta: "/recepciones", icon: ClipboardList, permiso: "recepciones:read" },
+  ] },
+  { section: "ABASTECIMIENTO", items: [
     {
-      label: "Reabastecimiento", ruta: "/reabastecimiento", icon: RefreshCw, permiso: "recepciones:create",
+      label: "Reabastecimiento", ruta: "/reabastecimiento", icon: RefreshCw,
+      anyPermissions: ["reabastecimiento:read", "pedidos_proveedor:create", "pedidos_proveedor:send"],
       subitems: [
-        { label: "Resumen", ruta: "/reabastecimiento" },
-        { label: "Generar pedido", ruta: "/reabastecimiento/generar-pedido" },
-        { label: "Mis pedidos", ruta: "/reabastecimiento/pedidos" },
+        { label: "Resumen", ruta: "/reabastecimiento", permiso: "reabastecimiento:read" },
+        { label: "Generar pedido", ruta: "/reabastecimiento/generar-pedido", permiso: "pedidos_proveedor:create" },
+        { label: "Pedidos a proveedores", ruta: "/reabastecimiento/pedidos", anyPermissions: ["reabastecimiento:read", "pedidos_proveedor:send"] },
       ],
     },
-    { label: "Recepción de mercancía", ruta: "/recepciones", icon: ClipboardList, permiso: "recepciones:read" },
-    { label: "Clientes",         ruta: "/clientes",          icon: Users,        permiso: "clients:read" },
-    { label: "Proveedores",      ruta: "/proveedores",       icon: Truck,        permiso: "suppliers:read" },
-  ],
-},
-  {
-    section: "CONTROL",
-    items: [
-      { label: "Personal",    ruta: "/usuarios",    icon: UserCog,         permiso: "users:read" },
-      { label: "Auditoría",   ruta: "/auditoria",   icon: ShieldCheck,     permiso: "audit:read" },
-      
-
-    ],
-  },
+    { label: "Proveedores", ruta: "/proveedores", icon: Truck, permiso: "suppliers:read" },
+  ] },
+  { section: "ADMINISTRACIÓN Y CONTROL", items: [
+    { label: "Personal", ruta: "/usuarios", icon: UserCog, permiso: "users:read" },
+    { label: "Configuración", ruta: "/configuracion", icon: Settings, anyPermissions: ["roles:read", "permissions:read"] },
+    { label: "Auditoría", ruta: "/auditoria", icon: ShieldCheck, permiso: "audit:read" },
+  ] },
 ];
 
 // ---------------------------------------------------------------------------
@@ -86,13 +81,8 @@ export default function Sidebar({ onCerrar }) {
       onCerrar?.();
     }
   };
-  const tienePermiso = (permisoRequerido) => {
-      if (!permisoRequerido) return true;
-
-      // Permitir a admins y gerentes directamente
-      // Para otros roles, verificar permisos dinámicos del JWT
-      return Array.isArray(usuario?.permissions) && usuario.permissions.includes(permisoRequerido);
-    };
+  const tienePermiso = (permisoRequerido) => hasPermission(usuario, permisoRequerido);
+  const tieneAlgunoDeLosPermisos = (permisos) => hasAnyPermission(usuario, permisos);
 
     return (
       <aside
@@ -162,7 +152,9 @@ export default function Sidebar({ onCerrar }) {
       {/* Nav */}
       <nav className="flex-1 px-2 overflow-y-auto">
         {navItems.map((group) => {
-          const itemsConPermiso = group.items.filter(item => tienePermiso(item.permiso));
+          const itemsConPermiso = group.items.filter((item) =>
+            item.anyPermissions ? tieneAlgunoDeLosPermisos(item.anyPermissions) : tienePermiso(item.permiso)
+          );
           if (itemsConPermiso.length === 0) return null;
 
           return (
@@ -186,7 +178,14 @@ export default function Sidebar({ onCerrar }) {
               }
 
               <div className="flex flex-col gap-1.5">
-                {itemsConPermiso.map(({ label, ruta, icon: Icon, subitems }) => {
+                {itemsConPermiso.map(({ label, ruta, icon: Icon, subitems, descripcion }) => {
+                  const subitemsConPermiso = subitems?.filter((subitem) =>
+                    subitem.anyPermissions
+                      ? tieneAlgunoDeLosPermisos(subitem.anyPermissions)
+                      : tienePermiso(subitem.permiso)
+                  ) || [];
+                  const tieneSubitems = subitemsConPermiso.length > 0;
+                  const rutaPredeterminada = subitemsConPermiso[0]?.ruta || ruta;
                   const isActive = subitems
                     ? location.pathname.startsWith(ruta)
                     : location.pathname === ruta;
@@ -196,14 +195,14 @@ export default function Sidebar({ onCerrar }) {
                     <div key={label}>
                       <button
                         onClick={() => {
-                          if (subitems && !isCollapsed) {
+                          if (tieneSubitems && !isCollapsed) {
                             abrirSubmenu();
                             return;
                           }
-                          navigate(ruta);
+                          navigate(rutaPredeterminada);
                           if (!esDesktop) onCerrar?.();
                         }}
-                        title={isCollapsed ? label : undefined}
+                        title={isCollapsed ? `${label}${descripcion ? ` — ${descripcion}` : ''}` : descripcion}
                         className={`group relative flex items-center w-full h-11 rounded-[2px] transition-all duration-300 overflow-hidden ${
                           isCollapsed ? "justify-center px-0" : "gap-3.5 px-4.5"
                         } ${
@@ -241,13 +240,13 @@ export default function Sidebar({ onCerrar }) {
                           {label}
                         </span>
                       )}
-                      {subitems && !isCollapsed && (
+                      {tieneSubitems && !isCollapsed && (
                         <ChevronDown size={16} className={`ml-auto text-[var(--gold-dark)] dark:text-[var(--gold-light)] transition-transform ${reabastecimientoAbierto ? "rotate-180" : ""}`} />
                       )}
                       </button>
-                      {subitems && !isCollapsed && reabastecimientoAbierto && (
+                      {tieneSubitems && !isCollapsed && reabastecimientoAbierto && (
                         <div className="ml-9 mt-1 mb-1 flex flex-col gap-1 border-l border-[var(--border-gold-25)] pl-3 dark:border-[var(--border-gold-20)]">
-                          {subitems.map((subitem) => {
+                          {subitemsConPermiso.map((subitem) => {
                             const subActivo = location.pathname === subitem.ruta;
                             return (
                               <button

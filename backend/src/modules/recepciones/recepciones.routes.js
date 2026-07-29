@@ -18,22 +18,32 @@ const router = Router()
 router.get(
   '/',
   authenticate,
-  requirePermissions(['recepciones:read']),
+  requirePermissions(['reabastecimiento:read']),
   validate(listRecepcionesQuerySchema, 'query'),
   asyncHandler(recepcionesController.list.bind(recepcionesController))
+)
+
+// Vista operativa del almacén. Conserva el mismo modelo de datos, pero no
+// expone el listado administrativo de pedidos de proveedor.
+router.get(
+  '/pendientes',
+  authenticate,
+  requirePermissions(['recepciones:read']),
+  validate(listRecepcionesQuerySchema, 'query'),
+  asyncHandler(recepcionesController.listForConfirmation.bind(recepcionesController))
 )
 
 router.get(
   '/next-folio',
   authenticate,
-  requirePermissions(['recepciones:create']),
+  requirePermissions(['pedidos_proveedor:create']),
   asyncHandler(recepcionesController.nextFolio.bind(recepcionesController))
 )
 
 router.get(
   '/:id',
   authenticate,
-  requirePermissions(['recepciones:read']),
+  requirePermissions(['reabastecimiento:read']),
   validate(recepcionIdParamSchema, 'params'),
   asyncHandler(recepcionesController.getById.bind(recepcionesController))
 )
@@ -41,7 +51,7 @@ router.get(
 router.post(
   '/',
   authenticate,
-  requirePermissions(['recepciones:create']),
+  requirePermissions(['pedidos_proveedor:create']),
   validate(createRecepcionSchema),
   asyncHandler(recepcionesController.create.bind(recepcionesController))
 )
@@ -76,7 +86,7 @@ router.patch(
 router.patch(
   '/:id/enviar',
   authenticate,
-  requirePermissions(['recepciones:enviar']),
+  requirePermissions(['pedidos_proveedor:send']),
   validate(recepcionIdParamSchema, 'params'),
   asyncHandler(recepcionesController.enviar.bind(recepcionesController))
 )

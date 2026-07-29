@@ -96,8 +96,8 @@ export default function GenerarPedido() {
   const navigate = useNavigate();
   const location = useLocation();
   const { usuario } = useAuth();
-  const puedeCrear = canPerformAction(usuario?.permissions, "recepciones", "create");
-  const puedeEnviar = canPerformAction(usuario?.permissions, "recepciones", "enviar");
+  const puedeCrear = canPerformAction(usuario, "pedidos_proveedor", "create");
+  const puedeEnviar = canPerformAction(usuario, "pedidos_proveedor", "send");
 
   const [filas, setFilas] = useState([]);
   const [productosActivos, setProductosActivos] = useState([]);

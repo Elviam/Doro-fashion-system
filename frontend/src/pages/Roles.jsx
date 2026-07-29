@@ -21,7 +21,7 @@ import ModalPermisos from "../components/ModalPermisos";
 const LIMIT = 10;
 
 export default function Roles() {
-  useTitulo("Roles");
+  useTitulo("Configuración");
   const { usuario: usuarioLogeado } = useContext(AuthContext);
 
 const esAdmin = usuarioLogeado?.role === "ADMIN" ||
@@ -221,9 +221,7 @@ const esAdmin = usuarioLogeado?.role === "ADMIN" ||
       <td className="p-4 align-middle whitespace-nowrap">
         <AccionesTabla
           onVer={() => handleVerDetalles(row)}
-          onPermisos={() => handleAbrirPermisos(row)}
           onEditar={() => handleAbrirFormEditar(row)}
-          onEliminar={() => handleAbrirConfirmacionBorrar(row)}
         />
       </td>
     </tr>
@@ -255,10 +253,10 @@ const esAdmin = usuarioLogeado?.role === "ADMIN" ||
           busqueda={busqueda} 
           setBusqueda={setBusqueda} 
           placeholderBuscar="Buscar por nombre o descripción..."
-          textoBoton="+ Rol" 
-          accionBoton={handleAbrirFormCrear}
-          textoBoton2="+ Permiso" 
-          accionBoton2={() => setIsModalNuevoPermisoAbierto(true)}
+          textoBoton=""
+          accionBoton={undefined}
+          textoBoton2=""
+          accionBoton2={undefined}
         />
       </div>
 

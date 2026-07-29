@@ -65,6 +65,8 @@ export async function performSearch(searchTerm, userPermissions = []) {
   if (hasPermission(userPermissions, 'recepciones:read')) {
     queries.push(prisma.reception.findMany({
       where: {
+        origen: 'REABASTECIMIENTO',
+        estado: { not: 'BORRADOR' },
         AND: terms.map((term) => ({ OR: [
           { folio: { contains: term, mode: 'insensitive' } },
           { facturaProveedor: { contains: term, mode: 'insensitive' } },

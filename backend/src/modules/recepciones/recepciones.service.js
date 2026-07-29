@@ -18,6 +18,14 @@ function formatUserName(user) {
   return [user.nombre, user.apellido].filter(Boolean).join(' ').trim() || user.usuario || ''
 }
 
+function assertNotSupplierOrder(recepcion) {
+  if (recepcion.origen === 'REABASTECIMIENTO') {
+    const error = new Error('Los pedidos a proveedor solo admiten las acciones configuradas para ese módulo')
+    error.statusCode = 403
+    throw error
+  }
+}
+
 // Merges duplicate productId+talla rows into one, summing cantidad and
 // weighting costoUnitario by quantity — matches "one row per product,
 // quantity increases" business rule.
@@ -186,6 +194,7 @@ export class RecepcionesService {
       error.statusCode = 404
       throw error
     }
+    assertNotSupplierOrder(current)
 
     if (current.estado !== 'BORRADOR') {
       const error = new Error('Solo puedes editar recepciones en borrador')
@@ -551,6 +560,7 @@ export class RecepcionesService {
       error.statusCode = 404
       throw error
     }
+    assertNotSupplierOrder(recepcion)
 
     if (!['BORRADOR', 'ENVIADA'].includes(recepcion.estado)) {
       const error = new Error('Solo puedes cancelar recepciones en estado BORRADOR o ENVIADA')
@@ -582,6 +592,7 @@ export class RecepcionesService {
       error.statusCode = 404
       throw error
     }
+    assertNotSupplierOrder(recepcion)
 
     if (recepcion.estado !== 'BORRADOR') {
       const error = new Error('Solo puedes eliminar recepciones en borrador.')

@@ -7,8 +7,24 @@ export class RecepcionesController {
   }
 
   async list(req, res) {
-    const result = await recepcionesService.list(req.query, req.user)
+    const result = await recepcionesService.list({
+      ...req.query,
+      origen: 'REABASTECIMIENTO'
+    }, req.user)
 
+    return res.status(200).json(result)
+  }
+
+  async listForConfirmation(req, res) {
+    const result = await recepcionesService.list({
+      ...req.query,
+      origen: 'REABASTECIMIENTO'
+    }, req.user)
+
+    // El almacén solamente trabaja con mercancía que ya fue enviada o tiene
+    // un resultado de recepción; nunca con borradores administrativos.
+    result.items = result.items.filter((item) => item.status !== 'BORRADOR')
+    result.total = result.items.length
     return res.status(200).json(result)
   }
 
@@ -21,6 +37,9 @@ export class RecepcionesController {
   }
 
   async create(req, res) {
+    if (req.body.origen !== 'REABASTECIMIENTO') {
+      return res.status(400).json({ message: 'Este endpoint solo crea pedidos a proveedores' })
+    }
     const item = await recepcionesService.create(req.body, req.user)
 
     return res.status(201).json({

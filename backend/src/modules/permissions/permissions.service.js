@@ -41,6 +41,10 @@ const DEFAULT_PERMISSIONS = [
   { code: 'fulfillment:read', nombre: 'Ver preparación de pedidos', descripcion: 'Permite consultar pedidos pagados por preparar', modulo: 'fulfillment' },
   { code: 'fulfillment:update', nombre: 'Actualizar preparación de pedidos', descripcion: 'Permite actualizar el estado de preparación de pedidos', modulo: 'fulfillment' },
 
+  { code: 'reabastecimiento:read', nombre: 'Ver reabastecimiento', descripcion: 'Permite acceder al resumen y páginas de reabastecimiento', modulo: 'reabastecimiento' },
+  { code: 'pedidos_proveedor:create', nombre: 'Crear pedido a proveedor', descripcion: 'Permite generar pedidos de reabastecimiento', modulo: 'reabastecimiento' },
+  { code: 'pedidos_proveedor:send', nombre: 'Enviar pedido a proveedor', descripcion: 'Permite enviar un pedido de proveedor a recepción', modulo: 'reabastecimiento' },
+
   { code: 'recepciones:read', nombre: 'Ver recepciones', descripcion: 'Permite listar y ver recepciones', modulo: 'recepciones' },
   { code: 'recepciones:create', nombre: 'Crear recepciones', descripcion: 'Permite registrar recepciones', modulo: 'recepciones' },
   { code: 'recepciones:update', nombre: 'Editar recepciones', descripcion: 'Permite actualizar recepciones', modulo: 'recepciones' },

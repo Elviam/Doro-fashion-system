@@ -3,6 +3,14 @@ import Modal from "./Modal";
 import Input from "./Input";
 import Boton from "./Boton";
 import ModalConfirmacion from "./ModalConfirmacion";
+import {
+  MODULE_LABELS,
+  getPermissionModule,
+  getPermissionPresentation,
+  isPermissionVisibleInModal,
+  sortPermissionGroups,
+  sortPermissions,
+} from "../config/permissionPresentation";
 
 const MODULOS_PERMISOS = {
   auth: "Acceso",
@@ -12,9 +20,10 @@ const MODULOS_PERMISOS = {
   suppliers: "Proveedores",
   products: "Productos",
   inventory: "Inventario",
+  reabastecimiento: "Reabastecimiento",
   pedidos: "Pedidos",
   recepciones: "Recepción de mercancía",
-  fulfillment: "Preparación de pedidos",
+  fulfillment: "Pedidos de clientes",
   ventas: "Ventas",
   audit: "Auditoría",
   permissions: "Configuración",
@@ -30,13 +39,27 @@ export const RECURSOS_PERMISOS = {
   permissions: "permisos", roles: "roles", tienda: "tienda"
 };
 
+RECURSOS_PERMISOS.recepciones = "recepciones de mercancía";
+
+RECURSOS_PERMISOS.reabastecimiento = "reabastecimiento";
+
 const ACCIONES_PERMISOS = {
   read: "Ver", create: "Crear", update: "Editar", delete: "Eliminar",
   confirm: "Confirmar", enviar: "Marcar como enviado", cancel: "Cancelar",
   seed: "Configurar", me: "Ver"
 };
 
+const MODULOS_ORDENADOS = ['dashboard', 'ventas', 'products', 'clients', 'inventory', 'fulfillment', 'reabastecimiento', 'recepciones', 'pedidos', 'suppliers', 'users', 'permissions', 'roles', 'audit'];
+const ACCIONES_ORDENADAS = ['read', 'create', 'update', 'enviar', 'confirm', 'cancel', 'delete'];
+const ordenarPermisos = (permisos) => [...permisos].sort((a, b) => {
+  const posicionA = ACCIONES_ORDENADAS.indexOf(a.code.split(':')[1]);
+  const posicionB = ACCIONES_ORDENADAS.indexOf(b.code.split(':')[1]);
+  return (posicionA < 0 ? 99 : posicionA) - (posicionB < 0 ? 99 : posicionB);
+});
+
 export function getPermissionLabel(code) {
+  const presentation = getPermissionPresentation(code);
+  if (presentation) return presentation.label;
   const [resource, action] = code.split(":");
   return `${ACCIONES_PERMISOS[action] || action} ${RECURSOS_PERMISOS[resource] || resource}`;
 }
@@ -178,11 +201,12 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
   const esPropiaCuenta = data?.id === usuarioLogeado?.id;
   const esCuentaAdmin = (data?.role || rolSeleccionado?.codigo) === "ADMIN";
   const puedeAdministrarCuentaAdmin = usuarioLogeado?.isPrimaryAdmin === true;
-  const permisosConfigurables = permisosDisponibles.length > 0
+  const permisosConfigurables = (permisosDisponibles.length > 0
     ? permisosDisponibles
-    : (rolSeleccionado?.permissions || []).map((code) => ({ code }));
+    : (rolSeleccionado?.permissions || []).map((code) => ({ code })))
+    .filter(({ code }) => isPermissionVisibleInModal(code));
   const permisosAgrupados = permisosConfigurables.reduce((grupos, permiso) => {
-    const [modulo] = permiso.code.split(":");
+    const modulo = getPermissionModule(permiso.code);
     grupos[modulo] = [...(grupos[modulo] || []), permiso];
     return grupos;
   }, {});
@@ -434,14 +458,15 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
             </div>
 
             <div className="space-y-3">
-              {Object.entries(permisosAgrupados).map(([modulo, permisos]) => (
+              {sortPermissionGroups(Object.entries(permisosAgrupados))
+                .map(([modulo, permisos]) => (
                 <details key={modulo} className="group rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] dark:border-[var(--border-gold-20)] dark:bg-[var(--noir-soft)]">
                   <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-tag text-sm font-semibold uppercase tracking-wider text-[var(--noir)] dark:text-[var(--snow)]">
-                    <span>{MODULOS_PERMISOS[modulo] || modulo}</span>
+                    <span>{MODULE_LABELS[modulo] || MODULOS_PERMISOS[modulo] || modulo}</span>
                     <i className="bi bi-chevron-down text-[var(--gold-dark)] transition-transform group-open:rotate-180 dark:text-[var(--gold-light)]" />
                   </summary>
                   <div className="border-t border-[var(--border-gold-25)] px-4 py-2 dark:border-[var(--border-gold-20)]">
-                    {permisos.map((permiso) => {
+                    {sortPermissions(permisos).map((permiso) => {
                       const esPermisoDelRol = rolSeleccionado.permissions.includes(permiso.code);
                       const asignado = esPermisoDelRol
                         ? !formData.revokedPermissions.includes(permiso.code)

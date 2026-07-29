@@ -1,4 +1,5 @@
 import { createContext, useState, useContext, useEffect } from "react";
+import { normalizeAuthenticatedUser } from "../utils/accessControl";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -44,13 +45,11 @@ export function AuthProvider({ children }) {
         const data = await res.json();
 
         // Normalizar estructura del usuario para asegurar que tenga roleId
-        const usuario = {
-          ...data.user,
-          roleId: data.user?.roleId || data.user?.role || null
-        };
+        const usuario = normalizeAuthenticatedUser(data.user);
 
         setToken(tokenGuardado);
         setUsuario(usuario);
+        localStorage.setItem("usuario", JSON.stringify(usuario));
 
       } catch (error) {
         // Solo borrar token si es explícitamente inválido
@@ -77,10 +76,7 @@ export function AuthProvider({ children }) {
   const login = (tokenRecibido, datosUsuario) => {
 
     // Normalizar estructura del usuario para asegurar que tenga roleId
-    const usuario = {
-      ...datosUsuario,
-      roleId: datosUsuario?.roleId || datosUsuario?.role || null
-    };
+    const usuario = normalizeAuthenticatedUser(datosUsuario);
 
     localStorage.setItem("token", tokenRecibido);
     localStorage.setItem("usuario", JSON.stringify(usuario));
