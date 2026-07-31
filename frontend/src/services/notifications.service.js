@@ -1,17 +1,11 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api"
+import { staffApi } from './api.js'
 
-function getToken() {
-  return localStorage.getItem("token") ?? ""
-}
-
-export async function fetchNotifications() {
-  const res = await fetch(`${BASE_URL}/notifications`, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`,
-    },
-  })
-
-  if (!res.ok) throw new Error("Error al cargar notificaciones")
-  return res.json() // { total, items }
+export async function fetchNotifications(options = {}) {
+  const payload = await staffApi.get('/notifications', options)
+  if (typeof payload?.total !== 'number' || !Array.isArray(payload?.items) || payload.total !== payload.items.length) {
+    const error = new Error('La respuesta de notificaciones no tiene el formato esperado')
+    error.code = 'INVALID_NOTIFICATIONS_PAYLOAD'
+    throw error
+  }
+  return payload
 }

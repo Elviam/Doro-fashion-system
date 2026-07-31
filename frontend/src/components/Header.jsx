@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { api } from "../services/api";
-import { fetchNotifications } from "../services/notifications.service";
+import { staffApi } from "../services/api";
+import useNotifications, { NOTIFICATION_STATUS } from "../hooks/useNotifications";
 import { createPortal } from "react-dom";
+import { setFlashMessage } from "../utils/flash";
 
 export default function Header({ onMenuClick, onActualizar, actualizando = false }) {
-  const { usuario, logout } = useAuth();
+  const { usuario, logout, token, accountType } = useAuth();
   const navigate = useNavigate();
 
   const [isDark, setIsDark] = useState(() => {
@@ -31,10 +32,12 @@ export default function Header({ onMenuClick, onActualizar, actualizando = false
   const menuDropdownRef = useRef(null);
 
   const [posNotifs, setPosNotifs] = useState({ top: 0, right: 0 });
-  const [totalNotifs, setTotalNotifs] = useState(0);
   const [mostrarNotifs, setMostrarNotifs] = useState(false);
-  const [notifs, setNotifs] = useState([]);
   const [mostrarMenu, setMostrarMenu] = useState(false);
+  const notifications = useNotifications({ enabled: accountType === "STAFF" && Boolean(token), userId: usuario?.id });
+  const { items: notifs, total: totalNotifs, status: notificationStatus, lastUpdatedAt, retry: retryNotifications, isEmptySuccessful } = notifications;
+  const hasSuccessfulNotifications = Boolean(lastUpdatedAt);
+  const isNotificationLoading = notificationStatus === NOTIFICATION_STATUS.IDLE || notificationStatus === NOTIFICATION_STATUS.LOADING || notificationStatus === NOTIFICATION_STATUS.RETRYING;
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -61,7 +64,7 @@ export default function Header({ onMenuClick, onActualizar, actualizando = false
       setMostrarModal(true);
 
       try {
-        const response = await api.get(
+        const response = await staffApi.get(
           `/search?q=${encodeURIComponent(query.trim())}`
         );
         setResultados(response.data || response);
@@ -84,17 +87,6 @@ export default function Header({ onMenuClick, onActualizar, actualizando = false
     };
     document.addEventListener("mousedown", handleClickFuera);
     return () => document.removeEventListener("mousedown", handleClickFuera);
-  }, []);
-
-  useEffect(() => {
-    const cargar = async () => {
-      try {
-        const data = await fetchNotifications();
-        setNotifs(data.items ?? []);
-        setTotalNotifs(data.total ?? 0);
-      } catch {}
-    };
-    cargar();
   }, []);
 
   useEffect(() => {
@@ -320,7 +312,7 @@ export default function Header({ onMenuClick, onActualizar, actualizando = false
             title="Notificaciones"
           >
             <i className="bi bi-bell text-lg text-[var(--gold-dark)] dark:text-[var(--gold-light)]"></i>
-            {totalNotifs > 0 && (
+            {hasSuccessfulNotifications && totalNotifs > 0 && (
               <span className="absolute top-1.5 right-1.5 min-w-4 h-4 px-1 rounded-full bg-rojo text-blanco text-[9px] font-bold flex items-center justify-center leading-none shadow-sm">
                 {totalNotifs > 99 ? "99+" : totalNotifs}
               </span>
@@ -337,23 +329,30 @@ export default function Header({ onMenuClick, onActualizar, actualizando = false
                   right: posNotifs.right,
                   ...(posNotifs.isMobile && { left: 16 }),
                 }}
-                className="bg-[var(--snow)] border border-[var(--border-gold-40)] rounded-[2px] shadow-xl z-[9999] overflow-hidden dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] sm:w-72"
+                className="bg-[var(--snow)] border border-[var(--border-gold-40)] rounded-[2px] shadow-xl z-[9999] overflow-hidden dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] sm:w-72 lg:w-[36rem]"
               >
                 <div className="px-3.5 py-2.5 border-b border-[var(--border-gold-20)] flex items-center justify-between font-tag">
                   <p className="text-sm font-bold text-[var(--noir)] m-0 dark:text-[var(--snow)]">Notificaciones</p>
-                  {totalNotifs > 0 && (
+                  {hasSuccessfulNotifications && totalNotifs > 0 && (
                     <span className="text-xs px-2 py-0.5 rounded-[2px] bg-[var(--gold-08)] text-[var(--gold-dark)] font-semibold dark:bg-[var(--gold-08)] dark:text-[var(--gold-light)]">
                       {totalNotifs}
                     </span>
                   )}
                 </div>
                 <div className="max-h-64 overflow-y-auto custom-scrollbar">
-                  {notifs.length === 0 ? (
-                    <div className="px-4 py-6 text-center text-sm text-[var(--noir-soft)] opacity-80 dark:text-[var(--ash)]">
-                      Todo en orden
-                    </div>
-                  ) : (
-                    notifs.map((n) => (
+                  {isNotificationLoading && !hasSuccessfulNotifications && (
+                    <div role="status" className="px-4 py-7 text-center text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]"><i className="bi bi-arrow-repeat mr-2 inline-block animate-spin text-[var(--gold)]" />{notificationStatus === NOTIFICATION_STATUS.RETRYING ? "Intentando cargar las notificaciones..." : "Cargando notificaciones..."}</div>
+                  )}
+                  {notificationStatus === NOTIFICATION_STATUS.ERROR && !hasSuccessfulNotifications && (
+                    <div role="alert" className="px-4 py-6 text-center text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]"><p>No fue posible cargar las notificaciones.</p><button type="button" onClick={retryNotifications} className="mt-3 rounded-[2px] bg-[var(--gold)] px-3 py-1.5 text-xs font-semibold text-[var(--noir)]">Reintentar</button></div>
+                  )}
+                  {hasSuccessfulNotifications && (
+                    <>
+                      {isNotificationLoading && <div role="status" className="flex items-center gap-2 px-3.5 py-2 text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]"><i className="bi bi-arrow-repeat animate-spin text-[var(--gold)]" />Intentando cargar las notificaciones...</div>}
+                      {notificationStatus === NOTIFICATION_STATUS.ERROR && <div role="alert" className="flex items-center justify-between gap-3 px-3.5 py-2 text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]"><span>No fue posible actualizar las notificaciones.</span><button type="button" onClick={retryNotifications} className="shrink-0 font-semibold text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Reintentar</button></div>}
+                      {isEmptySuccessful ? (
+                        <div className="px-4 py-6 text-center text-sm text-[var(--noir-soft)] opacity-80 dark:text-[var(--ash)]">Todo en orden</div>
+                      ) : notifs.map((n) => (
                       <div
                         key={n.id}
                         onClick={() => {
@@ -372,7 +371,8 @@ export default function Header({ onMenuClick, onActualizar, actualizando = false
                           <p className="text-[11px] text-[var(--ash)] m-0 truncate">{n.mensaje}</p>
                         </div>
                       </div>
-                    ))
+                      ))}
+                    </>
                   )}
                 </div>
               </div>,
@@ -405,15 +405,20 @@ export default function Header({ onMenuClick, onActualizar, actualizando = false
             </div>
 
             {/* Texto informativo, NO es botón: sin hover, sin onClick, cursor-default */}
-            <div className="w-full px-3.5 py-2 flex items-center gap-2.5 text-base font-body text-[var(--noir)] dark:text-[var(--snow)] cursor-default select-none">
+            <button
+              type="button"
+              onClick={() => { navigate("/perfil", { state: { accountType: "STAFF" } }); setMostrarMenu(false); }}
+              className="w-full px-3.5 py-2 flex items-center gap-2.5 text-left text-base font-body text-[var(--noir)] transition-colors hover:bg-[var(--gold-08)] dark:text-[var(--snow)]"
+            >
               <i className="bi bi-person-circle"></i>
-              <span className="truncate">{usuario?.nombre || "Usuario"}</span>
-            </div>
+              <span className="truncate">Mi perfil · {usuario?.usuario || usuario?.nombre || "Usuario"}</span>
+            </button>
 
             <button
               onClick={() => {
-                logout();
-                navigate("/login");
+                logout("STAFF");
+                setFlashMessage("Sesión cerrada correctamente.");
+                navigate("/staff/login");
                 setMostrarMenu(false);
               }}
               className="w-full px-3.5 py-2 text-left transition-colors flex items-center gap-2.5 text-base font-body cursor-pointer
@@ -455,8 +460,6 @@ export default function Header({ onMenuClick, onActualizar, actualizando = false
 
             <button
               onClick={() => {
-                // La tienda no conserva sesiones administrativas.
-                logout();
                 navigate("/tienda");
                 setMostrarMenu(false);
               }}
