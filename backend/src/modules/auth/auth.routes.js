@@ -4,7 +4,7 @@ import { validate } from '../../middlewares/validate.js'
 import { authenticate } from '../../middlewares/auth.js'
 import { requirePermissions } from '../../middlewares/requirePermissions.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
-import { changePasswordSchema, clientLoginSchema, staffLoginSchema, registerSchema, passwordResetSchema, validateResetPasswordSchema, googleLoginSchema } from './auth.schema.js'
+import { changePasswordSchema, clientLoginSchema, staffLoginSchema, registerSchema, googleLoginSchema } from './auth.schema.js'
 const router = Router()
 
 router.post(
@@ -37,18 +37,6 @@ router.post(
   '/google',
   validate(googleLoginSchema),
   asyncHandler(authController.googleLogin.bind(authController))
-)
-
-router.post(
-  '/request-password-reset',
-  validate(passwordResetSchema),
-  asyncHandler(authController.requestPasswordReset.bind(authController))
-)
-
-router.post(
-  '/validate-and-reset-password',
-  validate(validateResetPasswordSchema),
-  asyncHandler(authController.validateAndResetPassword.bind(authController))
 )
 
 export default router

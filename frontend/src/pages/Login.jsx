@@ -6,9 +6,6 @@ import { z } from 'zod';
 import { Eye, EyeOff } from 'lucide-react';
 import bgImage from '../assets/login.png';
 import Toast from '../components/Toast';
-import ModalResetPassword from '../components/ModalResetPassword';
-import ModalValidateCode from '../components/ModalValidateCode';
-import ModalUserNotFound from '../components/ModalUserNotFound';
 import { useAuth } from '../hooks/useAuth';
 import useTitulo from '../hooks/useTitulo';
 
@@ -211,21 +208,6 @@ const LoginStyles = () => (
     }
     .login-btn-google:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .login-btn-ghost {
-      font-family: var(--font-tag);
-      font-size: 10px;
-      font-weight: 400;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--gold-light);
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      transition: color 0.2s;
-    }
-    .login-btn-ghost:hover { color: var(--gold); }
-
     .login-register-link {
       font-family: var(--font-tag);
       font-size: 10px;
@@ -328,7 +310,6 @@ export default function Login() {
   const [loadingGoogle,      setLoadingGoogle]      = useState(false);
   const [toast,              setToast]              = useState({ message: '', type: 'error' });
   const [usuarioLogeado,     setUsuarioLogeado]     = useState(null);
-  const [resetPasswordState, setResetPasswordState] = useState({ step: null, email: null });
 
   const {
     register,
@@ -435,36 +416,6 @@ export default function Login() {
   };
 }, []);
 
-  // ── Password reset flow ───────────────────────────────────────────────────
-  const openResetModal = (e) => {
-    e.preventDefault();
-    setResetPasswordState({ step: null, email: null });
-    document.getElementById('reset_password_usuario_modal').showModal();
-  };
-
-  const handleResetPasswordFlow = (email, step) => {
-    if (step === 'CLIENTE' && email) {
-      setResetPasswordState({ step: 'CLIENTE', email });
-      document.getElementById('reset_password_usuario_modal').close();
-      document.getElementById('validate_code_modal').showModal();
-    } else if (!email) {
-      document.getElementById('reset_password_usuario_modal').close();
-      document.getElementById('user_not_found_modal').showModal();
-      setResetPasswordState({ step: 'NOT_FOUND', email: null });
-    }
-  };
-
-  const closeResetPasswordModals = () => {
-    ['reset_password_usuario_modal', 'validate_code_modal', 'forgot_password_modal', 'user_not_found_modal']
-      .forEach((id) => document.getElementById(id)?.close());
-    setResetPasswordState({ step: null, email: null });
-  };
-
-  const handleResetSuccess = () => {
-    closeResetPasswordModals();
-    setToast({ message: 'Contraseña actualizada. Inicia sesión con tus nuevas credenciales.', type: 'success' });
-  };
-
   const isBusy = isSubmitting || loading || loadingGoogle;
 
   return (
@@ -477,10 +428,6 @@ export default function Login() {
         type={toast.type}
         onClose={() => setToast({ message: '', type: 'error' })}
       />
-
-      <ModalResetPassword onClose={closeResetPasswordModals} onUserSubmitted={handleResetPasswordFlow} />
-      <ModalValidateCode email={resetPasswordState.email} onClose={closeResetPasswordModals} onSuccess={handleResetSuccess} />
-      <ModalUserNotFound onClose={closeResetPasswordModals} />
 
       <div className="login-root">
 
@@ -604,11 +551,9 @@ export default function Login() {
                 ) : 'Ingresar'}
               </button>
 
-              <div style={{ textAlign: 'center' }}>
-                <button type="button" onClick={openResetModal} className="login-btn-ghost">
-                  ¿Olvidaste tu contraseña?
-                </button>
-              </div>
+              <p style={{ margin: 0, textAlign: 'center', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--ash, #9C8B79)' }}>
+                Si no puedes acceder a tu cuenta, contacta al soporte de D’oro.
+              </p>
             </div>
 
             <div style={{ textAlign: 'center', paddingTop: '4px' }}>
@@ -621,54 +566,6 @@ export default function Login() {
           </form>
         </div>
       </div>
-
-      {/* ── Admin reset modal ── */}
-      <dialog id="forgot_password_modal" className="modal modal-bottom sm:modal-middle">
-        <div className="modal-box doro-modal-box" style={{ maxWidth: '480px', width: '100%', padding: '48px 40px', boxSizing: 'border-box' }}>
-          <form method="dialog">
-            <button
-              type="button"
-              onClick={closeResetPasswordModals}
-              style={{
-                position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none',
-                cursor: 'pointer', color: 'var(--ash)', fontSize: '18px', lineHeight: 1,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px',
-              }}
-              aria-label="Cerrar"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
-          </form>
-          <div style={{ width: '44px', height: '44px', border: '1px solid var(--border-gold-25)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold-dark)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-              <path d="M7 11V7a5 5 0 0110 0v4" />
-            </svg>
-          </div>
-          <span style={{ display: 'block', width: '36px', height: '1px', background: 'var(--gold)', marginBottom: '20px' }} />
-          <p style={{ fontFamily: 'var(--font-tag)', fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--gold-dark)', margin: '0 0 12px' }}>
-            Recuperación de contraseña
-          </p>
-          <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(20px, 2.5vw, 26px)', fontWeight: 300, fontStyle: 'italic', color: 'var(--noir)', margin: '0 0 24px', lineHeight: 1.2 }}>
-            Acceso restringido al administrador
-          </h3>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--ash)', lineHeight: 1.75, margin: '0 0 16px' }}>
-            Por políticas de seguridad del sistema, el restablecimiento de contraseñas es gestionado exclusivamente por el administrador del sistema.
-          </p>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--ash)', lineHeight: 1.7, margin: '0 0 28px', opacity: 0.8 }}>
-            Comuníquese con el área de Sistemas o Soporte Técnico de su organización para obtener nuevas credenciales.
-          </p>
-          <div style={{ borderLeft: '2px solid var(--border-gold-40)', paddingLeft: '16px', fontFamily: 'var(--font-tag)', fontSize: '11px', fontWeight: 400, letterSpacing: '0.12em', color: '#5C4A2A', lineHeight: 1.8 }}>
-            Si desconoce quién es el administrador asignado,<br />
-            contacte al responsable de su área o departamento.
-          </div>
-        </div>
-        <form method="dialog" className="modal-backdrop" style={{ background: 'rgba(13,13,13,0.55)', backdropFilter: 'blur(4px)' }}>
-          <button onClick={closeResetPasswordModals}>cerrar</button>
-        </form>
-      </dialog>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </>

@@ -36,7 +36,6 @@
     "express": "^5.2.1",
     "google-auth-library": "^10.9.0",
     "jsonwebtoken": "^9.0.3",
-    "nodemailer": "^8.0.10",
     "prisma": "6.15.0",
     "zod": "^4.3.6"
   },

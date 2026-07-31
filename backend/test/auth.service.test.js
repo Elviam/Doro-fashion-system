@@ -13,11 +13,9 @@ const [{ AuthService }, { authRepository }] = await Promise.all([
 const original = {
   findByUsuario: authRepository.findByUsuario,
   findClientByEmail: authRepository.findClientByEmail,
+  findClientById: authRepository.findClientById,
   createClient: authRepository.createClient,
-  upsertClientPasswordReset: authRepository.upsertClientPasswordReset,
-  findClientPasswordReset: authRepository.findClientPasswordReset,
   updateClientPassword: authRepository.updateClientPassword,
-  markClientPasswordResetUsed: authRepository.markClientPasswordResetUsed,
   updatePassword: authRepository.updatePassword,
 }
 function restore() { Object.assign(authRepository, original) }
@@ -27,7 +25,7 @@ test('ADMIN and BODEGUERO authenticate only through the staff User lookup', asyn
   const passwordHash = await bcrypt.hash('secreto-seguro', 4)
   for (const role of ['ADMIN', 'BODEGUERO']) {
     let clientLookupCalled = false
-    authRepository.findByUsuario = async () => ({ id: role, usuario: role.toLowerCase(), passwordHash, nombre: role, email: `${role}@doro.test`, role, roleId: null, activo: true, revokedPermissions: [], grantedPermissions: [] })
+    authRepository.findByUsuario = async () => ({ id: role, usuario: role.toLowerCase(), passwordHash, nombre: role, email: role + '@doro.test', role, roleId: null, activo: true, revokedPermissions: [], grantedPermissions: [] })
     authRepository.findClientByEmail = async () => { clientLookupCalled = true; return null }
     const result = await new AuthService().staffLogin({ usuario: role.toLowerCase(), password: 'secreto-seguro' })
     assert.equal(result.user.accountType, 'STAFF')
@@ -87,41 +85,19 @@ test('auth me serializes the primary-administrator flag for staff accounts', asy
   assert.equal(result.accountType, 'STAFF')
 })
 
-test('client password recovery uses only Client credentials and preserves one-time expiry behavior', async (t) => {
+test('client changes their password only from an authenticated account', async (t) => {
   t.after(restore)
-  const client = { id: 'existing-client', nombre: 'Cliente existente', email: 'cliente@doro.test', activo: true }
-  const service = new AuthService()
-  let resetRequest = null
-  let updatedClientPassword = null
-  let markedUsed = null
-  service.sendPasswordResetEmail = async () => {}
-  authRepository.findByUsuario = async () => { throw new Error('User lookup must not occur') }
-  authRepository.updatePassword = async () => { throw new Error('User password must not change') }
-  authRepository.findClientByEmail = async () => client
-  authRepository.upsertClientPasswordReset = async (clientId, data) => { resetRequest = { clientId, ...data } }
+  const passwordHash = await bcrypt.hash('clave-actual', 4)
+  const client = { id: 'client-1', nombre: 'Cliente', email: 'cliente@doro.test', activo: true, passwordHash }
+  let savedPassword
+  authRepository.findClientById = async (id) => id === client.id ? client : null
+  authRepository.updateClientPassword = async (id, hash) => { savedPassword = { id, hash } }
 
-  await service.requestPasswordReset({ email: client.email })
-  assert.equal(resetRequest.clientId, client.id)
-  assert.equal(resetRequest.code.length, 6)
-  assert.ok(resetRequest.expiresAt > new Date())
+  await new AuthService().changePassword(
+    { id: client.id, accountType: 'CLIENT' },
+    { currentPassword: 'clave-actual', newPassword: 'clave-nueva', confirmPassword: 'clave-nueva' }
+  )
 
-  authRepository.findClientPasswordReset = async () => ({ code: '123456', used: false, expiresAt: new Date(Date.now() + 60_000) })
-  authRepository.updateClientPassword = async (id, passwordHash) => { updatedClientPassword = { id, passwordHash } }
-  authRepository.markClientPasswordResetUsed = async (id) => { markedUsed = id }
-  await service.validateAndResetPassword({ email: client.email, code: '123456', newPassword: 'nueva-clave' })
-  assert.equal(updatedClientPassword.id, client.id)
-  assert.ok(updatedClientPassword.passwordHash)
-  assert.equal(markedUsed, client.id)
-
-  authRepository.findClientPasswordReset = async () => ({ code: '123456', used: true, expiresAt: new Date(Date.now() + 60_000) })
-  await assert.rejects(() => service.validateAndResetPassword({ email: client.email, code: '123456', newPassword: 'otra-clave' }), (error) => error.statusCode === 400)
-})
-
-test('client password recovery returns the same response for an unknown email', async (t) => {
-  t.after(restore)
-  const service = new AuthService()
-  service.sendPasswordResetEmail = async () => { throw new Error('No email should be sent') }
-  authRepository.findClientByEmail = async () => null
-  const result = await service.requestPasswordReset({ email: 'unknown@doro.test' })
-  assert.equal(result.message, 'Se ha enviado un cÃ³digo a tu correo electrÃ³nico')
+  assert.equal(savedPassword.id, client.id)
+  assert.ok(await bcrypt.compare('clave-nueva', savedPassword.hash))
 })

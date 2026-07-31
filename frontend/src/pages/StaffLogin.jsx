@@ -7,6 +7,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import Toast from '../components/Toast';
 import { useAuth } from '../hooks/useAuth';
 import useTitulo from '../hooks/useTitulo';
+import { hasPermission, normalizeAuthenticatedUser } from '../utils/accessControl';
 
 const FontLoader = () => (
   <style>{`
@@ -300,13 +301,13 @@ export default function StaffLogin() {
         return;
       }
 
-      login(result.token, result.user ?? {});
-      const permissions = result.user?.permissions || [];
-      const destination = permissions.includes('dashboard:read')
+      const user = normalizeAuthenticatedUser(result.user ?? {});
+      login(result.token, user);
+      const destination = hasPermission(user, 'dashboard:read')
         ? '/dashboard'
-        : permissions.includes('recepciones:read')
+        : hasPermission(user, 'recepciones:read')
           ? '/recepciones'
-          : permissions.includes('fulfillment:read')
+          : hasPermission(user, 'fulfillment:read')
             ? '/preparar-pedidos'
             : '/perfil';
       navigate(destination);
@@ -415,10 +416,9 @@ export default function StaffLogin() {
                 ) : 'Ingresar'}
               </button>
 
-              <div style={{ textAlign: 'center' }}>
-                <button type="button" onClick={showContactModal} className="staff-login-ghost">
-                  ¿Olvidaste tu contraseña?
-                </button>
+              <div className="rounded-[2px] border border-[var(--border-gold-25)] bg-[var(--gold-08)] p-3 text-left text-xs text-[var(--noir-soft)]">
+                <p className="font-semibold text-[var(--noir)]">¿No recuerdas tu contraseña actual?</p>
+                <p className="mt-1">Contacta al área de sistemas para solicitar un restablecimiento de contraseña.</p>
               </div>
             </div>
           </form>
@@ -459,12 +459,12 @@ export default function StaffLogin() {
 
           <h3 style={{
             fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: 300,
-            fontStyle: 'italic', color: 'var(--noir)', margin: '0 0 20px', lineHeight: 1.2,
+            color: 'var(--noir)', margin: '0 0 20px', lineHeight: 1.2,
           }}>
             Contacta al área de Sistemas
           </h3>
 
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--ash)', lineHeight: 1.7, margin: 0 }}>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--noir-soft)', lineHeight: 1.7, margin: 0 }}>
             Por seguridad, el restablecimiento de contraseñas de personal solo puede realizarlo el administrador del sistema. Comunícate con el área de Sistemas o Soporte Técnico de tu organización.
           </p>
         </div>

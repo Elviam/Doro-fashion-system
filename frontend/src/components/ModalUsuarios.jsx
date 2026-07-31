@@ -14,14 +14,15 @@ const formatFechaCreacion = (iso) => {
   });
 };
 
-export default function ModalUsuarios({ data, usuarioLogeado, onClose, onEditar, onEliminar, isOpen = true }) {
+export default function ModalUsuarios({ data, usuarioLogeado, onClose, onEditar, onEliminar, onCambiarPassword, isOpen = true }) {
   if (!data) return null;
 
   const estadoTexto = data.activo !== false ? "Activo" : "Inactivo";
   const esElMismoUsuario = data.id === usuarioLogeado?.id;
+  const puedeGestionar = !esElMismoUsuario && !data.isPrimaryAdmin && (data.role !== "ADMIN" || usuarioLogeado?.isPrimaryAdmin === true);
   
-  const puedeEditar = canPerformAction(usuarioLogeado?.permissions, 'users', 'update');
-  const puedeEliminar = canPerformAction(usuarioLogeado?.permissions, 'users', 'delete') && !esElMismoUsuario;
+  const puedeEditar = puedeGestionar && canPerformAction(usuarioLogeado?.permissions, 'users', 'update');
+  const puedeEliminar = puedeGestionar && canPerformAction(usuarioLogeado?.permissions, 'users', 'delete');
   const permisosAgrupados = (data.permissions || []).reduce((grupos, permission) => {
     const [recurso, accion] = permission.split(":");
     // El backend conserva estos permisos bajo "recepciones"; visualmente
@@ -45,25 +46,22 @@ export default function ModalUsuarios({ data, usuarioLogeado, onClose, onEditar,
 
   // Footer
   const footerAcciones = (
-    <div className="flex justify-between items-center w-full">
+    <div className="flex w-full items-center justify-between gap-3">
       <div>
-        {esElMismoUsuario && (
-          <span className="font-tag text-[10px] lg:text-xs font-bold uppercase tracking-wider text-[var(--gold-dark)] bg-[var(--gold-08)] px-3 py-1.5 rounded-[2px] dark:text-[var(--gold-light)] dark:bg-[var(--gold-08)] flex items-center gap-1">
-            <i className="bi bi-person-badge"></i> Tu cuenta
-          </span>
+        {puedeEliminar && (
+          <Boton
+            variante="secundario"
+            onClick={() => onEliminar(data)}
+            className="text-rojo border-rojo/30 bg-rojo/10 hover:bg-rojo hover:text-[var(--snow)] dark:text-rojo dark:border-rojo/30 dark:bg-rojo/10 dark:hover:bg-rojo"
+          >
+            <i className="bi bi-trash3"></i> Eliminar
+          </Boton>
         )}
       </div>
-      <div className="flex gap-3">
-        {puedeEliminar && (
-          <Boton variante="secundario" onClick={() => onEliminar(data)}>
-            <i className="bi bi-trash"></i> Eliminar
-          </Boton>
-        )}
-        {puedeEditar && (
-          <Boton variante="claro" onClick={() => onEditar(data)}>
-            <i className="bi bi-pencil-square"></i> Editar
-          </Boton>
-        )}
+      <div className="flex items-center gap-3">
+        {esElMismoUsuario && <span className="font-tag text-[10px] lg:text-xs font-bold uppercase tracking-wider text-[var(--gold-dark)] bg-[var(--gold-08)] px-3 py-1.5 rounded-[2px] dark:text-[var(--gold-light)] dark:bg-[var(--gold-08)] flex items-center gap-1"><i className="bi bi-person-badge"></i> Tu cuenta</span>}
+        {esElMismoUsuario && <Boton variante="claro" onClick={onCambiarPassword}><i className="bi bi-key"></i> Cambiar contraseña</Boton>}
+        {puedeEditar && <Boton variante="claro" onClick={() => onEditar(data)}><i className="bi bi-pencil-square"></i> Editar</Boton>}
       </div>
     </div>
   );

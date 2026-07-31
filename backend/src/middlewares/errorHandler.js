@@ -28,7 +28,7 @@ export function errorHandler(error, req, res, next) {
     })
   }
 
-  if (['P1001', 'P1002', 'P1017', 'P6001'].includes(code)) {
+  if (['P1001', 'P1002', 'P1017', 'P6001'].includes(code) || error?.name === 'PrismaClientInitializationError') {
     return res.status(503).json({
       message: 'No fue posible conectar con la base de datos. Intenta de nuevo en unos minutos.',
       errorId,

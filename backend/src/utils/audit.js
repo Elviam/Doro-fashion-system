@@ -1,5 +1,15 @@
 import { auditRepository } from '../modules/audit/audit.repository.js'
 
+const SECRET_DETAIL_KEYS = new Set(['password', 'passwordhash', 'currentpassword', 'newpassword', 'confirmpassword', 'token', 'cookie', 'code', 'recoverycode'])
+
+function stripSecrets(value) {
+  if (Array.isArray(value)) return value.map(stripSecrets)
+  if (!value || typeof value !== 'object') return value
+  return Object.fromEntries(Object.entries(value)
+    .filter(([key]) => !SECRET_DETAIL_KEYS.has(key.toLowerCase()))
+    .map(([key, nested]) => [key, stripSecrets(nested)]))
+}
+
 export async function logAuditEvent({
   action,
   resource,
@@ -16,7 +26,7 @@ export async function logAuditEvent({
       action,
       resource,
       resourceId,
-      details,
+      details: stripSecrets(details),
       userId: currentUser?.sub || null
     })
   } catch (error) {

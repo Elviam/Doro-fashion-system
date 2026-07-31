@@ -70,10 +70,21 @@ export class UsersService {
     Object.assign(data, overrides)
     const updated = await usersRepository.update(id, data)
     const item = this.sanitizeUser(updated)
-    await this.audit(payload.roleId !== undefined && payload.roleId !== target.roleId ? 'CHANGE_ROLE' : 'UPDATE', id, {
-      target: this.auditTarget(item), changedFields: Object.keys(payload).filter((field) => field !== 'password'),
-      previousRole: target.role, newRole: item.role, grantedPermissions: item.grantedPermissions, revokedPermissions: item.revokedPermissions
-    }, currentUser)
+    const isPasswordReset = Boolean(payload.password)
+    await this.audit(isPasswordReset ? 'RESET_PASSWORD' : payload.roleId !== undefined && payload.roleId !== target.roleId ? 'CHANGE_ROLE' : 'UPDATE', id,
+      isPasswordReset
+        ? {
+            actorUserId: currentUser.id || currentUser.sub,
+            actorUsername: currentUser.usuario,
+            targetUserId: item.id,
+            targetUsername: item.usuario,
+          }
+        : {
+            target: this.auditTarget(item), changedFields: Object.keys(payload).filter((field) => field !== 'password'),
+            previousRole: target.role, newRole: item.role, grantedPermissions: item.grantedPermissions, revokedPermissions: item.revokedPermissions
+          },
+      currentUser,
+      isPasswordReset ? 'auth' : 'users')
     return item
   }
 
@@ -167,7 +178,7 @@ export class UsersService {
   }
 
   auditTarget(user) { return { id: user.id, usuario: user.usuario, email: user.email, role: user.role, isPrimaryAdmin: user.isPrimaryAdmin === true } }
-  audit(action, resourceId, details, currentUser) { return logAuditEvent({ action, resource: 'users', resourceId, details, currentUser }) }
+  audit(action, resourceId, details, currentUser, resource = 'users') { return logAuditEvent({ action, resource, resourceId, details, currentUser }) }
   conflict(message) { const error = new Error(message); error.statusCode = 409; throw error }
   forbidden(message) { const error = new Error(message); error.statusCode = 403; throw error }
 }

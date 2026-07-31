@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
-import { api } from "../services/api";
-import Toast from "./Toast";
+import { staffApi } from "../services/api";
+import CambioPasswordForm from "./CambioPasswordForm";
+import { getPasswordMovementDescription } from "../utils/passwordAuditPresentation";
 
 const ACTION_CFG = {
   CREATE:        { label: "CREATE",  clases: "bg-verde/12 border-verde/35 text-green-700 dark:text-verde" },
   UPDATE:        { label: "UPDATE",  clases: "bg-amarillo/12 border-amarillo/35 text-yellow-700 dark:text-amarillo" },
   DELETE:        { label: "DELETE",  clases: "bg-rojo/12 border-rojo/35 text-red-700 dark:text-rojo" },
   TOGGLE_ACTIVE: { label: "TOGGLE",  clases: "bg-azul/12 border-azul/35 text-blue-700 dark:text-azul" },
+  CHANGE_PASSWORD: { label: "Cambio de contraseña", clases: "bg-amarillo/12 border-amarillo/35 text-yellow-700 dark:text-amarillo" },
+  RESET_PASSWORD: { label: "Restablecimiento de contraseña", clases: "bg-amarillo/12 border-amarillo/35 text-yellow-700 dark:text-amarillo" },
 };
 
 function fmtDateShort(iso) {
@@ -47,17 +50,13 @@ function formatDetails(details) {
 export default function PerfilUsuario({ usuario }) {
   const [auditoria, setAuditoria] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [passwordData, setPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
-  const [passwordVisible, setPasswordVisible] = useState({ currentPassword: false, newPassword: false, confirmPassword: false });
-  const [guardandoPassword, setGuardandoPassword] = useState(false);
-  const [toast, setToast] = useState({ message: "", type: "exito" });
 
   useEffect(() => {
     const cargarAuditoria = async () => {
       try {
-        const data = await api.get("/audit?limit=50");
+        const data = await staffApi.get("/audit?limit=50");
         const movimientos = (data.items || [])
-          .filter(item => item.usuario === usuario?.usuario)
+          .filter(item => item.userId === usuario?.id || (!item.userId && item.usuario === usuario?.usuario))
           .slice(0, 20);
         setAuditoria(movimientos);
       } catch (error) {
@@ -67,42 +66,15 @@ export default function PerfilUsuario({ usuario }) {
       }
     };
 
-    if (usuario?.usuario) {
+    if (usuario?.usuario && (usuario?.role === "ADMIN" || usuario?.permissions?.includes("audit:read"))) {
       cargarAuditoria();
+    } else {
+      setCargando(false);
     }
   }, [usuario?.usuario]);
 
-  const handlePasswordChange = (event) => {
-    const { name, value } = event.target;
-    setPasswordData((current) => ({ ...current, [name]: value }));
-  };
-
-  const handleCambiarPassword = async (event) => {
-    event.preventDefault();
-    if (passwordData.newPassword.length < 8) {
-      setToast({ message: "La nueva contraseña debe tener al menos 8 caracteres.", type: "error" });
-      return;
-    }
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setToast({ message: "Las nuevas contraseñas no coinciden.", type: "error" });
-      return;
-    }
-
-    try {
-      setGuardandoPassword(true);
-      const result = await api.patch("/auth/change-password", passwordData);
-      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-      setToast({ message: result.message || "Contraseña actualizada correctamente.", type: "exito" });
-    } catch (error) {
-      setToast({ message: error.message || "No fue posible cambiar la contraseña.", type: "error" });
-    } finally {
-      setGuardandoPassword(false);
-    }
-  };
-
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto px-4 box-border">
-      <Toast message={toast.message} type={toast.type} onClose={() => setToast((current) => ({ ...current, message: "" }))} />
       
       <div className="rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] p-5 shadow-lg dark:border-[var(--border-gold-20)] dark:bg-[var(--noir-soft)] sm:p-6">
         <div className="mb-5 flex items-start gap-3">
@@ -113,17 +85,7 @@ export default function PerfilUsuario({ usuario }) {
           </div>
         </div>
 
-        <form onSubmit={handleCambiarPassword} className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <PasswordField label="Contraseña actual" name="currentPassword" value={passwordData.currentPassword} onChange={handlePasswordChange} visible={passwordVisible.currentPassword} onToggle={() => setPasswordVisible((current) => ({ ...current, currentPassword: !current.currentPassword }))} placeholder="Tu contraseña actual" />
-          <PasswordField label="Nueva contraseña" name="newPassword" value={passwordData.newPassword} onChange={handlePasswordChange} visible={passwordVisible.newPassword} onToggle={() => setPasswordVisible((current) => ({ ...current, newPassword: !current.newPassword }))} placeholder="Mínimo 8 caracteres" />
-          <PasswordField label="Confirmar nueva contraseña" name="confirmPassword" value={passwordData.confirmPassword} onChange={handlePasswordChange} visible={passwordVisible.confirmPassword} onToggle={() => setPasswordVisible((current) => ({ ...current, confirmPassword: !current.confirmPassword }))} placeholder="Repite la nueva contraseña" />
-          <div className="flex justify-end pt-1 lg:col-span-3">
-            <button type="submit" disabled={guardandoPassword} className="flex items-center gap-2 rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] px-5 py-2.5 font-tag text-xs font-semibold uppercase tracking-wider text-[var(--gold-dark)] transition-colors hover:bg-[var(--gold)] hover:text-[var(--noir)] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[var(--gold)] dark:text-[var(--noir)]">
-              <i className={`bi ${guardandoPassword ? "bi-arrow-repeat animate-spin" : "bi-key"}`} />
-              {guardandoPassword ? "Guardando" : "Actualizar contraseña"}
-            </button>
-          </div>
-        </form>
+        <CambioPasswordForm />
       </div>
 
       <div className="rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] shadow-lg p-5 sm:p-6 w-full bg-[var(--snow)] dark:bg-[var(--noir-soft)] backdrop-blur-sm box-border">
@@ -196,7 +158,7 @@ export default function PerfilUsuario({ usuario }) {
                     </div>
                     
                     <p className="font-mono text-xs sm:text-sm lg:text-base text-[var(--noir)] dark:text-[var(--snow)] bg-[var(--snow)] dark:bg-[var(--noir)] p-2.5 rounded-[2px] border border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)] break-all sm:break-words max-h-24 overflow-y-auto custom-scrollbar w-full box-border">
-                      {formatDetails(item.details)}
+                      {getPasswordMovementDescription(item) || formatDetails(item.details)}
                     </p>
                   </div>
 
@@ -212,28 +174,6 @@ export default function PerfilUsuario({ usuario }) {
             ))}
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function PasswordField({ label, name, value, onChange, visible, onToggle, placeholder }) {
-  return (
-    <div>
-      <label className="mb-1.5 block pl-1 font-tag text-[11px] uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">{label}</label>
-      <div className="relative">
-        <input
-          type={visible ? "text" : "password"}
-          name={name}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          required
-          className="w-full rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] px-4 py-2.5 pr-11 text-sm text-[var(--noir)] transition-colors focus:border-[var(--gold-dark)] focus:outline-none dark:border-[var(--border-gold-20)] dark:bg-[var(--noir)] dark:text-[var(--snow)]"
-        />
-        <button type="button" onClick={onToggle} className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-[var(--gold-dark)] hover:text-[var(--noir)] dark:text-[var(--gold-light)]" aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}>
-          <i className={`bi ${visible ? "bi-eye-slash" : "bi-eye"}`} />
-        </button>
       </div>
     </div>
   );

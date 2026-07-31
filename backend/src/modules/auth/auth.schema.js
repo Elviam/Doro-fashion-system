@@ -39,20 +39,6 @@ export const registerSchema = z.object({
     .min(6, 'La contraseña debe tener al menos 6 caracteres'),
 })
 
-export const passwordResetSchema = z.object({
-  email: z.string({ required_error: 'El correo es obligatorio' }).email().trim().toLowerCase()
-})
-
-export const validateResetPasswordSchema = z.object({
-  email: z.string({ required_error: 'El correo es obligatorio' }).email().trim().toLowerCase(),
-  code: z
-    .string({ required_error: 'El código es obligatorio' })
-    .length(6, 'El código debe tener 6 dígitos'),
-  newPassword: z
-    .string({ required_error: 'La nueva contraseña es obligatoria' })
-    .min(6, 'La contraseña debe tener al menos 6 caracteres')
-})
-
 export const changePasswordSchema = z.object({
   currentPassword: z
     .string({ required_error: 'La contraseña actual es obligatoria' })
@@ -65,4 +51,4 @@ export const changePasswordSchema = z.object({
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: 'Las nuevas contraseñas no coinciden',
   path: ['confirmPassword']
-})
+}).strict('Solo se permiten contraseña actual, nueva contraseña y confirmación')

@@ -44,13 +44,6 @@ export class AuthRepository {
     return prisma.user.update({ where: { id: userId }, data: { passwordHash } })
   }
 
-  async upsertClientPasswordReset(clientId, { code, expiresAt }) {
-    return prisma.clientPasswordReset.upsert({ where: { clientId }, update: { code, expiresAt, used: false }, create: { clientId, code, expiresAt } })
-  }
-  async findClientPasswordReset(clientId) { return prisma.clientPasswordReset.findUnique({ where: { clientId } }) }
-  async markClientPasswordResetUsed(clientId) { return prisma.clientPasswordReset.update({ where: { clientId }, data: { used: true } }) }
-  async deleteClientPasswordReset(clientId) { return prisma.clientPasswordReset.delete({ where: { clientId } }).catch(() => null) }
-
   mapStaff(user) {
     return {
       id: user.id, usuario: user.usuario, passwordHash: user.passwordHash, nombre: user.nombre, apellido: user.apellido,

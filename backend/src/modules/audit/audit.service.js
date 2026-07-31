@@ -1,5 +1,36 @@
 import { auditRepository } from './audit.repository.js'
 
+const ZONA_HORARIA_MEXICO = 'America/Mexico_City'
+const partesFechaMexico = new Intl.DateTimeFormat('en-US', {
+  timeZone: ZONA_HORARIA_MEXICO,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+})
+
+function desfaseHorarioMexico(fecha) {
+  const partes = Object.fromEntries(partesFechaMexico.formatToParts(fecha).map(({ type, value }) => [type, value]))
+  const horaLocalComoUtc = Date.UTC(partes.year, Number(partes.month) - 1, partes.day, partes.hour, partes.minute, partes.second)
+  return horaLocalComoUtc - fecha.getTime()
+}
+
+function inicioDelDiaMexico(fecha) {
+  const [anio, mes, dia] = fecha.split('-').map(Number)
+  const medianocheUtc = new Date(Date.UTC(anio, mes - 1, dia))
+  const conDesfaseInicial = new Date(medianocheUtc.getTime() - desfaseHorarioMexico(medianocheUtc))
+  return new Date(medianocheUtc.getTime() - desfaseHorarioMexico(conDesfaseInicial))
+}
+
+function siguienteFecha(fecha) {
+  const [anio, mes, dia] = fecha.split('-').map(Number)
+  const siguienteDia = new Date(Date.UTC(anio, mes - 1, dia + 1))
+  return `${siguienteDia.getUTCFullYear()}-${String(siguienteDia.getUTCMonth() + 1).padStart(2, '0')}-${String(siguienteDia.getUTCDate()).padStart(2, '0')}`
+}
+
 export class AuditService {
   buildWhere({ q = '', resource, action, userId, resourceId, from, to }) {
     // No se muestran eventos históricos de clientes ni eventos de sistema:
@@ -11,8 +42,8 @@ export class AuditService {
     if (resourceId) where.entidadId = resourceId
     if (from || to) {
       where.createdAt = {}
-      if (from) where.createdAt.gte = new Date(`${from}T00:00:00.000Z`)
-      if (to) where.createdAt.lte = new Date(`${to}T23:59:59.999Z`)
+      if (from) where.createdAt.gte = inicioDelDiaMexico(from)
+      if (to) where.createdAt.lt = inicioDelDiaMexico(siguienteFecha(to))
     }
     if (q.trim()) {
       const term = q.trim()
