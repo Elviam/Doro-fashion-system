@@ -20,7 +20,10 @@ function createTransactionPrisma(current, calls) {
   const tx = {
     reception: {
       findUnique: async () => current,
-      update: async ({ data }) => ({ ...current, ...data }),
+      update: async ({ data }) => {
+        calls.receptionUpdates.push(data)
+        return { ...current, ...data }
+      },
     },
     receptionItem: { update: async (input) => { calls.itemUpdates.push(input); return input } },
     productVariant: {
@@ -30,8 +33,31 @@ function createTransactionPrisma(current, calls) {
     product: { update: async (input) => { calls.productUpdates.push(input); return input } },
     inventoryMovement: { create: async ({ data }) => { calls.movements.push(data); return { id: `mov-${calls.movements.length}`, ...data } } },
   }
-  return { $transaction: async (callback) => callback(tx) }
+  return {
+    $transaction: async (callback, options) => {
+      calls.transactionOptions = options
+      return callback(tx)
+    }
+  }
 }
+
+test('la respuesta de recepción conserva costos válidos y marca costos históricos inválidos', () => {
+  const reception = makeReception()
+  reception.total = 800
+  reception.items[1].costoUnitario = 0
+  reception.items[1].product.precioCompra = 0
+  const service = new RecepcionesService({ repository: {}, prismaClient: {}, auditLogger: async () => {} })
+
+  const result = service.sanitizeRecepcion(reception)
+
+  assert.equal(result.items[0].costoUnitario, 100)
+  assert.equal(result.items[0].precioCompra, 100)
+  assert.equal(result.items[0].subtotal, 500)
+  assert.equal(result.items[1].costoUnitario, null)
+  assert.equal(result.items[1].precioCompra, null)
+  assert.equal(result.items[1].subtotal, null)
+  assert.equal(result.total, 800)
+})
 
 test('enviar cambia un pedido BORRADOR de reabastecimiento a ENVIADA', async () => {
   const reception = makeReception('BORRADOR')
@@ -87,7 +113,7 @@ test('enviar rechaza un pedido que no está en BORRADOR', async () => {
 
 test('confirmación parcial actualiza stock, omite movimientos cero y reporta faltantes', async () => {
   const reception = makeReception()
-  const calls = { itemUpdates: [], variantUpserts: [], productUpdates: [], movements: [] }
+  const calls = { itemUpdates: [], variantUpserts: [], productUpdates: [], movements: [], receptionUpdates: [] }
   const service = new RecepcionesService({
     repository: { findById: async () => reception },
     prismaClient: createTransactionPrisma(reception, calls),
@@ -117,8 +143,75 @@ test('confirmación parcial actualiza stock, omite movimientos cero y reporta fa
   assert.equal(calls.productUpdates[0].data.precioCompraAnterior, 100)
   assert.equal(calls.productUpdates[0].data.pendingPriceReview, true)
   assert.ok(calls.productUpdates[0].data.purchasePriceChangedAt instanceof Date)
+  assert.equal(calls.receptionUpdates[0].estado, 'CONFIRMADA')
+  assert.equal(calls.transactionOptions.timeout, 10000)
   assert.equal(result.itemsFaltantes.length, 2)
   assert.deepEqual(result.itemsFaltantes.map((item) => item.cantidadRecibida), [3, 0])
+})
+
+test('una factura cargada antes de confirmar queda asociada sin cambiar el estado ENVIADA', async () => {
+  const reception = makeReception('ENVIADA')
+  const updates = []
+  const service = new RecepcionesService({
+    repository: {
+      findById: async () => reception,
+      update: async (id, data) => {
+        updates.push({ id, data })
+        return { ...reception, ...data }
+      },
+    },
+    prismaClient: {},
+    auditLogger: async () => {},
+  })
+  service.attachAuditUsers = async (items) => items
+
+  const result = await service.attachInvoice(reception.id, {
+    facturaProveedor: 'FAC-100',
+    facturaUrl: 'https://example.com/factura.pdf',
+  }, { id: 'bodega-1' })
+
+  assert.equal(updates.length, 1)
+  assert.equal(updates[0].data.facturaUrl, 'https://example.com/factura.pdf')
+  assert.equal(result.status, 'ENVIADA')
+})
+
+test('una recepción cancelada no permite adjuntar factura', async () => {
+  const service = new RecepcionesService({
+    repository: { findById: async () => makeReception('CANCELADA') },
+    prismaClient: {}, auditLogger: async () => {},
+  })
+
+  await assert.rejects(
+    () => service.attachInvoice('rec-1', { facturaUrl: 'https://example.com/factura.pdf' }),
+    (error) => error.statusCode === 400,
+  )
+})
+
+test('cancelar un pedido enviado lo cambia a CANCELADA con el mismo identificador', async () => {
+  const reception = makeReception('ENVIADA')
+  const updates = []
+  const service = new RecepcionesService({
+    repository: {
+      findById: async () => reception,
+      update: async (id, data) => {
+        updates.push({ id, data })
+        return { ...reception, ...data }
+      },
+    },
+    prismaClient: {},
+    auditLogger: async () => {},
+  })
+
+  const result = await service.cancelar(reception.id, {
+    id: 'admin-1',
+    role: 'ADMIN',
+    permissions: ['pedidos_proveedor:send'],
+  })
+
+  assert.equal(updates.length, 1)
+  assert.equal(updates[0].id, reception.id)
+  assert.equal(updates[0].data.estado, 'CANCELADA')
+  assert.equal(result.item.status, 'CANCELADA')
 })
 
 test('confirmación rechaza recibir más unidades de las pedidas', async () => {

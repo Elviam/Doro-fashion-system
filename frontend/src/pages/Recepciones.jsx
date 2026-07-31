@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { api } from "../services/api";
+import { staffApi } from "../services/api";
 import useTitulo from "../hooks/useTitulo";
 import Encabezado from "../components/Encabezado";
 import ModalConfirmacion from "../components/ModalConfirmacion";
@@ -34,8 +34,8 @@ function esDeLosUltimosDiezDias(recepcion) {
 export default function Recepciones() {
   useTitulo("Recepción de mercancía");
   const { usuario } = useAuth();
-  const puedeConfirmar = canPerformAction(usuario?.permissions, "recepciones", "confirm");
-  const puedeCancelar = usuario?.role === "ADMIN" && canPerformAction(usuario?.permissions, "recepciones", "cancel");
+  const puedeConfirmar = canPerformAction(usuario, "recepciones", "confirm");
+  const puedeCancelar = canPerformAction(usuario, "recepciones", "cancel");
 
   const [rows, setRows] = useState([]);
   const [filtro, setFiltro] = useState("ENVIADA");
@@ -58,7 +58,7 @@ export default function Recepciones() {
     if (filtro) params.set("status", filtro);
     if (busquedaActiva) params.set("q", busquedaActiva);
 
-      api.get(`/recepciones/pendientes?${params}`)
+      staffApi.get(`/recepciones/pendientes?${params}`)
       .then((res) => {
         const items = (res.items || [])
           .filter((item) => item.status !== "BORRADOR")
@@ -76,22 +76,14 @@ export default function Recepciones() {
   const totalPaginas = Math.max(1, Math.ceil(totalRegistros / LIMIT));
 
   const handleConfirmar = async (recepcion, datosConfirmacion) => {
-    const items = datosConfirmacion.items || [];
-    const hayFaltantes = items.some((item) => {
-      const pedido = recepcion.items.find((linea) => linea.id === item.id);
-      return pedido && Number(item.cantidadRecibida) < Number(pedido.cantidad);
-    });
-
-    if (hayFaltantes && !window.confirm("Hay productos con cantidades menores a las pedidas. ¿Deseas confirmar la recepción de todos modos?")) return;
-
     try {
-      const resultado = await api.patch(`/recepciones/${recepcion.id}/confirm`, datosConfirmacion);
+      const resultado = await staffApi.patch(`/recepciones/${recepcion.id}/confirm`, datosConfirmacion);
       const faltantes = resultado.itemsFaltantes || [];
       setRowSeleccionada(null);
       refetch();
       setModalExito(faltantes.length ? `Recepción confirmada con ${faltantes.length} incidencia(s).` : "Recepción confirmada correctamente.");
     } catch (error) {
-      window.alert(error.message || "No se pudo confirmar la recepción.");
+      throw error;
     }
   };
 
@@ -99,7 +91,7 @@ export default function Recepciones() {
     if (!rowCancelando || cancelando) return;
     try {
       setCancelando(true);
-      await api.patch(`/recepciones/${rowCancelando.id}/cancel`);
+      await staffApi.patch(`/recepciones/${rowCancelando.id}/cancel`);
       setRowSeleccionada(null);
       refetch();
       setModalExito("Recepción cancelada correctamente.");
@@ -112,7 +104,7 @@ export default function Recepciones() {
   };
 
   const handleAdjuntarFactura = async (recepcion, datosFactura) => {
-    const resultado = await api.patch(`/recepciones/${recepcion.id}/factura`, datosFactura);
+    const resultado = await staffApi.patch(`/recepciones/${recepcion.id}/factura`, datosFactura);
     const actualizada = resultado.item || resultado.data?.item;
     if (actualizada) setRowSeleccionada(actualizada);
     refetch();

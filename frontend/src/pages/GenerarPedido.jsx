@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { api } from "../services/api";
+import { staffApi } from "../services/api";
 import { fetchSuppliers } from "../services/suppliers.service";
 import { crearPedido, enviarPedido } from "../services/pedidos.service";
 import Encabezado from "../components/Encabezado";
@@ -9,6 +9,7 @@ import useTitulo from "../hooks/useTitulo";
 import { useAuth } from "../hooks/useAuth";
 import { canPerformAction } from "../utils/permissionMapper";
 import { TALLAS_POR_CATEGORIA } from "../constants/categorias";
+import AccessibleSelect from "../components/AccessibleSelect";
 
 function obtenerInventario(producto) {
   const inventario = Array.isArray(producto.inventario)
@@ -51,7 +52,7 @@ function obtenerVariantesBajas(producto) {
 
 async function fetchProductos() {
   const limite = 100;
-  const primeraPagina = await api.get(`/products?limit=${limite}`);
+  const primeraPagina = await staffApi.get(`/products?limit=${limite}`);
   const primerosItems = primeraPagina.items || primeraPagina.data?.items || (Array.isArray(primeraPagina) ? primeraPagina : []);
   const total = Number(primeraPagina.total ?? primerosItems.length);
   const paginasRestantes = Math.ceil(total / limite) - 1;
@@ -59,7 +60,7 @@ async function fetchProductos() {
   if (paginasRestantes <= 0) return primerosItems;
 
   const resultados = await Promise.all(
-    Array.from({ length: paginasRestantes }, (_, index) => api.get(`/products?limit=${limite}&page=${index + 2}`))
+    Array.from({ length: paginasRestantes }, (_, index) => staffApi.get(`/products?limit=${limite}&page=${index + 2}`))
   );
   return [...primerosItems, ...resultados.flatMap((resultado) => resultado.items || resultado.data?.items || [])];
 }
@@ -177,7 +178,7 @@ export default function GenerarPedido() {
   }, [location.state]);
 
   useEffect(() => {
-    api.get("/recepciones/next-folio")
+    staffApi.get("/recepciones/next-folio")
       .then((result) => setNombrePedido(result.folio || ""))
       .catch((err) => console.error("Error al obtener el nombre del pedido:", err));
   }, []);
@@ -455,19 +456,72 @@ export default function GenerarPedido() {
                 </table>
               </div>
 
-              <div className="flex flex-col gap-4 p-4">
-                <div className="rounded-[2px] border p-4 bg-[var(--gold-08)] border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)]">
-                  {requiereProveedorManual ? (
-                    <label className="block text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Los productos tienen proveedores distintos. Elige el proveedor del pedido.
-                      <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className="mt-2 h-10 w-full max-w-md rounded-[2px] px-3 text-sm normal-case font-body outline-none bg-[var(--snow)] border border-[var(--border-gold-40)] text-[var(--noir)] dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)]"><option value="">Selecciona un proveedor</option>{proveedores.map((proveedor) => <option key={proveedor.id} value={proveedor.id}>{proveedor.nombre}</option>)}</select>
-                    </label>
-                  ) : <p className="text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">Proveedor del pedido: <strong>{proveedorSeleccionado?.nombre || "Sin proveedor asignado"}</strong></p>}
-                </div>
-                <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                  {puedeCrear && <button onClick={handleGuardarBorrador} disabled={guardando} className="px-5 py-2.5 text-xs font-bold rounded-[2px] border border-[var(--border-gold-40)] text-[var(--gold-dark)] dark:text-[var(--gold-light)] disabled:opacity-50"><i className={`bi ${guardando ? "bi-arrow-repeat spinner-cargando" : "bi-save"} mr-2`} />{guardando ? "Guardando..." : "Guardar borrador"}</button>}
-                  {puedeCrear && puedeEnviar && <button onClick={handleEnviarProveedor} disabled={guardando || !supplierId} className="px-5 py-2.5 text-xs font-bold rounded-[2px] bg-[var(--gold)] text-[var(--noir)] disabled:opacity-50"><i className="bi bi-send mr-2" />Enviar a {proveedorSeleccionado?.nombre || "proveedor"}</button>}
-                </div>
-              </div>
+            <div className="flex flex-col gap-4 p-4">
+  <div className="rounded-[2px] border p-4 bg-[var(--gold-08)] border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)]">
+    {requiereProveedorManual ? (
+      <div>
+        <p className="block text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
+          Los productos tienen proveedores distintos. Elige el proveedor del pedido.
+        </p>
+
+        <AccessibleSelect
+          id="proveedor-pedido"
+          ariaLabel="Proveedor del pedido"
+          containerClassName="mt-2 w-full max-w-md"
+          value={supplierId}
+          onChange={setSupplierId}
+          placeholder="Sin proveedor asignado"
+          soloSeleccion
+          inputClassName="h-10 rounded-[2px] px-3 text-sm normal-case font-body outline-none bg-[var(--snow)] border border-[var(--border-gold-40)] text-[var(--noir)] focus:ring-1 focus:ring-[var(--gold)] disabled:opacity-50 dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)]"
+          options={[
+            { value: "", label: "Sin proveedor asignado" },
+            ...proveedores.map((proveedor) => ({
+              value: proveedor.id,
+              label: proveedor.nombre,
+            })),
+          ]}
+        />
+      </div>
+    ) : (
+      <p className="text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">
+        Proveedor del pedido:{" "}
+        <strong>
+          {proveedorSeleccionado?.nombre || "Sin proveedor asignado"}
+        </strong>
+      </p>
+    )}
+  </div>
+
+  <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+    {puedeCrear && (
+      <button
+        type="button"
+        onClick={handleGuardarBorrador}
+        disabled={guardando}
+        className="px-5 py-2.5 text-xs font-bold rounded-[2px] border border-[var(--border-gold-40)] text-[var(--gold-dark)] dark:text-[var(--gold-light)] disabled:opacity-50"
+      >
+        <i
+          className={`bi ${
+            guardando ? "bi-arrow-repeat spinner-cargando" : "bi-save"
+          } mr-2`}
+        />
+        {guardando ? "Guardando..." : "Guardar borrador"}
+      </button>
+    )}
+
+    {puedeCrear && puedeEnviar && (
+      <button
+        type="button"
+        onClick={handleEnviarProveedor}
+        disabled={guardando || !supplierId}
+        className="px-5 py-2.5 text-xs font-bold rounded-[2px] bg-[var(--gold)] text-[var(--noir)] disabled:opacity-50"
+      >
+        <i className="bi bi-send mr-2" />
+        Enviar a {proveedorSeleccionado?.nombre || "proveedor"}
+      </button>
+    )}
+  </div>
+</div>
             </>
           )}
       </section>
@@ -617,21 +671,35 @@ export default function GenerarPedido() {
             </select>
           </label>
 
-          <label className="w-[calc(50%-0.375rem)] text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)] sm:w-auto sm:max-w-[10rem] lg:max-w-none lg:flex-1">
+          <div className="w-[calc(50%-0.375rem)] text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)] sm:w-auto sm:max-w-[10rem] lg:max-w-none lg:flex-1">
             Talla
-            <select
+            {/* <select
               value={tallaManual}
               onChange={(e) => setTallaManual(e.target.value)}
               disabled={!productoManual}
-              className="mt-1.5 w-full h-11 rounded-[2px] px-3 text-sm normal-case font-body outline-none bg-[var(--snow)] border border-[var(--border-gold-40)] text-[var(--noir)] focus:ring-1 focus:ring-[var(--gold)] disabled:opacity-50 dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)]"
+              className="hidden"
             >
               <option value="">Selecciona una talla</option>
               {tallasManuales.map((talla) => {
                 const stockActual = obtenerInventario(productoManual).find((variante) => variante.talla === talla)?.stock ?? 0;
                 return <option key={talla} value={talla}>{talla} · Stock actual {stockActual}</option>;
               })}
-            </select>
-          </label>
+            </select> */}
+            <AccessibleSelect
+              id="talla-manual"
+              ariaLabel="Talla"
+              value={tallaManual}
+              onChange={setTallaManual}
+              disabled={!productoManual}
+              placeholder="Selecciona una talla"
+              mostrarBotonDesplegable
+              inputClassName="w-full h-11 rounded-[2px] px-3 text-sm normal-case font-body outline-none bg-[var(--snow)] border border-[var(--border-gold-40)] text-[var(--noir)] focus:ring-1 focus:ring-[var(--gold)] disabled:opacity-50 dark:bg-[var(--noir)] dark:text-[var(--snow)] dark:border-[var(--border-gold-20)]"
+              options={tallasManuales.map((talla) => {
+                const stockActual = obtenerInventario(productoManual).find((variante) => variante.talla === talla)?.stock ?? 0;
+                return { value: talla, label: `${talla} · Stock actual ${stockActual}` };
+              })}
+            />
+          </div>
 
           <label className="w-[calc(50%-0.375rem)] text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--ash)] sm:w-auto sm:max-w-[10rem] lg:max-w-none lg:flex-1">
             Cantidad (Piezas)

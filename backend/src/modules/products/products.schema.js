@@ -61,7 +61,7 @@ export const createProductSchema = z.object({
 
   supplierId: nullableString,
   supplierNombre: nullableString,
-  precioCompra: z.coerce.number().min(0, 'El precio de compra no puede ser negativo').optional().default(0),
+  precioCompra: z.coerce.number({ required_error: 'El precio de compra es obligatorio' }).finite('El precio de compra debe ser válido').gt(0, 'El precio de compra debe ser mayor que cero'),
   precioVenta: z.coerce.number().min(0, 'El precio de venta no puede ser negativo').optional().default(0),
   stock: z.coerce.number().min(0, 'El stock no puede ser negativo').optional().default(0),
   stockMinimo: z.coerce.number().min(0, 'El stock mínimo no puede ser negativo'),
@@ -115,7 +115,7 @@ export const updateProductSchema = z.object({
   }).nullable().optional(),
   supplierId: z.string().nullable().optional(),
   supplierNombre: z.string().nullable().optional(),
-  precioCompra: z.coerce.number().min(0, 'El precio de compra no puede ser negativo').optional(),
+  precioCompra: z.coerce.number().finite('El precio de compra debe ser válido').gt(0, 'El precio de compra debe ser mayor que cero').optional(),
   precioVenta: z.coerce.number().min(0, 'El precio de venta no puede ser negativo').optional(),
   stock: z.coerce.number().min(0, 'El stock no puede ser negativo').optional(),
   stockMinimo: z.coerce.number().min(0, 'El stock mínimo no puede ser negativo').optional(),

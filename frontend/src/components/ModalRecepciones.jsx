@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Etiquetas from "./Etiquetas";
 import Boton from "./Boton";
 import Modal from "./Modal";
@@ -10,7 +10,16 @@ import ModalFactura from "./ModalFactura";
 const ESTADO_LABELS = { BORRADOR: "En borrador", ENVIADA: "Enviada", CONFIRMADA: "Recibido", CANCELADA: "Cancelada" };
 
 function formatMoney(n) {
-  return `$${Number(n).toLocaleString("es-MX")}`;
+  const amount = Number(n);
+  return Number.isFinite(amount) ? `$${amount.toLocaleString("es-MX")}` : "—";
+}
+
+function getValidCost(...candidates) {
+  for (const candidate of candidates) {
+    const value = Number(candidate);
+    if (Number.isFinite(value) && value > 0) return value;
+  }
+  return null;
 }
 
 function formatDate(iso) {
@@ -34,8 +43,10 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
   const [cantidadesPrevias, setCantidadesPrevias] = useState({});
   const [facturaProveedor, setFacturaProveedor] = useState("");
   const [archivoFactura, setArchivoFactura] = useState(null);
+  const [facturaUrl, setFacturaUrl] = useState("");
   const [subiendoFactura, setSubiendoFactura] = useState(false);
-  const [confirmando, setConfirmando] = useState(false);
+  const [confirmandoRecepcion, setConfirmandoRecepcion] = useState(false);
+  const confirmacionEnCursoRef = useRef(false);
   const [guardandoFacturaPendiente, setGuardandoFacturaPendiente] = useState(false);
   const [mostrarFactura, setMostrarFactura] = useState(false);
 
@@ -51,16 +62,17 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
       return {
         id: item.id,
         cantidadRecibida: String(cantidadInicial),
-        costoUnitarioReal: Number(
-          item.costoUnitarioReal ?? item.costoUnitario ?? 0
-        ),
+        costoUnitarioReal: getValidCost(item.costoUnitarioReal, item.costoUnitario, item.precioCompra),
       };
     });
 
     setBusquedaItems("");
     setFacturaProveedor(row.facturaProveedor || "");
     setArchivoFactura(null);
-    setConfirmando(false);
+    setFacturaUrl(row.facturaUrl || "");
+    setSubiendoFactura(false);
+    setConfirmandoRecepcion(false);
+    confirmacionEnCursoRef.current = false;
     setGuardandoFacturaPendiente(false);
     setMostrarFactura(false);
     setValoresEnEdicion({});
@@ -85,9 +97,16 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
   const esConfirmada = row.status === "CONFIRMADA";
   const esCancelada = row.status === "CANCELADA";
   const ocultarDatosRecepcion = vistaMisPedidos && (esBorrador || esEnviada);
-  const costoUnitarioRecibido = (item) => Number(item.costoUnitarioReal ?? item.costoUnitario ?? 0);
-  const cantidadRecibida = (item) => Number(item.cantidadRecibida ?? item.cantidad ?? 0);
-  const costoTotalRecibido = (item) => costoUnitarioRecibido(item) * cantidadRecibida(item);
+  const costoUnitarioRecibido = (item) => getValidCost(item.costoUnitarioReal, item.costoUnitario, item.precioCompra);
+  const cantidadRecibida = (item) => {
+    const value = Number(item.cantidadRecibida ?? item.cantidad);
+    return Number.isFinite(value) && value >= 0 ? value : null;
+  };
+  const costoTotalRecibido = (item) => {
+    const costo = costoUnitarioRecibido(item);
+    const cantidad = cantidadRecibida(item);
+    return costo === null || cantidad === null ? null : costo * cantidad;
+  };
   const columnasExportacion = [
     { header: "SKU", key: "sku", width: 18 },
     { header: "Producto", key: "producto", width: 32 },
@@ -108,7 +127,10 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
       costo: formatMoney(costoTotalRecibido(item)),
     } : {}),
   }));
-  const totalCostoRecibido = row.items.reduce((total, item) => total + costoTotalRecibido(item), 0);
+  const totalCostoRecibido = row.items.reduce((total, item) => {
+    const subtotal = costoTotalRecibido(item);
+    return subtotal === null ? null : (total === null ? null : total + subtotal);
+  }, 0);
   const tituloExportacion = `Pedido ${row.folio || row.id}`;
   const terminoBusquedaItems = busquedaItems.trim().toLowerCase();
   const itemsVisibles = (row.items || []).filter((item) => !terminoBusquedaItems || item.productNombre?.toLowerCase().includes(terminoBusquedaItems) || item.sku?.toLowerCase().includes(terminoBusquedaItems));
@@ -143,7 +165,7 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
       (linea) => linea.id === producto.id
     )?.costoUnitarioReal;
 
-    return costo !== undefined && costo !== null && costo !== "";
+    return getValidCost(costo) !== null;
   });
 
   const checklistCompleto =
@@ -151,12 +173,12 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
 
 
   const actualizarCostoReal = (id, valor) => {
-    const costo = Math.max(0, Number(valor) || 0);
+    const costo = getValidCost(valor);
     setItemsChecklist((prev) => prev.map((item) => item.id === id ? { ...item, costoUnitarioReal: costo } : item));
   };
 
   const actualizarCostoRealProducto = (items, valor) => {
-    const costo = Math.max(0, Number(valor) || 0);
+    const costo = getValidCost(valor);
     const ids = new Set(items.map((item) => item.id));
     setItemsChecklist((prev) => prev.map((item) => ids.has(item.id)
       ? { ...item, costoUnitarioReal: costo }
@@ -174,13 +196,13 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
     const clave = `costo-${productId}`;
     const costoGuardado =
       itemsChecklist.find((linea) => linea.id === items[0]?.id)
-        ?.costoUnitarioReal ?? 0;
+        ?.costoUnitarioReal;
 
     const valorEnEdicion = valoresEnEdicion[clave];
     const costoActual =
       valorEnEdicion === undefined || valorEnEdicion === ""
-        ? Number(costoGuardado || 0)
-        : Number(valorEnEdicion || 0);
+        ? getValidCost(costoGuardado) ?? 0
+        : getValidCost(valorEnEdicion) ?? 0;
 
     const nuevoCosto = Math.max(
       0,
@@ -273,7 +295,7 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
   };
 
  const confirmarChecklist = async () => {
-  if (confirmando) return;
+  if (confirmacionEnCursoRef.current || subiendoFactura || confirmandoRecepcion) return;
   if (!todosMarcados) {
     window.alert(
       "Debes marcar todos los productos como recibidos antes de confirmar."
@@ -295,39 +317,50 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
     return;
   }
 
-  setConfirmando(true);
+  confirmacionEnCursoRef.current = true;
   try {
-    let facturaUrl = row.facturaUrl || undefined;
+    let facturaUrlParaConfirmar = facturaUrl || row.facturaUrl || undefined;
 
-    if (archivoFactura) {
+    if (archivoFactura && !facturaUrlParaConfirmar) {
       setSubiendoFactura(true);
       try {
-        facturaUrl = await uploadFileToCloudinary(archivoFactura);
+        facturaUrlParaConfirmar = await uploadFileToCloudinary(archivoFactura);
+        if (!facturaUrlParaConfirmar) throw new Error("No se pudo subir el archivo de la factura.");
+
+        await onAdjuntarFactura?.(row, { facturaProveedor, facturaUrl: facturaUrlParaConfirmar });
+        setFacturaUrl(facturaUrlParaConfirmar);
+        setArchivoFactura(null);
+      } catch (error) {
+        window.alert(error.message || "No se pudo cargar la factura. Inténtalo nuevamente.");
+        return;
       } finally {
         setSubiendoFactura(false);
       }
-
-      if (!facturaUrl) {
-        window.alert(
-          "No se pudo subir la evidencia de la factura. Intenta nuevamente o confirma sin adjunto."
-        );
-        return;
-      }
     }
 
+    setConfirmandoRecepcion(true);
     const itemsNormalizados = itemsChecklist.map((item) => ({
       ...item,
-      cantidadRecibida: Number(item.cantidadRecibida || 0),
-      costoUnitarioReal: Number(item.costoUnitarioReal || 0),
+      cantidadRecibida: Number(item.cantidadRecibida),
+      costoUnitarioReal: getValidCost(item.costoUnitarioReal),
     }));
 
-    await onConfirmar(row, {
-      items: itemsNormalizados,
-      facturaProveedor,
-      facturaUrl,
-    });
+    try {
+      await onConfirmar(row, {
+        items: itemsNormalizados,
+        facturaProveedor,
+        facturaUrl: facturaUrlParaConfirmar,
+      });
+    } catch (error) {
+      window.alert(
+        facturaUrlParaConfirmar
+          ? "La factura se cargó, pero no fue posible confirmar la recepción."
+          : (error.message || "No se pudo confirmar la recepción.")
+      );
+    }
   } finally {
-    setConfirmando(false);
+    setConfirmandoRecepcion(false);
+    confirmacionEnCursoRef.current = false;
   }
 };
 
@@ -375,7 +408,7 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
           <div className="flex justify-end gap-3">
             {esBorrador && puedeEnviar && (
               <Boton variante="claro" onClick={() => onEnviar?.(row)} disabled={enviando} className="shrink-0">
-                {enviando ? <><span>Enviando</span><i className="bi bi-arrow-repeat animate-spin" /></> : <><i className="bi bi-send" /> Marcar enviado</>}
+                {enviando ? <><span>Enviando</span><i className="bi bi-arrow-repeat animate-spin" /></> : <><i className="bi bi-send" /> Enviado</>}
               </Boton>
             )}
           </div>
@@ -392,8 +425,8 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
       )}
 
       {!soloLectura && esEnviada && puedeConfirmar && (
-        <Boton variante="claro" onClick={() => modoChecklist ? confirmarChecklist() : onConfirmar(row)} disabled={confirmando || subiendoFactura || (modoChecklist && !checklistCompleto)} className="order-2 ml-auto shrink-0 px-3 justify-center">
-          <i className={`bi ${confirmando || subiendoFactura ? "bi-arrow-repeat animate-spin" : "bi-check-circle"}`} /> {subiendoFactura ? "Subiendo factura..." : confirmando ? "Confirmando..." : "Confirmar"}
+        <Boton variante="claro" onClick={() => modoChecklist ? confirmarChecklist() : onConfirmar(row)} disabled={subiendoFactura || confirmandoRecepcion || (modoChecklist && !checklistCompleto)} className="order-2 ml-auto shrink-0 px-3 justify-center">
+          <i className={`bi ${confirmandoRecepcion || subiendoFactura ? "bi-arrow-repeat animate-spin" : "bi-check-circle"}`} /> {subiendoFactura ? "Subiendo factura..." : confirmandoRecepcion ? "Confirmando recepción..." : "Confirmar recepción"}
         </Boton>
       )}
 
@@ -464,10 +497,10 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
                 </label>
                 <label className="text-xs font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
                   Evidencia de factura
-                  <input id="evidencia-factura" type="file" accept="image/*,application/pdf" onChange={(event) => setArchivoFactura(event.target.files?.[0] || null)} className="sr-only" />
+                  <input id="evidencia-factura" type="file" accept="image/*,application/pdf" disabled={subiendoFactura || confirmandoRecepcion || Boolean(row.facturaUrl)} onChange={(event) => { setFacturaUrl(""); setArchivoFactura(event.target.files?.[0] || null); }} className="sr-only" />
                   <span className="mt-1 flex h-10 w-full cursor-pointer items-center gap-2 truncate rounded-[2px] border px-3 text-sm normal-case font-body bg-[var(--snow)] border-[var(--border-gold-40)] text-[var(--noir)] dark:bg-[var(--noir-soft)] dark:border-[var(--border-gold-20)] dark:text-[var(--snow)]">
                     <i className="bi bi-paperclip shrink-0 text-[var(--gold-dark)] dark:text-[var(--gold-light)]" />
-                    <span className="truncate">{archivoFactura?.name || "Elige un archivo"}</span>
+                    <span className="truncate">{subiendoFactura ? "Subiendo factura..." : facturaUrl ? "Factura cargada correctamente." : archivoFactura?.name || "Elige un archivo"}</span>
                   </span>
                   <span className="mt-1 block text-[10px] normal-case tracking-normal text-[var(--ash)]">Imagen o PDF</span>
                 </label>
@@ -546,14 +579,12 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
             <div className="flex flex-col gap-4">
               {productosAgrupados.map((items) => {
                 const producto = items[0];
-                const costoPredeterminado = Number(
-                  producto.costoUnitarioReal ?? producto.costoUnitario ?? 0
-                );
+                const costoPredeterminado = getValidCost(producto.costoUnitarioReal, producto.costoUnitario, producto.precioCompra);
                 const costoReal =
                   itemsChecklist.find((linea) => linea.id === producto.id)
                     ?.costoUnitarioReal ?? costoPredeterminado;
                 const piezasRecibidas = items.reduce((total, item) => total + (itemsMarcados[item.id] ? Number(itemsChecklist.find((linea) => linea.id === item.id)?.cantidadRecibida || 0) : 0), 0);
-                const subtotal = piezasRecibidas * Number(costoReal || 0);
+                const subtotal = getValidCost(costoReal) === null ? null : piezasRecibidas * costoReal;
 
                 return <section key={producto.productId} className="rounded-[2px] border bg-[var(--snow)] p-4 shadow-sm border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)]">
                   <header className="mb-3 border-b pb-3 border-[var(--border-gold-20)]">
@@ -648,6 +679,8 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
                   <div className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-end gap-3 border-t pt-3 border-[var(--border-gold-20)]">
                     <div className="flex items-center gap-2 whitespace-nowrap"><span className="text-[10px] font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">Subtotal:</span><span className="text-lg font-bold tabular-nums text-green-700 dark:text-verde">{formatMoney(subtotal)}</span></div>
                     <div className="text-right text-[10px] font-tag font-bold uppercase tracking-wider text-[var(--gold-dark)] dark:text-[var(--gold-light)]">
+                      <p className="mb-1 normal-case tracking-normal text-[var(--ash)]">Costo esperado: {formatMoney(costoPredeterminado)}</p>
+                      {costoPredeterminado === null && <p className="mb-1 normal-case tracking-normal text-rojo">Este producto no tiene un costo válido. No puede confirmarse la recepción.</p>}
                       <p>Costo real por pieza</p>
 
                       <div className="mt-1 ml-auto flex h-9 w-full items-stretch overflow-hidden rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] min-[440px]:w-[13.5rem] dark:border-[var(--border-gold-20)] dark:bg-[var(--noir-soft)]">
@@ -686,7 +719,7 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
                               valoresEnEdicion[`costo-${producto.productId}`] ??
                               costoReal
                             }
-                            placeholder={String(costoPredeterminado)}
+                            placeholder={costoPredeterminado === null ? "Costo no disponible" : String(costoPredeterminado)}
                             onFocus={(event) => event.currentTarget.select()}
                             onBlur={(event) => {
                               if (event.target.value !== "") {
@@ -748,7 +781,7 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
                 { key: "cantidad", label: "Cantidad", value: item.cantidad },
                 { key: "costo-pedido", label: "Costo pedido", value: formatMoney(item.costoUnitario) },
                 { key: "costo-real", label: "Costo real", value: costoReal === null || costoReal === undefined ? "—" : formatMoney(costoReal) },
-                { key: "subtotal", label: "Subtotal", value: formatMoney(Number(item.costoUnitario || 0) * Number(item.cantidad || 0)) },
+                { key: "subtotal", label: "Subtotal", value: formatMoney(costoTotalRecibido(item)) },
               ].filter(({ key }) => !["costo-pedido", "costo-real"].includes(key));
 
               return <div key={i} className="relative rounded-[2px] border bg-[var(--snow)] p-4 shadow-sm border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)]">
@@ -809,7 +842,7 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
             {[
               { label: "Productos", value: row.items.length },
               { label: "Piezas", value: row.piezasTotales },
-              { label: ocultarDatosRecepcion ? "Total aproximado" : "Total de la recepción", value: esCancelada ? "N/A" : soloLectura ? formatMoney(esConfirmada ? totalCostoRecibido : itemsVisibles.reduce((total, item) => total + Number(item.costoUnitario || 0) * Number(item.cantidad || 0), 0)) : formatMoney(row.total), color: "text-green-700 dark:text-verde font-extrabold" },
+              { label: ocultarDatosRecepcion ? "Total aproximado" : "Total de la recepción", value: esCancelada ? "N/A" : soloLectura ? formatMoney(esConfirmada ? totalCostoRecibido : itemsVisibles.reduce((total, item) => { const subtotal = costoTotalRecibido(item); return subtotal === null || total === null ? null : total + subtotal; }, 0)) : formatMoney(row.total), color: "text-green-700 dark:text-verde font-extrabold" },
             ].map((stat, i) => (
               <div key={i} className={`px-4 py-3 text-center ${i < 2 ? "border-r border-[var(--border-gold-25)] dark:border-[var(--border-gold-20)]" : ""}`}>
                 <p className="text-[10px] font-tag font-bold uppercase tracking-wider mb-1 text-[var(--gold-dark)] dark:text-[var(--ash)]">{stat.label}</p>

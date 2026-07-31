@@ -1,6 +1,6 @@
 // Mapeo de permisos a páginas accesibles
 // Los permisos del backend tienen formato "recurso:accion"
-import { getUserPermissions, hasPermission as checkUserPermission, isAdmin } from './accessControl.js';
+import { hasAnyPermission, hasPermission as checkUserPermission, normalizeAuthenticatedUser } from './accessControl.js';
 
 export const PERMISSION_TO_PAGE_MAP = {
   'dashboard:read': 'dashboard',
@@ -47,19 +47,22 @@ export function getPagesFromPermissions(permissions) {
 
 // Verificar si el usuario tiene acceso a una página específica
 export function hasPageAccess(userOrPermissions, page) {
-  if (isAdmin(userOrPermissions)) return true;
-  const permissions = Array.isArray(userOrPermissions) ? userOrPermissions : getUserPermissions(userOrPermissions);
+  const user = Array.isArray(userOrPermissions)
+    ? normalizeAuthenticatedUser({ permissions: userOrPermissions })
+    : normalizeAuthenticatedUser(userOrPermissions);
   const requiredAny = PAGE_REQUIRED_ANY[page];
-  if (requiredAny) return requiredAny.some((permission) => permissions.includes(permission));
-  const allowedPages = getPagesFromPermissions(permissions);
+  if (requiredAny) return hasAnyPermission(user, requiredAny);
+  const allowedPages = getPagesFromPermissions(user?.permissions);
+  if (user?.role === 'ADMIN') return true;
   return allowedPages.includes(page);
 }
 
 // Verificar si tiene un permiso específico
 export function hasPermission(userOrPermissions, permission) {
-  return Array.isArray(userOrPermissions)
-    ? userOrPermissions.includes(permission)
-    : checkUserPermission(userOrPermissions, permission);
+  const user = Array.isArray(userOrPermissions)
+    ? normalizeAuthenticatedUser({ permissions: userOrPermissions })
+    : normalizeAuthenticatedUser(userOrPermissions);
+  return checkUserPermission(user, permission);
 }
 
 // Verificar si puede crear/actualizar/eliminar en una página

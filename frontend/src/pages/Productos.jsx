@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { api } from "../services/api";
+import { staffApi } from "../services/api";
 import { uploadImageToCloudinary } from "../services/cloudinaryClient"; 
 
 import useTitulo from "../hooks/useTitulo";
@@ -87,7 +87,7 @@ export default function Productos() {
     try {
       if (!silencioso) setCargando(true); 
       
-      const result = await api.get('/products');
+      const result = await staffApi.get('/products');
       const datosReales = result.items || result.data?.items || (Array.isArray(result) ? result : []);
       setProductosDB(datosReales);
     } catch (error) {
@@ -245,9 +245,9 @@ export default function Productos() {
 
       let respuesta;
       if (productoAEditar && productoAEditar.id) {
-        respuesta = await api.patch(`/products/${productoAEditar.id}`, payload);
+        respuesta = await staffApi.patch(`/products/${productoAEditar.id}`, payload);
       } else {
-        respuesta = await api.post('/products', payload);
+        respuesta = await staffApi.post('/products', payload);
       }
 
       if (irARegistrarInventario) {
@@ -297,7 +297,7 @@ export default function Productos() {
         if (eliminando) return;
         try {
           setEliminando(true);
-          await api.delete(`/products/${id}`);
+          await staffApi.delete(`/products/${id}`);
           await fetchProductos(true); 
           setModalConf({ isOpen: false }); 
         } catch (error) {

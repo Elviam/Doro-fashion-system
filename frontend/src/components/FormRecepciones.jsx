@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { api } from "../services/api";
+import { staffApi } from "../services/api";
 import { Package } from "lucide-react";
 import ModalConfirmacion from "./ModalConfirmacion";
 import Modal from "./Modal";
@@ -53,10 +53,10 @@ export default function FormRecepciones({ row, esNuevo, onClose, onGuardar }) {
   }, [confirmarDescartar, form, estadoOriginal, onClose]);
 
   useEffect(() => {
-    api.get("/suppliers?limit=100").then((res) => setSuppliers(res.items || res)).catch(console.error);
-    api.get("/products?limit=100&activo=true").then((res) => setProducts(res.items || res)).catch(console.error);
+    staffApi.get("/suppliers?limit=100").then((res) => setSuppliers(res.items || res)).catch(console.error);
+    staffApi.get("/products?limit=100&activo=true").then((res) => setProducts(res.items || res)).catch(console.error);
     if (esNuevo) {
-      api.get("/recepciones/next-folio").then((res) => setFolioSiguiente(res.folio)).catch(console.error);
+      staffApi.get("/recepciones/next-folio").then((res) => setFolioSiguiente(res.folio)).catch(console.error);
     }
   }, [esNuevo]);
 
@@ -192,8 +192,8 @@ export default function FormRecepciones({ row, esNuevo, onClose, onGuardar }) {
 
     setGuardando(true);
     try {
-      if (esNuevo) await api.post("/recepciones", body);
-      else         await api.patch(`/recepciones/${row.id}`, body);
+      if (esNuevo) await staffApi.post("/recepciones", body);
+      else         await staffApi.patch(`/recepciones/${row.id}`, body);
       onGuardar();
       onClose();
     } catch (e) {

@@ -1,6 +1,6 @@
 //formulario para crear un nuevo producto en el sistema, se publican directamente en tienda
 import { useState, useEffect } from "react";
-import { api } from "../services/api";
+import { staffApi } from "../services/api";
 import Modal from "./Modal";
 import Input from "./Input";
 import Boton from "./Boton";
@@ -71,7 +71,7 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
   };
 
   useEffect(() => {
-    api.get("/suppliers?limit=100")
+    staffApi.get("/suppliers?limit=100")
       .then((res) => setProveedores(res.items || res))
       .catch(console.error);
   }, []);

@@ -36,3 +36,11 @@ test('session normalization retains current staff role and permissions from auth
   assert.equal(user.accountType, 'STAFF')
   assert.equal(user.isPrimaryAdmin, true)
 })
+
+test('ADMIN secondary and legacy role spelling retain global page and action access', () => {
+  const secondaryAdmin = { role: { codigo: 'administrador' }, accountType: 'staff', permissions: ['recepciones:create'] }
+  assert.equal(hasPageAccess(secondaryAdmin, 'reabastecimiento'), true)
+  assert.equal(hasPageAccess(secondaryAdmin, 'generarPedidoProveedor'), true)
+  assert.equal(hasPageAccess(secondaryAdmin, 'pedidosProveedor'), true)
+  assert.equal(hasPermission(secondaryAdmin, 'pedidos_proveedor:send'), true)
+})

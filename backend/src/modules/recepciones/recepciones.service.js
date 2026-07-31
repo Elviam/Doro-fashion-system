@@ -1,6 +1,7 @@
 import { recepcionesRepository } from './recepciones.repository.js'
 import { logAuditEvent } from '../../utils/audit.js'
 import { prisma } from '../../lib/prisma.js'
+import { getRoleCode, hasPermission, normalizeAuthenticatedUser } from '../../services/authorization.service.js'
 
 function normalizeOptionalText(value) {
   if (value === undefined) return undefined
@@ -11,6 +12,11 @@ function normalizeOptionalText(value) {
 
 function round2(value) {
   return Math.round((Number(value) + Number.EPSILON) * 100) / 100
+}
+
+function positiveNumberOrNull(value) {
+  const number = Number(value)
+  return Number.isFinite(number) && number > 0 ? number : null
 }
 
 function formatUserName(user) {
@@ -103,8 +109,7 @@ export class RecepcionesService {
     const total = filtered.length
     const start = (page - 1) * limit
     const pageItems = filtered.slice(start, start + limit)
-    const includeFinancial = currentUser?.role !== 'BODEGUERO'
-    const items = (await this.attachAuditUsers(pageItems)).map((r) => this.sanitizeRecepcion(r, { includeFinancial }))
+    const items = (await this.attachAuditUsers(pageItems)).map((r) => this.sanitizeRecepcion(r))
 
     return { items, total, page, limit }
   }
@@ -117,7 +122,7 @@ export class RecepcionesService {
       throw error
     }
     const [recepcionWithUser] = await this.attachAuditUsers([recepcion])
-    return this.sanitizeRecepcion(recepcionWithUser, { includeFinancial: currentUser?.role !== 'BODEGUERO' })
+    return this.sanitizeRecepcion(recepcionWithUser)
   }
 
   async create(payload, currentUser = null) {
@@ -347,8 +352,8 @@ export class RecepcionesService {
         error.statusCode = 400
         throw error
       }
-      if (item.costoUnitarioReal !== undefined && item.costoUnitarioReal !== null && Number(item.costoUnitarioReal) < 0) {
-        const error = new Error('El costo unitario real no puede ser negativo')
+      if (!Number.isFinite(Number(item.costoUnitarioReal)) || Number(item.costoUnitarioReal) <= 0) {
+        const error = new Error('El costo unitario real debe ser válido y mayor que cero')
         error.statusCode = 400
         throw error
       }
@@ -466,11 +471,10 @@ export class RecepcionesService {
       })
 
       return { updated, movements, purchasePriceChanges }
-    })
+    }, { timeout: 10000 })
 
     const [updatedWithUsers] = await this.attachAuditUsers([result.updated])
-    const includeFinancial = currentUser?.role !== 'BODEGUERO'
-    const item = this.sanitizeRecepcion(updatedWithUsers, { includeFinancial })
+    const item = this.sanitizeRecepcion(updatedWithUsers)
     const itemsFaltantes = item.items
       .filter((item) => item.cantidadRecibida < item.cantidad)
       .map((item) => ({
@@ -507,7 +511,7 @@ export class RecepcionesService {
       item,
       movements: result.movements,
       itemsFaltantes,
-      diferenciasCosto: includeFinancial ? diferenciasCosto : [],
+      diferenciasCosto,
       purchasePriceChanges: result.purchasePriceChanges,
     }
   }
@@ -519,8 +523,8 @@ export class RecepcionesService {
       error.statusCode = 404
       throw error
     }
-    if (recepcion.estado !== 'CONFIRMADA') {
-      const error = new Error('Solo puedes adjuntar una factura a una recepción confirmada')
+    if (!['ENVIADA', 'CONFIRMADA'].includes(recepcion.estado)) {
+      const error = new Error('Solo puedes adjuntar una factura a una recepción enviada o confirmada')
       error.statusCode = 400
       throw error
     }
@@ -544,23 +548,28 @@ export class RecepcionesService {
     })
 
     const [updatedWithUsers] = await this.attachAuditUsers([updated])
-    return this.sanitizeRecepcion(updatedWithUsers, { includeFinancial: currentUser?.role !== 'BODEGUERO' })
+    return this.sanitizeRecepcion(updatedWithUsers)
   }
 
   async cancelar(id, currentUser = null) {
-    if (currentUser?.role !== 'ADMIN') {
-      const error = new Error('Solo un administrador puede cancelar recepciones')
-      error.statusCode = 403
-      throw error
-    }
-
-    const recepcion = await recepcionesRepository.findById(id)
+    const recepcion = await this.repository.findById(id)
     if (!recepcion) {
       const error = new Error('Recepción no encontrada')
       error.statusCode = 404
       throw error
     }
-    assertNotSupplierOrder(recepcion)
+    const user = normalizeAuthenticatedUser(currentUser)
+    if (recepcion.origen === 'REABASTECIMIENTO') {
+      if (!hasPermission(user, 'pedidos_proveedor:send')) {
+        const error = new Error('No tienes permisos para cancelar pedidos a proveedor')
+        error.statusCode = 403
+        throw error
+      }
+    } else if (getRoleCode(user) !== 'ADMIN') {
+      const error = new Error('Solo un administrador puede cancelar recepciones')
+      error.statusCode = 403
+      throw error
+    }
 
     if (!['BORRADOR', 'ENVIADA'].includes(recepcion.estado)) {
       const error = new Error('Solo puedes cancelar recepciones en estado BORRADOR o ENVIADA')
@@ -568,7 +577,7 @@ export class RecepcionesService {
       throw error
     }
 
-    const updated = await recepcionesRepository.update(recepcion.id, {
+    const updated = await this.repository.update(recepcion.id, {
       estado: 'CANCELADA',
       canceledAt: new Date(),
       canceledBy: currentUser?.id ?? currentUser?.sub ?? null,
@@ -592,7 +601,11 @@ export class RecepcionesService {
       error.statusCode = 404
       throw error
     }
-    assertNotSupplierOrder(recepcion)
+    if (recepcion.origen === 'REABASTECIMIENTO' && !hasPermission(normalizeAuthenticatedUser(currentUser), 'pedidos_proveedor:create')) {
+      const error = new Error('No tienes permisos para eliminar borradores de pedidos a proveedor')
+      error.statusCode = 403
+      throw error
+    }
 
     if (recepcion.estado !== 'BORRADOR') {
       const error = new Error('Solo puedes eliminar recepciones en borrador.')
@@ -613,7 +626,7 @@ export class RecepcionesService {
     return { success: true }
   }
 
-  sanitizeRecepcion(recepcion, { includeFinancial = true } = {}) {
+  sanitizeRecepcion(recepcion) {
     const piezasTotales = (recepcion.items || []).reduce((sum, i) => sum + Number(i.cantidad || 0), 0)
     const confirmedByNombre = formatUserName(recepcion.confirmedByUser)
     const sentByNombre = formatUserName(recepcion.sentByUser)
@@ -636,22 +649,23 @@ export class RecepcionesService {
         productId: item.productId || '',
         sku: item.product?.sku || '',
         productNombre: item.product?.nombre || '',
+        precioCompra: positiveNumberOrNull(item.product?.precioCompra),
         imagen: item.product?.imagenes?.[0] || '',
         talla: item.talla || '',
         cantidad: Number(item.cantidad || 0),
         cantidadRecibida: item.cantidadRecibida === null || item.cantidadRecibida === undefined
           ? null
           : Number(item.cantidadRecibida),
-        ...(includeFinancial ? {
-          costoUnitario: Number(item.costoUnitario || 0),
-          costoUnitarioReal: item.costoUnitarioReal === null || item.costoUnitarioReal === undefined
-            ? null
-            : Number(item.costoUnitarioReal),
-          subtotal: round2(Number(item.cantidad || 0) * Number(item.costoUnitario || 0)),
-        } : {}),
+        costoUnitario: positiveNumberOrNull(item.costoUnitario),
+        costoUnitarioReal: item.costoUnitarioReal === null || item.costoUnitarioReal === undefined
+          ? null
+          : positiveNumberOrNull(item.costoUnitarioReal),
+        subtotal: positiveNumberOrNull(item.costoUnitario) === null
+          ? null
+          : round2(Number(item.cantidad || 0) * Number(item.costoUnitario)),
       })),
       piezasTotales,
-      ...(includeFinancial ? { total: Number(recepcion.total || 0) } : {}),
+      total: positiveNumberOrNull(recepcion.total),
       sentAt: recepcion.sentAt || null,
       sentBy: recepcion.sentBy || '',
       sentByNombre,

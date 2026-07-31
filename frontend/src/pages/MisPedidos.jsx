@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Encabezado from "../components/Encabezado";
 import Etiquetas from "../components/Etiquetas";
 import ModalRecepciones from "../components/ModalRecepciones";
 import ModalConfirmacion from "../components/ModalConfirmacion";
 import Paginacion from "../components/Paginacion";
-import { fetchPedidos, enviarPedido, ESTADO_PEDIDO_LABELS } from "../services/pedidos.service";
+import { cancelarPedido, eliminarPedido, fetchPedidos, enviarPedido, ESTADO_PEDIDO_LABELS } from "../services/pedidos.service";
 import useTitulo from "../hooks/useTitulo";
 import { useAuth } from "../hooks/useAuth";
 import { canPerformAction } from "../utils/permissionMapper";
@@ -38,9 +38,17 @@ const FECHA_MAXIMA = new Date().toISOString().slice(0, 10);
 const PEDIDOS_POR_PAGINA = 5;
 
 function fechaParaFiltro(iso) {
-  return iso ? String(iso).slice(0, 10) : "";
-}
+  if (!iso) return "";
 
+  const fecha = new Date(iso);
+  if (Number.isNaN(fecha.getTime())) return "";
+
+  const year = fecha.getFullYear();
+  const month = String(fecha.getMonth() + 1).padStart(2, "0");
+  const day = String(fecha.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
 function estadoVisualPedido(pedido) {
   if (pedido.status === "BORRADOR") return "En borrador";
   return ESTADO_PEDIDO_LABELS[pedido.status] || pedido.status;
@@ -50,12 +58,16 @@ export default function MisPedidos() {
   const navigate = useNavigate();
   useTitulo("Mis pedidos");
   const { usuario } = useAuth();
+  const puedeCrear = canPerformAction(usuario, "pedidos_proveedor", "create");
   const puedeEnviar = canPerformAction(usuario, "pedidos_proveedor", "send");
 
   const [pedidos, setPedidos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [enviandoId, setEnviandoId] = useState(null);
+  const envioEnCursoRef = useRef(false);
+  const [accionPendiente, setAccionPendiente] = useState(null);
+  const [procesandoAccion, setProcesandoAccion] = useState(false);
   const [pedidoEnviadoExitosamente, setPedidoEnviadoExitosamente] = useState(false);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
   const [busqueda, setBusqueda] = useState("");
@@ -73,15 +85,35 @@ export default function MisPedidos() {
   }, [refreshKey]);
 
   const handleMarcarEnviado = async (id) => {
+    if (envioEnCursoRef.current) return;
+    envioEnCursoRef.current = true;
     setEnviandoId(id);
     try {
       await enviarPedido(id);
+      setPedidoSeleccionado(null);
       setRefreshKey((k) => k + 1);
       setPedidoEnviadoExitosamente(true);
     } catch (err) {
       console.error("Error al marcar como enviado:", err);
     } finally {
+      envioEnCursoRef.current = false;
       setEnviandoId(null);
+    }
+  };
+
+  const handleConfirmarAccion = async () => {
+    if (!accionPendiente || procesandoAccion) return;
+    try {
+      setProcesandoAccion(true);
+      if (accionPendiente.tipo === "eliminar") await eliminarPedido(accionPendiente.pedido.id);
+      else await cancelarPedido(accionPendiente.pedido.id);
+      setPedidoSeleccionado(null);
+      setAccionPendiente(null);
+      setRefreshKey((key) => key + 1);
+    } catch (error) {
+      console.error("Error al actualizar el pedido:", error);
+    } finally {
+      setProcesandoAccion(false);
     }
   };
 
@@ -186,18 +218,21 @@ export default function MisPedidos() {
         onClose={() => setPedidoSeleccionado(null)}
         soloLectura
         vistaMisPedidos
+        puedeEliminar={puedeCrear}
+        puedeCancelar={puedeEnviar}
         puedeEnviar={puedeEnviar}
         enviando={enviandoId === pedidoSeleccionado?.id}
         onEnviar={(pedido) => handleMarcarEnviado(pedido.id)}
+        onEliminar={(pedido) => setAccionPendiente({ tipo: "eliminar", pedido })}
+        onCancelar={(pedido) => setAccionPendiente({ tipo: "cancelar", pedido })}
         onEditarPedido={(pedido) => {
           setPedidoSeleccionado(null);
           navigate("/reabastecimiento/generar-pedido", { state: { pedidoParaEditar: pedido } });
         }}
       />
 
-      {/* Cancelar/eliminar pertenecen a Recepción y no se exponen como acciones de pedidos a proveedor.
-        <ModalConfirmacion
-          isOpen
+      {accionPendiente && <ModalConfirmacion
+          isOpen={Boolean(accionPendiente)}
           tipo="eliminar"
           titulo={accionPendiente.tipo === "eliminar" ? "¿Eliminar este borrador?" : "¿Cancelar este pedido?"}
           mensaje={accionPendiente.tipo === "eliminar"
@@ -208,8 +243,7 @@ export default function MisPedidos() {
           onCancelar={() => { if (!procesandoAccion) setAccionPendiente(null); }}
           cargando={procesandoAccion}
           textoCargando={accionPendiente.tipo === "eliminar" ? "Eliminando..." : "Cancelando..."}
-        />
-      */}
+        />}
 
       <ModalConfirmacion
         isOpen={pedidoEnviadoExitosamente}

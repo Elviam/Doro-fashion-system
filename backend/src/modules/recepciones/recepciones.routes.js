@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { recepcionesController } from './recepciones.controller.js'
 import { authenticate } from '../../middlewares/auth.js'
-import { requirePermissions } from '../../middlewares/requirePermissions.js'
+import { requireAnyPermission, requirePermissions } from '../../middlewares/requirePermissions.js'
 import { validate } from '../../middlewares/validate.js'
 import { asyncHandler } from '../../utils/asyncHandler.js'
 import {
@@ -94,7 +94,7 @@ router.patch(
 router.patch(
   '/:id/cancel',
   authenticate,
-  requirePermissions(['recepciones:cancel']),
+  requireAnyPermission(['pedidos_proveedor:send', 'recepciones:cancel']),
   validate(recepcionIdParamSchema, 'params'),
   asyncHandler(recepcionesController.cancel.bind(recepcionesController))
 )
@@ -102,7 +102,7 @@ router.patch(
 router.delete(
   '/:id',
   authenticate,
-  requirePermissions(['recepciones:delete']),
+  requireAnyPermission(['pedidos_proveedor:create', 'recepciones:delete']),
   validate(recepcionIdParamSchema, 'params'),
   asyncHandler(recepcionesController.remove.bind(recepcionesController))
 )
