@@ -1,7 +1,6 @@
 import { useState, useMemo, useContext, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import HeaderTienda from "../components/tienda/HeaderTienda";
 import FooterTienda from "../components/tienda/FooterTienda";
 import HeroCarrusel from "../components/tienda/HeroCarrusel";
 import FiltrosSidebar, { DrawerFiltros } from "../components/tienda/FiltrosSidebar";
@@ -9,9 +8,6 @@ import { RANGO_PRECIO } from "../constants/precio";
 import BarraOrdenamiento from "../components/tienda/BarraOrdenamiento";
 import TarjetaProductoTienda from "../components/tienda/TarjetaProductoTienda";
 import VistaRapida from "../components/tienda/VistaRapida";
-import SeccionCarrito from "../components/tienda/SeccionCarrito";
-import Wishlist from "../components/tienda/Wishlist";
-import ToastTienda from "../components/tienda/ToastTienda";
 import {
   cargarCatalogoTienda,
   catalogoEstaVigente,
@@ -22,6 +18,7 @@ import useTitulo from "../hooks/useTitulo";
 import { useRequireAuth, esClienteTienda } from "../context/LoginRequeridoContext";
 import { useCarrito } from "../context/CarritoContext";
 import { useWishlist } from "../context/WishlistContext";
+import { useTiendaPanel } from "../components/tienda/TiendaLayout";
 
 const filtrosIniciales = {
   precioMin: RANGO_PRECIO.min,
@@ -46,7 +43,7 @@ export default function Tienda() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const requireAuth = useRequireAuth();
-  const { logout, usuario } = useContext(AuthContext);
+  const { usuario } = useContext(AuthContext);
 
   // Identidad efectiva para carrito/wishlist: solo cuentas de CLIENTE cuentan.
   // Si un admin/staff entra desde "Ir a la Tienda", se le trata como invitado
@@ -54,8 +51,9 @@ export default function Tienda() {
   // se le cierra su sesión real al volver al dashboard.
   const clienteReal = esClienteTienda(usuario) ? usuario : null;
 
-  const { carrito, agregarAlCarrito, cambiarCantidad, eliminarDelCarrito, cantidadCarrito, carritoAbierto, setCarritoAbierto, setToast } = useCarrito();
+  const { agregarAlCarrito, setToast } = useCarrito();
   const { favoritos, setFavoritos } = useWishlist();
+  const { setWishlistAbierto } = useTiendaPanel();
   const [busqueda, setBusqueda]               = useState("");
   const [categoriaActiva, setCategoriaActiva] = useState("todas");
   const [ordenamiento, setOrdenamiento]       = useState("relevancia");
@@ -64,26 +62,16 @@ export default function Tienda() {
   const [cargando, setCargando]               = useState(() => !obtenerCatalogoEnCache());
   const [errorCarga, setErrorCarga]           = useState(false);
   const [filtrosAbiertos, setFiltrosAbiertos]   = useState(false);
-  const [toast]                       = useState(null);
 
   // ── Favoritos ─────────────────────────────────────────────────────────────
-  const [wishlistAbierto, setWishlistAbierto] = useState(false);
 
   // Sincronizar favoritos → localStorage cada vez que cambian
   useEffect(() => {
-    const panel = searchParams.get("panel");
     const categoria = searchParams.get("categoria");
     const consulta = searchParams.get("q");
-    if (panel === "carrito") setCarritoAbierto(true);
-    if (panel === "wishlist") setWishlistAbierto(true);
     if (categoria) setCategoriaActiva(categoria);
     if (consulta !== null) setBusqueda(consulta);
-    if (panel) {
-      const nextParams = new URLSearchParams(searchParams);
-      nextParams.delete("panel");
-      setSearchParams(nextParams, { replace: true });
-    }
-  }, [searchParams, setCarritoAbierto, setSearchParams]);
+  }, [searchParams]);
 
   useEffect(() => {
     let activo = true;
@@ -156,8 +144,6 @@ export default function Tienda() {
     setCategoriaActiva("todas");
     setSearchParams({}, { replace: true });
   };
-  const handleLogout  = () => { logout(); navigate("/login"); };
-
   const filtrosActivos = contarFiltrosActivos(filtros, categoriaActiva, busqueda);
 
   const productosFiltrados = useMemo(() => {
@@ -199,22 +185,6 @@ export default function Tienda() {
   return (
     
     <div className="min-h-screen" style={{ background: "var(--ivory-deep)" }}>
-
-      <HeaderTienda
-        busqueda={busqueda}
-        setBusqueda={setBusqueda}
-        onBuscar={handleBuscar}
-        cantidadCarrito={cantidadCarrito}
-        cantidadWishlist={favoritos.length}
-        onAbrirCarrito={() => setCarritoAbierto(true)}
-        onAbrirWishlist={() => setWishlistAbierto(true)}
-        onIrInicio={() => { setCarritoAbierto(false); setWishlistAbierto(false); navigate("/tienda"); }}
-        categoriaActiva={categoriaActiva}
-        onSeleccionarCategoria={seleccionarCategoria}
-        onLogout={handleLogout}
-        usuario={usuario}
-        onIrAlDashboard={() => navigate("/dashboard")}
-      />
 
       <HeroCarrusel />
 
@@ -337,29 +307,6 @@ export default function Tienda() {
       </section>
 
       <FooterTienda />
-
-      <SeccionCarrito
-        abierto={carritoAbierto}
-        onCerrar={() => setCarritoAbierto(false)}
-        carrito={carrito}
-        onCambiarCantidad={cambiarCantidad}
-        onEliminar={eliminarDelCarrito}
-        onCheckout={() => { setCarritoAbierto(false); navigate("/tienda/checkout"); }}
-        onVerDetalle={(producto) => { setCarritoAbierto(false); navigate(`/tienda/producto/${producto.id}`); }}
-      />
-
-      <Wishlist
-        abierto={wishlistAbierto}
-        onCerrar={() => setWishlistAbierto(false)}
-        favoritos={favoritos}
-        productos={productos}
-        carrito={carrito}
-        onProductoClick={(producto) => navigate(`/tienda/producto/${producto.id}`)}
-        onAgregarAlCarrito={agregarAlCarrito}       
-        onQuitar={(productoId) =>
-          setFavoritos((prev) => prev.filter((id) => id !== productoId))
-        }
-      />
 
       <DrawerFiltros
         filtros={filtros}

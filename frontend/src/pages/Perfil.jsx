@@ -1,45 +1,18 @@
-import { useContext, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { userCanAccessDashboard } from "../utils/roleChecker";
 import PerfilUsuario from "../components/PerfilUsuario";
 import PerfilCliente from "../components/PerfilCliente";
 import Encabezado from "../components/Encabezado";
-import HeaderTienda from "../components/tienda/HeaderTienda";
 import FooterTienda from "../components/tienda/FooterTienda";
 import Layout from "../components/Layout";
 import useTitulo from "../hooks/useTitulo";
-import { useCarrito } from "../context/CarritoContext";
-import { useWishlist } from "../context/WishlistContext";
 
 export default function Perfil() {
   useTitulo("Perfil");
-  const { usuario, logout } = useContext(AuthContext);
-  const navigate = useNavigate();
-  const esAdmin = userCanAccessDashboard(usuario);
-  const { cantidadCarrito } = useCarrito();
-  const { favoritos } = useWishlist();
+  const { usuario } = useContext(AuthContext);
+  const esStaff = usuario?.accountType === "STAFF";
 
-  const [busqueda, setBusqueda] = useState("");
-
-  const handleVolver = () => {
-    navigate(esAdmin ? "/dashboard" : "/tienda");
-  };
-
-  const handleBuscar = () => {
-    navigate(`/tienda?busqueda=${encodeURIComponent(busqueda)}`);
-  };
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
-  const handleIrAlDashboard = () => {
-    navigate("/dashboard");
-  };
-
-  if (esAdmin) {
+  if (esStaff) {
     return (
       <Layout>
         <div className="p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6">
@@ -52,23 +25,6 @@ export default function Perfil() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[var(--ivory)] w-full overflow-x-hidden">
-      <HeaderTienda
-        busqueda={busqueda}
-        setBusqueda={setBusqueda}
-        onBuscar={handleBuscar}
-        cantidadCarrito={cantidadCarrito}
-        cantidadWishlist={favoritos.length}
-        onAbrirCarrito={() => navigate("/tienda?panel=carrito")}
-        onAbrirWishlist={() => navigate("/tienda?panel=wishlist")}
-        categoriaActiva=""
-        onSeleccionarCategoria={() => {}}
-        onLogout={handleLogout}
-        usuario={usuario}
-        onIrAlDashboard={handleIrAlDashboard}
-        mostrarVolver
-        onVolver={handleVolver}
-      />
-
       <main className="flex-1 max-w-[1480px] mx-auto px-4 md:px-6 lg:px-10 py-6 md:py-8 w-full box-border">
 
         <PerfilCliente usuario={usuario} />

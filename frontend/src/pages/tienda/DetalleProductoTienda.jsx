@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   cargarProductoTienda,
   obtenerProductoEnCache,
   productoEstaVigente,
 } from "../../services/tiendaCache";
-import HeaderTienda from "../../components/tienda/HeaderTienda";
 import FooterTienda from "../../components/tienda/FooterTienda";
 import useTitulo from "../../hooks/useTitulo";
 import { useCarrito } from "../../context/CarritoContext";
@@ -141,7 +140,6 @@ function MiniaturaImagen({ src, alt, activa, onClick }) {
 
 export default function DetalleProductoTienda() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { agregarAlCarrito } = useCarrito();
 
   const [producto, setProducto] = useState(() => obtenerProductoEnCache(id));
@@ -197,7 +195,6 @@ export default function DetalleProductoTienda() {
   if (cargando) {
     return (
       <>
-        <HeaderTienda mostrarVolver onVolver={() => navigate("/tienda")} />
         <main className="bg-[var(--ivory)] min-h-[70vh] flex items-center justify-center">
           <p className="flex items-center gap-2 font-body text-sm text-[var(--noir-soft)]">
             <i className="bi bi-arrow-repeat animate-spin text-xl text-[var(--gold-dark)]"></i>
@@ -212,7 +209,6 @@ export default function DetalleProductoTienda() {
   if (error || !producto) {
     return (
       <>
-        <HeaderTienda mostrarVolver onVolver={() => navigate("/tienda")} />
         <main className="bg-[var(--ivory)] min-h-[70vh] flex flex-col items-center justify-center gap-4 text-center px-4">
           <i className="bi bi-exclamation-triangle text-4xl text-[var(--gold-dark)]"></i>
           <p className="font-body text-[var(--noir)]">No se pudo cargar este producto.</p>
@@ -237,8 +233,6 @@ export default function DetalleProductoTienda() {
 
   return (
     <>
-      <HeaderTienda mostrarVolver onVolver={() => navigate("/tienda")} />
-
       <main className="bg-[var(--ivory)] pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-6 lg:pt-8">
 

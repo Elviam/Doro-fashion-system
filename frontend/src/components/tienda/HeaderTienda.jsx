@@ -50,8 +50,8 @@ export default function HeaderTienda({
   const cambiarBusqueda = setBusqueda || setBusquedaLocal;
   const buscar = onBuscar || (() => navigate(`/tienda${valorBusqueda ? `?q=${encodeURIComponent(valorBusqueda)}` : ""}`));
   const seleccionarCategoria = onSeleccionarCategoria || ((id) => navigate(`/tienda${id && id !== "todas" ? `?categoria=${encodeURIComponent(id)}` : ""}`));
-  const abrirCarrito = onAbrirCarrito || (() => navigate("/tienda?panel=carrito"));
-  const abrirWishlist = onAbrirWishlist || (() => navigate("/tienda?panel=wishlist"));
+  const abrirCarrito = onAbrirCarrito || (() => {});
+  const abrirWishlist = onAbrirWishlist || (() => {});
   const cerrarSesion = onLogout || (() => navigate("/login"));
   const irDashboard = onIrAlDashboard || (() => navigate("/dashboard"));
   const irInicio = onIrInicio || (() => navigate("/tienda"));

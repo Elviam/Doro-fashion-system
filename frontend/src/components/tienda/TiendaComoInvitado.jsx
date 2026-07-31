@@ -1,17 +1,13 @@
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { Outlet } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { esClienteTienda } from "../../context/LoginRequeridoContext";
 
-// La tienda y el panel usan una sola sesión. Si se entra con staff, se cierra
-// antes de renderizar la tienda para que el acceso sea siempre como invitado.
+// Las sesiones STAFF y CLIENT se conservan por separado. Esta superficie solo
+// consume la sesión CLIENT activa y nunca invalida la sesión administrativa.
 export default function TiendaComoInvitado() {
-  const { token, usuario, loading, logout } = useContext(AuthContext);
+  const { token, usuario, loading } = useContext(AuthContext);
   const esSesionDeStaff = Boolean(token && usuario && !esClienteTienda(usuario));
-
-  useEffect(() => {
-    if (esSesionDeStaff) logout();
-  }, [esSesionDeStaff, logout]);
 
   if (loading || esSesionDeStaff) return null;
 

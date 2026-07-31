@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../services/api";
-import HeaderTienda from "../../components/tienda/HeaderTienda";
 import FooterTienda from "../../components/tienda/FooterTienda";
 import { useAuth } from "../../hooks/useAuth";
 import useTitulo from "../../hooks/useTitulo";
 import { useCarrito } from "../../context/CarritoContext";
-import { useWishlist } from "../../context/WishlistContext";
+import AccessibleSelect from "../../components/AccessibleSelect";
 
 const pasos = ["Envío", "Pago", "Confirmación"];
 const ENVIO_GRATIS_DESDE = 799;
@@ -31,9 +30,7 @@ export default function Checkout() {
   useTitulo("Checkout — D'oro");
   const navigate = useNavigate();
   const { usuario } = useAuth();
-  const { carrito, cantidadCarrito, vaciarCarrito } = useCarrito();
-  const { favoritos } = useWishlist();
-  const [busquedaHeader, setBusquedaHeader] = useState("");
+  const { carrito, vaciarCarrito } = useCarrito();
 
   const nombreCompleto = usuario ? `${usuario.nombre ?? ""} ${usuario.apellido ?? ""}`.trim() : "";
 
@@ -191,23 +188,6 @@ export default function Checkout() {
 
   return (
     <>
-      <HeaderTienda
-        busqueda={busquedaHeader}
-        setBusqueda={setBusquedaHeader}
-        onBuscar={() => navigate(`/tienda${busquedaHeader ? `?q=${encodeURIComponent(busquedaHeader)}` : ""}`)}
-        cantidadCarrito={cantidadCarrito}
-        cantidadWishlist={favoritos.length}
-        onAbrirCarrito={() => navigate("/tienda?panel=carrito")}
-        onAbrirWishlist={() => navigate("/tienda?panel=wishlist")}
-        categoriaActiva="todas"
-        onSeleccionarCategoria={(id) => navigate(`/tienda${id && id !== "todas" ? `?categoria=${encodeURIComponent(id)}` : ""}`)}
-        onLogout={() => navigate("/tienda")}
-        usuario={usuario}
-        onIrAlDashboard={() => navigate("/dashboard")}
-        mostrarVolver
-        onVolver={() => navigate("/tienda")}
-      />
-
       <main className="bg-[var(--ivory)] pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-10">
 
@@ -332,7 +312,16 @@ export default function Checkout() {
                       </label>
                       <label className="block">
                         <span className="font-tag text-[10px] tracking-[0.15em] text-[var(--noir-soft)] uppercase font-bold">Estado</span>
-                        <select value={datos.estado} onChange={(e) => { setDato("estado", e.target.value); setErroresEnvio((p) => ({ ...p, estado: "" })); }} className={`${inputBase} ${erroresEnvio.estado ? "border-[#b3261e]" : "border-[var(--border-gold-40)]"}`}><option value="">Selecciona</option>{ESTADOS_MEXICO.map((estado) => <option key={estado} value={estado}>{estado}</option>)}</select>
+                        <AccessibleSelect
+                          id="estado-envio"
+                          ariaLabel="Estado"
+                          value={datos.estado}
+                          onChange={(estado) => { setDato("estado", estado); setErroresEnvio((p) => ({ ...p, estado: "" })); }}
+                          placeholder="Selecciona"
+                          error={Boolean(erroresEnvio.estado)}
+                          inputClassName={`${inputBase.replace("mt-1.5 ", "")} ${erroresEnvio.estado ? "border-[#b3261e]" : "border-[var(--border-gold-40)]"}`}
+                          options={ESTADOS_MEXICO.map((estado) => ({ value: estado, label: estado }))}
+                        />
                         {erroresEnvio.estado && <p className="mt-1 font-tag text-[10px] text-[#b3261e]">{erroresEnvio.estado}</p>}
                       </label>
                     </div>

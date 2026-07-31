@@ -1,22 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-
-// Palette for placeholder gradients when product has no image
-const paletasPorCategoria = {
-  "Playeras":   ["#9F86C0", "#E7D6FF"],
-  "Blusas":     ["#ED8ABA", "#E7D6FF"],
-  "Camisas":    ["#7EC9ED", "#E7D6FF"],
-  "Suéteres":   ["#C9B8E8", "#A68DC8"],
-  "Sudaderas":  ["#A68DC8", "#2C2A48"],
-  "Chamarras":  ["#F7CB57", "#FAA86B"],
-  "Abrigos":    ["#7EC9ED", "#2C2A48"],
-  "Vestidos":   ["#ED8ABA", "#C9B8E8"],
-  "Faldas":     ["#FAA86B", "#ED8ABA"],
-  "Shorts":     ["#A3E378", "#7EC9ED"],
-  "Pantalones": ["#7EC9ED", "#2C2A48"],
-  "Calzado":    ["#FAA86B", "#F7CB57"],
-  "Accesorios": ["#C9B8E8", "#ED8ABA"],
-};
-
 const ENVIO_GRATIS_DESDE = 799;
 const COSTO_ENVIO        = 99;
 
@@ -30,7 +12,6 @@ function ImagenMiniatura({ producto }) {
       />
     );
   }
-  const [c0, c1] = paletasPorCategoria[producto.categoria] || ["#A68DC8", "#E7D6FF"];
   return (
     <div
       className="w-full h-full"
@@ -38,7 +19,6 @@ function ImagenMiniatura({ producto }) {
     />
   );
 }
-
 export default function SeccionCarrito({
   
   abierto,

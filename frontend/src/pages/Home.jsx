@@ -1041,68 +1041,6 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════
-          CTA BAND
-      ══════════════════════════════════════════════════════════════════ */}
-      <section
-        ref={add}
-        className="reveal cta-band"
-        style={{
-          background: "var(--ivory-deep)",
-          borderTop: "1px solid var(--border-gold-25)",
-          borderBottom: "1px solid var(--border-gold-25)",
-          padding: "72px 60px",
-          textAlign: "center",
-          width: "100%",
-          boxSizing: "border-box",
-        }}
-      >
-        <p
-          style={{
-            fontFamily: "var(--font-tag)",
-            fontSize: "10px",
-            letterSpacing: "0.28em",
-            color: "var(--gold-dark)",
-            textTransform: "uppercase",
-            marginBottom: "20px",
-          }}
-        >
-          Nueva temporada disponible
-        </p>
-        <h2
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "clamp(24px, 4vw, 46px)",
-            fontWeight: 300,
-            fontStyle: "italic",
-            color: "var(--noir)",
-            lineHeight: 1.2,
-            maxWidth: "580px",
-            margin: "0 auto 40px",
-          }}
-        >
-          Descubre la colección Primavera D'oro 2026
-        </h2>
-        <button
-          onClick={() => navigate("/tienda")}
-          style={btnPrimary}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--gold-dark)";
-            e.currentTarget.style.color = "var(--ivory)";
-            e.currentTarget.style.transform = "translateY(-2px)";
-            e.currentTarget.style.boxShadow = "0 10px 32px rgba(122,92,30,0.35)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "var(--gold)";
-            e.currentTarget.style.color = "var(--noir)";
-            e.currentTarget.style.transform = "none";
-            e.currentTarget.style.boxShadow = "none";
-          }}
-        >
-          Ver colección completa
-        </button>
-      </section>
-
-      {/* ══════════════════════════════════════════════════════════════════
           FOOTER
       ══════════════════════════════════════════════════════════════════ */}
       <footer
@@ -1128,8 +1066,8 @@ export default function Home() {
           {/* Brand */}
           <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             <DoroWordmark size={22} color="var(--gold-light)" />
-            <p
-              style={{
+          <p
+            style={{
                 fontFamily: "var(--font-tag)",
                 fontSize: "10px",
                 letterSpacing: "0.2em",
@@ -1251,9 +1189,22 @@ export default function Home() {
             margin: 0,
             textTransform: "uppercase",
           }}
-        >
-          © 2026 D'oro Maison · Todos los derechos reservados
-        </p>
+          >
+            © 2026 D'oro Maison · Todos los derechos reservados
+          </p>
+          <p
+            style={{
+              fontFamily: "var(--font-body)",
+              fontSize: "10px",
+              lineHeight: 1.45,
+              color: "var(--snow-45)",
+              margin: 0,
+              maxWidth: "520px",
+              textAlign: "center",
+            }}
+          >
+            D'oro es una marca ficticia creada con fines académicos y de portafolio. Los nombres, ubicaciones y datos comerciales forman parte del concepto del proyecto.
+          </p>
         <p
           style={{
             fontFamily: "var(--font-tag)",
