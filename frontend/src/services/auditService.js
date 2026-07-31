@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { staffApi } from './api';
 
 // Consulta el log de auditoría más reciente para un recurso específico.
 // Filtra client-side por resourceId porque el endpoint /audit no expone ese filtro directamente.
@@ -10,14 +10,7 @@ export async function obtenerUltimoLog({ token, resource, resourceId, action }) 
       limit: "100",
       ...(action && { action }),
     });
-    const res = await fetch(`${API_URL}/audit?${params}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
+    const data = await staffApi.get(`/audit?${params}`);
     const items = (data.items || []).filter(
       (l) => String(l.resourceId) === String(resourceId)
     );

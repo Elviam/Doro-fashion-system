@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Modal from "./Modal";
-import { api } from "../services/api";
+import { staffApi } from "../services/api";
 
 const formatearFecha = (fecha) => fecha
   ? new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" }).format(new Date(fecha))
@@ -26,7 +26,7 @@ export default function ModalClientes({ cliente, onClose, isOpen = true }) {
     const cargarCompras = async () => {
       setCargandoCompras(true);
       try {
-        const data = await api.get(`/ventas?clienteId=${encodeURIComponent(cliente.id)}&limit=50`);
+        const data = await staffApi.get(`/ventas?clienteId=${encodeURIComponent(cliente.id)}&limit=50`);
         if (vigente) setCompras(data.items || []);
       } catch (error) {
         console.error("Error cargando historial del cliente:", error);
@@ -54,7 +54,7 @@ export default function ModalClientes({ cliente, onClose, isOpen = true }) {
   const tituloPersonalizado = (
     <div>
       <h2 className="text-xl sm:text-2xl font-display font-bold mb-1 uppercase tracking-widest transition-colors text-[var(--noir)] dark:text-[var(--snow)] m-0">
-        Detalle de cliente
+        Detalle del cliente
       </h2>
       <p className="text-xs sm:text-sm lg:text-base text-[var(--noir-soft)] dark:text-[var(--ash)] transition-colors font-body font-normal tracking-normal normal-case">
         Datos de contacto e historial de pedidos.
@@ -73,7 +73,7 @@ export default function ModalClientes({ cliente, onClose, isOpen = true }) {
         
         {/* Contenido */}
         <div className="flex flex-col md:flex-row gap-6">
-          
+
           {/* Columna Izquierda: Tarjeta de Perfil y Avatar */}
           <div className="w-full md:w-1/3 rounded-[2px] p-6 flex flex-col items-center justify-center text-center border transition-colors shadow-sm bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)] dark:shadow-none">
             <div className="w-24 h-24 rounded-full flex items-center justify-center mb-4 border-2 transition-colors font-bold text-3xl bg-[var(--gold-08)] border-[var(--border-gold-40)] text-[var(--gold-dark)] dark:bg-[var(--gold-08)] dark:border-[var(--border-gold-20)] dark:text-[var(--gold-light)]">
@@ -90,18 +90,15 @@ export default function ModalClientes({ cliente, onClose, isOpen = true }) {
 
           {/* Columna Derecha: Datos */}
           <div className="w-full md:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            
-            <div className="rounded-[2px] p-4 border transition-colors shadow-sm bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)] dark:shadow-none">
-              <p className="text-[10px] lg:text-[11px] font-tag uppercase tracking-[0.2em] text-[var(--gold-dark)] dark:text-[var(--ash)] mb-2">RFC</p>
-              <p className="text-sm lg:text-base font-semibold truncate text-[var(--noir)] dark:text-[var(--snow)]">{cliente.rfc || "—"}</p>
-            </div>
 
-            <div className="rounded-[2px] p-4 border transition-colors shadow-sm bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)] dark:shadow-none">
+
+
+            <div className="rounded-[2px] p-4 border transition-colors shadow-sm bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)] dark:shadow-none min-w-0">
               <p className="text-[10px] lg:text-[11px] font-tag uppercase tracking-[0.2em] text-[var(--gold-dark)] dark:text-[var(--ash)] mb-2">Teléfono</p>
               <p className="text-sm lg:text-base font-semibold truncate text-[var(--noir)] dark:text-[var(--snow)]">{cliente.telefono || "—"}</p>
             </div>
 
-            <div className="sm:col-span-2 rounded-[2px] p-4 border transition-colors shadow-sm bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)] dark:shadow-none">
+            <div className="rounded-[2px] p-4 border transition-colors shadow-sm bg-[var(--snow)] border-[var(--border-gold-40)] dark:bg-[var(--noir)] dark:border-[var(--border-gold-20)] dark:shadow-none min-w-0">
               <p className="text-[10px] lg:text-[11px] font-tag uppercase tracking-[0.2em] text-[var(--gold-dark)] dark:text-[var(--ash)] mb-2">Correo Electrónico</p>
               <p className="text-sm lg:text-base font-semibold truncate text-[var(--noir)] dark:text-[var(--snow)]">{cliente.email || "—"}</p>
             </div>

@@ -13,6 +13,20 @@ const TRANSICIONES_PERMITIDAS = {
   CANCELADO: [],
 }
 
+function normalizarTelefono(valor) {
+  const telefono = String(valor || '').replace(/\D/g, '')
+  if (!/^\d{8,15}$/.test(telefono)) {
+    const error = new Error('El teléfono debe tener entre 8 y 15 dígitos')
+    error.statusCode = 400
+    throw error
+  }
+  return telefono
+}
+
+function telefonoValido(valor) {
+  return /^\d{8,15}$/.test(String(valor || '').replace(/\D/g, ''))
+}
+
 // Busca un cliente existente por su correo electrónico o crea uno nuevo
 // a partir de la información proporcionada en el checkout. De esta forma,
 // cada venta queda asociada a un registro real de `Client` (nunca como
@@ -47,13 +61,18 @@ function shippingAddressData(address) {
 async function resolveCheckoutClient(clienteInfo, currentUser) {
   const email = String(clienteInfo.email).trim().toLowerCase()
   const direccion = formatShippingAddress(clienteInfo)
-  const defaultAddress = { nombre: clienteInfo.nombre.trim(), email, direccion }
 
   const client = await clientsRepository.findById(currentUser.sub)
   if (!client || client.activo === false || client.email.toLowerCase() !== email) {
     const error = new Error('Cliente no autorizado para realizar esta compra')
     error.statusCode = 403
     throw error
+  }
+  const defaultAddress = {
+    nombre: clienteInfo.nombre.trim(),
+    email,
+    direccion,
+    ...(!telefonoValido(client.telefono) ? { telefono: clienteInfo.telefono } : {}),
   }
   return clientsRepository.update(client.id, defaultAddress)
 }
@@ -139,10 +158,12 @@ export class VentasService {
       throw error
     }
 
-    const cliente = await resolveCheckoutClient({
+    const clienteInfo = {
       ...payload.cliente,
       email: currentUser.email,
-    }, currentUser)
+      telefono: normalizarTelefono(payload.cliente.telefono),
+    }
+    const cliente = await resolveCheckoutClient(clienteInfo, currentUser)
     const subtotal = items.reduce((total, item) => total + item.cantidad * item.precioUnitario, 0)
     const envio = subtotal >= ENVIO_GRATIS_DESDE ? 0 : COSTO_ENVIO
 
@@ -155,7 +176,7 @@ export class VentasService {
       envio,
       total: subtotal + envio,
       estado: 'PENDIENTE',
-      ...shippingAddressData(payload.cliente),
+      ...shippingAddressData(clienteInfo),
       items,
     }
 
@@ -262,7 +283,8 @@ export class VentasService {
       error.statusCode = 404
       throw error
     }
-    if (venta.cliente?.userId !== currentUser.sub) {
+    const clientId = venta.clientId ?? venta.cliente?.id
+    if (clientId !== currentUser.sub) {
       const error = new Error('No tienes acceso a este pedido')
       error.statusCode = 403
       throw error

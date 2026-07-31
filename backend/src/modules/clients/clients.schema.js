@@ -81,15 +81,64 @@ export const addressIdParamSchema = z.object({
 })
 
 export const addressSchema = z.object({
-  alias: z.string().trim().min(1).max(40).optional(),
-  calle: z.string().trim().min(3),
-  numeroExterior: z.string().trim().min(1),
-  numeroInterior: z.string().trim().max(30).optional().default(''),
-  cp: z.string().trim().regex(/^\d{5}$/, 'El código postal debe tener 5 dígitos'),
-  estado: z.string().trim().min(2),
-  ciudad: z.string().trim().min(2),
-  colonia: z.string().trim().min(2),
-  referencias: z.string().trim().max(300).optional().default(''),
-  telefono: z.string().trim().min(8),
+  alias: z
+    .string()
+    .trim()
+    .min(1, 'El alias debe tener al menos 1 carácter')
+    .max(40, 'El alias no puede tener más de 40 caracteres')
+    .optional(),
+
+  calle: z
+    .string()
+    .trim()
+    .min(3, 'La calle debe tener al menos 3 caracteres'),
+
+  numeroExterior: z
+    .string()
+    .trim()
+    .min(1, 'El número exterior es obligatorio'),
+
+  numeroInterior: z
+    .string()
+    .trim()
+    .max(30, 'El número interior no puede tener más de 30 caracteres')
+    .optional()
+    .default(''),
+
+  cp: z
+    .string()
+    .trim()
+    .regex(/^\d{5}$/, 'El código postal debe tener 5 dígitos'),
+
+  estado: z
+    .string()
+    .trim()
+    .min(2, 'Selecciona un estado válido'),
+
+  ciudad: z
+    .string()
+    .trim()
+    .min(2, 'La ciudad debe tener al menos 2 caracteres'),
+
+  colonia: z
+    .string()
+    .trim()
+    .min(2, 'La colonia debe tener al menos 2 caracteres'),
+
+  referencias: z
+    .string()
+    .trim()
+    .max(300, 'Las referencias no pueden tener más de 300 caracteres')
+    .optional()
+    .default(''),
+
+  telefono: z
+    .string()
+    .trim()
+    .refine(
+      (telefono) => /^\d{8,15}$/.test(telefono.replace(/\D/g, '')),
+      'El teléfono debe tener entre 8 y 15 dígitos'
+    ),
+
   esPredeterminada: z.boolean().optional()
 })

@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import PanelErrorBoundary from "./PanelErrorBoundary";
 
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -106,11 +107,11 @@ export default function Layout({ children }) {
               className={`flex h-8 w-8 items-center justify-center rounded-full bg-[var(--snow)] shadow-md dark:bg-[var(--noir)] ${actualizando ? "animate-spin" : ""}`}
               style={{ transform: `translateY(${Math.max(6, Math.min(distanciaTiro, UMBRAL_ACTUALIZAR + 8))}px) rotate(${actualizando ? 0 : distanciaTiro * 4}deg)` }}
             >
-              <span className="h-4 w-4 rounded-full border-2 border-[var(--gold-dark)] border-t-transparent dark:border-[var(--gold-light)] dark:border-t-transparent" />
+              <span className="h-4 w-4 rounded-full border-2 border-[var(--gold)] border-t-transparent" />
             </div>
           </div>
           <div key={versionSeccion} className="contents">
-            {children}
+            <PanelErrorBoundary>{children}</PanelErrorBoundary>
           </div>
         </main>
       </div>

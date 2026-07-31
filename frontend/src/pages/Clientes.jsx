@@ -4,7 +4,7 @@ import Tabla from "../components/Tabla";
 import ToolBar from "../components/ToolBar";
 import Paginacion from "../components/Paginacion";
 import Encabezado from "../components/Encabezado";
-import { api } from "../services/api";
+import { staffApi } from "../services/api";
 import useTitulo from "../hooks/useTitulo";
 
 import ModalClientes from "../components/ModalClientes";
@@ -44,7 +44,7 @@ export default function Clientes() {
       setLoading(true);
       try {
         const queryString = buildQuery();
-        const data = await api.get(`/clients?${queryString}`);
+        const data = await staffApi.get(`/clients?${queryString}`);
         const items = Array.isArray(data.items) ? data.items : Array.isArray(data) ? data : [];
         setRows(items);
         setTotalRegistros(typeof data.total === "number" ? data.total : items.length);

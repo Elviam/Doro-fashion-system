@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getResourceLabel } from "./ActionBadge";
-import { api } from "../services/api";
+import { staffApi } from "../services/api";
+import { getPasswordAuditPresentation } from "../utils/passwordAuditPresentation";
 
 const ACTION_CFG = {
   CREATE:        { label: "Creación",  bg: "rgba(74,222,128,0.13)",  border: "rgba(74,222,128,0.40)",  colorDark: "#84B140", colorLight: "#3d7a1a" },
@@ -13,6 +14,7 @@ const ACTION_CFG = {
   CANCEL:        { label: "Cancelación", bg: "rgba(244,63,94,0.13)", border: "rgba(244,63,94,0.40)", colorDark: "#D04E37", colorLight: "#b83224" },
   CHANGE_PASSWORD: { label: "Cambio de contraseña", bg: "rgba(251,191,36,0.13)", border: "rgba(251,191,36,0.40)", colorDark: "#C9A800", colorLight: "#92720a" },
   SEED: { label: "Inicialización", bg: "var(--gold-08)", border: "var(--border-gold-40)", colorDark: "var(--gold-light)", colorLight: "var(--gold-dark)" },
+  RESET_PASSWORD: { label: "Restablecimiento de contraseña", bg: "rgba(251,191,36,0.13)", border: "rgba(251,191,36,0.40)", colorDark: "#C9A800", colorLight: "#92720a" },
 };
 
 const ETIQUETAS_CAMPO = {
@@ -65,7 +67,7 @@ export default function ModalAuditoria({ isOpen, onClose, data }) {
     setProductoContexto(null);
     if (!isOpen || data?.resource !== "products" || !data.resourceId || data.action === "DELETE") return undefined;
 
-    api.get(`/products/${data.resourceId}`)
+    staffApi.get(`/products/${data.resourceId}`)
       .then((respuesta) => {
         if (activo) setProductoContexto(respuesta.item || respuesta.data?.item || respuesta);
       })
@@ -106,8 +108,9 @@ export default function ModalAuditoria({ isOpen, onClose, data }) {
     ...(productoContexto || {}),
     ...Object.fromEntries(Object.entries(data.details || {}).filter(([, valor]) => valor !== undefined)),
   };
+  const passwordPresentation = getPasswordAuditPresentation(data);
   const clavesContextoProducto = ["sku", "nombre", "activo", "categoria", "departamento", "imagenes", "stock", "stockMinimo", "stockIdeal", "stockMaximo"];
-  const detalles = data.details
+  const detalles = passwordPresentation ? [] : data.details
     ? Object.entries(data.details).filter(([key]) => !["evidencia", "ajustes", "cambios", "changes", ...(esProductoCreado ? [...camposProductoCreado, ...camposOmitidosProductoCreado] : esProductoEliminado ? camposProductoEliminado : data.resource === "products" ? clavesContextoProducto : [])].includes(key))
     : [];
   const evidenciaActual = evidencias[indiceEvidencia];
@@ -164,8 +167,8 @@ export default function ModalAuditoria({ isOpen, onClose, data }) {
               className="inline-flex items-center px-3 py-1 rounded-[2px] text-xs lg:text-sm font-medium"
               style={{ background: "var(--gold-08)", border: "0.5px solid var(--border-gold-40)" }}
             >
-              <span className="dark:hidden"  style={{ color: "var(--gold-dark)" }}>{getResourceLabel(data.resource)}</span>
-              <span className="hidden dark:inline" style={{ color: "var(--gold-light)" }}>{getResourceLabel(data.resource)}</span>
+              <span className="dark:hidden"  style={{ color: "var(--gold-dark)" }}>{passwordPresentation?.resourceLabel || getResourceLabel(data.resource, data.action)}</span>
+              <span className="hidden dark:inline" style={{ color: "var(--gold-light)" }}>{passwordPresentation?.resourceLabel || getResourceLabel(data.resource, data.action)}</span>
             </span>
           </div>
 
@@ -279,7 +282,8 @@ export default function ModalAuditoria({ isOpen, onClose, data }) {
           <div className="grid grid-cols-2 gap-2">
             {[
               { label: "ACCIÓN",   value: cfg.label,        accion: true },
-              { label: "RECURSO",  value: getResourceLabel(data.resource) },
+              { label: "RECURSO",  value: passwordPresentation?.resourceLabel || getResourceLabel(data.resource, data.action) },
+              ...(passwordPresentation?.fields || []),
             ].map(({ label, value, accion, highlight }) => (
               <div
                 key={label}

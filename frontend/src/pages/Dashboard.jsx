@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Tarjetas from "../components/Tarjetas";
 import Tabla from "../components/Tabla";
@@ -6,8 +6,9 @@ import Etiquetas from "../components/Etiquetas";
 import GraficaVentas from "../components/GraficaVentas";
 import useTitulo from "../hooks/useTitulo";
 import Encabezado from "../components/Encabezado";
+import { staffApi } from "../services/api";
+import useRetryableRequest from "../hooks/useRetryableRequest";
 
-const API_URL = import.meta.env.VITE_API_URL;
 const PERIODOS = [[1, "Hoy"], [7, "7 días"], [30, "30 días"]];
 const dinero = (value) => `$${Number(value || 0).toLocaleString("es-MX", { maximumFractionDigits: 0 })}`;
 const porcentaje = (value) => value === null || value === undefined ? "Sin base previa" : `${value >= 0 ? "+" : ""}${Number(value).toFixed(1)}% vs. periodo anterior`;
@@ -25,25 +26,19 @@ export default function Dashboard() {
   useTitulo("Dashboard");
   const navigate = useNavigate();
   const [days, setDays] = useState(30);
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const cargar = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/dashboard/summary?days=${days}`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
-      if (!response.ok) throw new Error("No se pudo actualizar el dashboard.");
-      setData(await response.json());
-      setLoading(false);
-    } catch (err) { setData(null); }
-  }, [days]);
-
-  useEffect(() => { cargar(); }, [cargar]);
+  const cargar = useCallback(({ signal }) => staffApi.get(`/dashboard/summary?days=${days}`, { signal }), [days]);
+  const { data, loading, error, isRetrying, slow, retry } = useRetryableRequest(cargar, [days]);
+  const authorizationError = error?.status === 403;
   const metrics = data?.metrics || {};
   const maxIngresoTop = Math.max(1, ...(data?.topProductos || []).map((product) => product.ingreso));
 
   return <div className="min-h-screen space-y-5 bg-[var(--snow)] p-4 font-body text-[var(--noir)] transition-colors duration-300 dark:bg-[var(--noir-soft)] dark:text-[var(--snow)] md:p-6">
     <Encabezado titulo="Dashboard" />
+
+    {loading && !data && <div role="status" className="flex items-center gap-3 rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--gold-08)] px-4 py-3 text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]"><i className="bi bi-arrow-repeat animate-spin text-[var(--gold)]" /><span>{isRetrying ? "Seguimos intentando cargar el Dashboard..." : "Cargando Dashboard..."}</span></div>}
+    {slow && <div role="status" className="rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--gold-08)] px-4 py-3 text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">La carga está tardando más de lo habitual. Seguimos intentando conectar.</div>}
+    {data && loading && <div role="status" className="rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--gold-08)] px-4 py-3 text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">Mostrando los últimos datos disponibles mientras actualizamos la información.</div>}
+    {error && <section role="alert" className="rounded-[2px] border border-rojo/40 bg-rojo/10 px-5 py-4 text-[var(--noir)] dark:text-[var(--snow)]"><h2 className="font-display text-lg font-semibold">{authorizationError ? "No tienes permisos para ver el Dashboard" : "No fue posible cargar el Dashboard"}</h2><p className="mt-1 text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">{authorizationError ? "Tu sesión continúa activa, pero no tienes autorización para consultar esta información." : "El servicio continúa sin responder. Revisa tu conexión e inténtalo nuevamente."}</p>{!authorizationError && <button type="button" onClick={retry} className="mt-4 rounded-[2px] bg-[var(--gold)] px-4 py-2 text-sm font-semibold text-[var(--noir)]">Reintentar</button>}</section>}
 
     <p className="text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">Resumen operativo y comercial</p><div className="sticky top-0 z-10 ml-auto w-fit"><div className="flex rounded-[2px] border border-[var(--border-gold-40)] bg-[var(--snow)] p-0.5 shadow-sm dark:bg-[var(--noir-soft)]">{PERIODOS.map(([value, label]) => <button key={value} type="button" onClick={() => setDays(value)} className={`px-3 py-1.5 text-xs font-semibold ${days === value ? "bg-[var(--gold)] text-[var(--noir)]" : "text-[var(--gold-dark)] dark:text-[var(--gold-light)]"}`}>{label}</button>)}</div></div>
 

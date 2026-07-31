@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { api } from "../services/api";
+import { staffApi } from "../services/api";
 import { canPerformAction } from "../utils/permissionMapper";
 
 import Toast from "../components/Toast";
@@ -17,6 +17,8 @@ import Encabezado from "../components/Encabezado";
 
 import ModalUsuarios from "../components/ModalUsuarios";
 import FormUsuarios from "../components/FormUsuarios";
+import Modal from "../components/Modal";
+import CambioPasswordForm from "../components/CambioPasswordForm";
 
 const LIMIT = 10;
 
@@ -40,6 +42,7 @@ export default function Usuarios() {
 
   const [isModalVerAbierto, setIsModalVerAbierto] = useState(false);
   const [isModalFormAbierto, setIsModalFormAbierto] = useState(false);
+  const [isModalPasswordAbierto, setIsModalPasswordAbierto] = useState(false);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
   const [usuarioAEditar, setUsuarioAEditar] = useState(null);
 
@@ -67,7 +70,7 @@ export default function Usuarios() {
     try {
       if (!silencioso) setCargando(true);
       setError("");
-      const result = await api.get('/users');
+      const result = await staffApi.get('/users');
       const datosReales = result.items || result.data?.items || (Array.isArray(result) ? result : []);
       setUsuariosDB(datosReales);
     } catch (err) {
@@ -80,7 +83,7 @@ export default function Usuarios() {
 
   const fetchRoles = async () => {
     try {
-      const result = await api.get('/roles');
+      const result = await staffApi.get('/roles');
       const datosReales = result.items || result.data?.items || result.data || (Array.isArray(result) ? result : []);
       setRolesDB(datosReales);
     } catch (err) {
@@ -90,7 +93,7 @@ export default function Usuarios() {
 
   const fetchPermisos = async () => {
     try {
-      const result = await api.get('/permissions?limit=100');
+      const result = await staffApi.get('/permissions?limit=100');
       const datosReales = result.items || result.data?.items || result.data || (Array.isArray(result) ? result : []);
       setPermisosDB(datosReales);
     } catch (err) {
@@ -189,15 +192,27 @@ export default function Usuarios() {
     });
   };
 
-  const handleGuardarUsuario = async (formData) => {
+  const handleGuardarUsuario = async (formData, passwordResetConfirmed = false) => {
+    if (usuarioAEditar && formData.password && !passwordResetConfirmed) {
+      setModalConf({
+        isOpen: true,
+        tipo: "confirmar",
+        titulo: "¿Restablecer contraseña?",
+        mensaje: `La contraseña de ${usuarioAEditar.nombre} ${usuarioAEditar.apellido || ""} será reemplazada y esta persona deberá usar la nueva credencial.`,
+        textoConfirmar: "Restablecer contraseña",
+        textoCancelar: "Cancelar",
+        onConfirmar: () => { setModalConf((current) => ({ ...current, isOpen: false })); handleGuardarUsuario(formData, true); },
+      });
+      return;
+    }
     try {
       setGuardando(true);
       const esEdicion = !!usuarioAEditar;
       
       if (esEdicion) {
-        await api.patch(`/users/${usuarioAEditar.id}`, formData);
+        await staffApi.patch(`/users/${usuarioAEditar.id}`, formData);
       } else {
-        await api.post('/users', formData);
+        await staffApi.post('/users', formData);
       }
       
       setIsModalFormAbierto(false);
@@ -228,7 +243,7 @@ export default function Usuarios() {
   const handleEliminarUsuario = async (usuarioId) => {
     try {
       setGuardando(true);
-      await api.delete(`/users/${usuarioId}`);
+      await staffApi.delete(`/users/${usuarioId}`);
       mostrarToast("Usuario eliminado correctamente", "exito");
       setModalConf({ ...modalConf, isOpen: false });
       setIsModalVerAbierto(false); 
@@ -319,15 +334,32 @@ export default function Usuarios() {
           onClose={() => setIsModalVerAbierto(false)}
           onEditar={(u) => handleAbrirFormEditar(u)}
           onEliminar={(u) => handleAbrirConfirmacionBorrar(u)}
+          onCambiarPassword={() => setIsModalPasswordAbierto(true)}
         />
+      )}
+
+      {isModalPasswordAbierto && (
+        <Modal
+          isOpen={true}
+          onClose={() => setIsModalPasswordAbierto(false)}
+          titulo="Cambiar contraseña"
+          ancho="max-w-3xl"
+        >
+          <CambioPasswordForm
+            onSuccess={() => {
+              setIsModalPasswordAbierto(false);
+              mostrarToast("Contraseña actualizada correctamente.");
+            }}
+          />
+        </Modal>
       )}
 
       {isModalFormAbierto && (
         <>
           {guardando && (
-            <div className="fixed inset-0 bg-oscuro/50 backdrop-blur-sm z-110 flex flex-col items-center justify-center">
-              <i className="bi bi-arrow-repeat animate-spin text-4xl text-lila mb-2"></i>
-              <p className="text-blanco font-bold">Guardando usuario...</p>
+            <div className="fixed inset-0 z-110 flex flex-col items-center justify-center bg-[var(--snow-78)] backdrop-blur-sm dark:bg-[var(--noir-overlay-78)]">
+              <i className="bi bi-arrow-repeat mb-2 animate-spin text-4xl text-[var(--gold)]"></i>
+              <p className="font-bold text-[var(--noir)] dark:text-[var(--snow)]">Guardando usuario...</p>
             </div>
           )}
           <FormUsuarios 

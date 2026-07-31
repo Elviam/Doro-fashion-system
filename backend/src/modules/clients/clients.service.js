@@ -10,6 +10,10 @@ function normalizeOptionalText(value) {
   return trimmed === '' ? '' : trimmed
 }
 
+function normalizePhone(value) {
+  return String(value || '').replace(/\D/g, '')
+}
+
 export class ClientsService {
   async getCurrentClient(currentUser) {
     const client = await clientsRepository.findById(currentUser.sub)
@@ -45,7 +49,7 @@ export class ClientsService {
       alias: payload.alias || 'Dirección', country: 'México', state: payload.estado, city: payload.ciudad,
       neighborhood: payload.colonia, postalCode: payload.cp, street: payload.calle,
       exteriorNumber: payload.numeroExterior, interiorNumber: payload.numeroInterior || null,
-      references: payload.referencias || null, phone: payload.telefono,
+      references: payload.referencias || null, phone: normalizePhone(payload.telefono),
     }
   }
 

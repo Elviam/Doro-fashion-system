@@ -13,6 +13,7 @@ export const ACTION_CFG = {
   CANCEL:        { label: "Cancelación",    colorClass: "bg-rojo/10 border-rojo/35 text-rojo-dark dark:text-rojo"           },
   CHANGE_PASSWORD: { label: "Cambio de contraseña", colorClass: "bg-amarillo/10 border-amarillo/35 text-amarillo-dark dark:text-amarillo" },
   SEED:          { label: "Inicialización", colorClass: "bg-gold/10 border-gold/35 text-gold-dark dark:text-gold-light" },
+  RESET_PASSWORD: { label: "Restablecimiento de contraseña", colorClass: "bg-amarillo/10 border-amarillo/35 text-amarillo-dark dark:text-amarillo" },
 };
 
 const DEFAULT_CFG = {
@@ -25,7 +26,8 @@ export const RESOURCE_LABELS = {
   ventas: "Ventas", fulfillment: "Preparaci\u00f3n de pedidos", auth: "Autenticaci\u00f3n",
 };
 
-export function getResourceLabel(resource) {
+export function getResourceLabel(resource, action) {
+  if (resource === "auth" && ["CHANGE_PASSWORD", "RESET_PASSWORD"].includes(action)) return "Seguridad de cuenta";
   return RESOURCE_LABELS[resource] || resource || "Sin m\u00f3dulo";
 }
 
@@ -47,11 +49,11 @@ export function ActionBadge({ action, className = "" }) {
   );
 }
 
-export function ResourceBadge({ resource }) {
+export function ResourceBadge({ resource, action }) {
   const labels = { users: "Usuarios", clients: "Clientes", suppliers: "Proveedores", products: "Productos", recepciones: "Recepciones", inventory: "Inventario", roles: "Roles", permissions: "Permisos", ventas: "Ventas", fulfillment: "Preparación", auth: "Autenticación" };
   return (
     <span className="inline-block px-2 py-0.5 rounded-[2px] border text-xs font-tag font-medium bg-gold/10 border-gold/30 text-gold-dark dark:text-gold-light">
-      {getResourceLabel(resource)}
+      {getResourceLabel(resource, action)}
     </span>
   );
 }

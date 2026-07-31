@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { api } from "../services/api";
+import { staffApi } from "../services/api";
 import useTitulo from "../hooks/useTitulo";
 import Encabezado from "../components/Encabezado";
 import Modal from "../components/Modal";
 import Boton from "../components/Boton";
 import Toast from "../components/Toast";
+import ModalConfirmacion from "../components/ModalConfirmacion";
 import { useAuth } from "../hooks/useAuth";
 import { canPerformAction } from "../utils/permissionMapper";
 
@@ -26,11 +27,12 @@ export default function PrepararPedidos() {
   const [cantidadesVerificadas, setCantidadesVerificadas] = useState({});
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [confirmarEnvio, setConfirmarEnvio] = useState(false);
   const [toast, setToast] = useState({ message: "", type: "success" });
 
   const cargar = () => {
     setCargando(true);
-    api.get("/fulfillment")
+    staffApi.get("/fulfillment")
       .then((result) => setPedidos(result.items || []))
       .catch((error) => setToast({ message: error.message || "No se pudieron cargar los pedidos.", type: "error" }))
       .finally(() => setCargando(false));
@@ -61,7 +63,7 @@ export default function PrepararPedidos() {
     if (!seleccionado || !todoVerificado) return;
     setGuardando(true);
     try {
-      const result = await api.patch(`/fulfillment/${seleccionado.id}/dispatch`, {});
+      const result = await staffApi.patch(`/fulfillment/${seleccionado.id}/dispatch`, {});
       setPedidos((actuales) => actuales.filter((pedido) => pedido.id !== seleccionado.id));
       setSeleccionado(null);
       setToast({ message: `Pedido enviado a paqueteria. Guia simulada: ${result.item.guiaEnvio}`, type: "success" });
@@ -111,7 +113,7 @@ export default function PrepararPedidos() {
 
       <Modal isOpen={Boolean(seleccionado)} onClose={() => !guardando && setSeleccionado(null)} titulo={seleccionado ? `Pedido ${seleccionado.numeroPedido}` : "Pedido"} ancho="max-w-3xl" footer={seleccionado && (
         <div className="flex w-full flex-wrap items-center justify-end gap-3">
-          {puedeActualizar && !esEnviado && <Boton variante="claro" onClick={confirmarPreparacionYEnvio} className={`shrink-0 ${!todoVerificado || guardando ? "pointer-events-none opacity-50" : ""}`}><i className="bi bi-truck" /> {guardando ? "Confirmando..." : "Confirmar preparacion y envio"}</Boton>}
+          {puedeActualizar && !esEnviado && <Boton variante="claro" onClick={() => setConfirmarEnvio(true)} className={`shrink-0 ${!todoVerificado || guardando ? "pointer-events-none opacity-50" : ""}`}><i className="bi bi-truck" /> Confirmar preparacion y envio</Boton>}
         </div>
       )}>
         {seleccionado && <div className="space-y-5">
@@ -137,6 +139,17 @@ export default function PrepararPedidos() {
           </div>
         </div>}
       </Modal>
+      <ModalConfirmacion
+        isOpen={confirmarEnvio}
+        tipo="confirmar"
+        titulo="¿Enviar pedido a paquetería?"
+        mensaje="El pedido quedará marcado como enviado y se registrará la guía de paquetería."
+        textoConfirmar="Sí, enviar pedido"
+        onConfirmar={async () => { await confirmarPreparacionYEnvio(); setConfirmarEnvio(false); }}
+        onCancelar={() => { if (!guardando) setConfirmarEnvio(false); }}
+        cargando={guardando}
+        textoCargando="Enviando..."
+      />
     </div>
   );
 }

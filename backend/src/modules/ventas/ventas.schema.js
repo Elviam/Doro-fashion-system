@@ -21,7 +21,10 @@ export const createVentaSchema = z.object({
     ciudad:  z.string().min(2, 'La ciudad es obligatoria'),
     colonia: z.string().min(2, 'La colonia es obligatoria'),
     referencias: z.string().max(300).optional().default(''),
-    telefono: z.string().min(8, 'El teléfono es obligatorio'),
+    telefono: z.string().trim().refine(
+      (telefono) => /^\d{8,15}$/.test(telefono.replace(/\D/g, '')),
+      'El teléfono debe tener entre 8 y 15 dígitos'
+    ),
   }),
   metodoPago: z.enum(METODOS_PAGO, {
     errorMap: () => ({ message: 'Método de pago no válido' })

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { api } from "../services/api";
+import { staffApi } from "../services/api";
 import useTitulo from "../hooks/useTitulo";
 import Encabezado from "../components/Encabezado";
 import Tarjetas from "../components/Tarjetas";
@@ -54,7 +54,7 @@ export default function Inventario() {
 
   useEffect(() => {
     setCargando(true);
-    api.get("/inventory?limit=100")
+    staffApi.get("/inventory?limit=100")
       .then((result) => {
         const items = result.items || result.data?.items || (Array.isArray(result) ? result : []);
         setProductosDB(items);
@@ -78,7 +78,7 @@ export default function Inventario() {
 
   useEffect(() => {
     if (!usuario?.permissions?.includes("inventory:read")) return;
-    api.get("/inventory/summary")
+    staffApi.get("/inventory/summary")
       .then((summary) => setValoresInventario({
         costo: Number(summary.valorInventarioCosto || 0),
         venta: Number(summary.valorPotencialVenta || 0),
@@ -98,7 +98,7 @@ export default function Inventario() {
       const producto = productosDB.find((p) => p.id === datos.productoId);
       if (!producto) throw new Error("No se encontró el producto.");
 
-      const resultado = await api.patch(`/inventory/${producto.id}/adjust`, {
+      const resultado = await staffApi.patch(`/inventory/${producto.id}/adjust`, {
         ajustes: datos.ajustes,
         motivo: datos.motivo,
         notas: datos.notas,

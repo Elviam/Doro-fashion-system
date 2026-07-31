@@ -8,7 +8,7 @@ import Etiquetas from "../components/Etiquetas";
 import Paginacion from "../components/Paginacion";
 import ModalConfirmacion from "../components/ModalConfirmacion";
 import Encabezado from "../components/Encabezado";
-import { api } from "../services/api";
+import { staffApi } from "../services/api";
 import ModalVentas from "../components/ModalVentas";
 import FechaMexicoInput from "../components/FechaMexicoInput";
 
@@ -92,7 +92,7 @@ export default function Ventas() {
   useEffect(() => {
     setCargando(true);
     const params = new URLSearchParams({ page: paginaActiva, limit: LIMIT, q: busqueda, estado: filtroEstado, metodoPago: filtroPago, desde, hasta });
-    api.get(`/ventas?${params}`)
+    staffApi.get(`/ventas?${params}`)
       .then((pagina) => {
         const items = pagina.items ?? [];
         setVentas(items);
@@ -136,7 +136,7 @@ export default function Ventas() {
     if (!ventaCancelando || cancelando) return;
     setCancelando(true);
     try {
-      await api.patch(`/ventas/${ventaCancelando.id}/estado`, { estado: "CANCELADO", motivoCancelacion: motivoCancelacion.trim() });
+      await staffApi.patch(`/ventas/${ventaCancelando.id}/estado`, { estado: "CANCELADO", motivoCancelacion: motivoCancelacion.trim() });
       setRefresh((r) => r + 1);
       setModalExito("Venta cancelada correctamente");
     } catch {
