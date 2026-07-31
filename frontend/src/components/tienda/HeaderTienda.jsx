@@ -244,7 +244,14 @@ export default function HeaderTienda({
           <i className="bi bi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ash)] text-xs" />
           <input
             value={valorBusqueda}
-            onChange={(e) => { cambiarBusqueda(e.target.value); if (!e.target.value) buscar(); }}
+            onChange={(e) => {
+              const nuevoValor = e.target.value;
+              cambiarBusqueda(nuevoValor);
+
+              if (!nuevoValor) {
+                navigate("/tienda");
+              }
+            }}
             onKeyDown={(e) => e.key === "Enter" && buscar()}
             placeholder="Busca prendas, categorías…"
             className="w-full bg-[var(--noir-soft)] text-[var(--snow)] border border-[var(--border-gold-20)] rounded-[2px] pl-9 pr-4 py-1.5 sm:py-2 font-body text-xs sm:text-sm outline-none hover:border-[var(--border-gold-40)] focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)] transition placeholder-[var(--ash)] box-border"

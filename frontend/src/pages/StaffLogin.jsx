@@ -319,11 +319,6 @@ export default function StaffLogin() {
     }
   };
 
-  const showContactModal = (e) => {
-    e.preventDefault();
-    document.getElementById('staff_contact_admin_modal').showModal();
-  };
-
   const isBusy = isSubmitting || loading;
 
   return (

@@ -1,4 +1,4 @@
-import { useState, useMemo, useContext, useRef, useEffect } from "react";
+import { useState, useMemo, useContext, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import FooterTienda from "../components/tienda/FooterTienda";
@@ -7,7 +7,6 @@ import FiltrosSidebar, { DrawerFiltros } from "../components/tienda/FiltrosSideb
 import { RANGO_PRECIO } from "../constants/precio";
 import BarraOrdenamiento from "../components/tienda/BarraOrdenamiento";
 import TarjetaProductoTienda from "../components/tienda/TarjetaProductoTienda";
-import VistaRapida from "../components/tienda/VistaRapida";
 import {
   cargarCatalogoTienda,
   catalogoEstaVigente,
@@ -51,7 +50,7 @@ export default function Tienda() {
   // se le cierra su sesión real al volver al dashboard.
   const clienteReal = esClienteTienda(usuario) ? usuario : null;
 
-  const { agregarAlCarrito, setToast } = useCarrito();
+  const { setToast } = useCarrito();
   const { favoritos, setFavoritos } = useWishlist();
   const { setWishlistAbierto } = useTiendaPanel();
   const [busqueda, setBusqueda]               = useState("");
@@ -67,11 +66,12 @@ export default function Tienda() {
 
   // Sincronizar favoritos → localStorage cada vez que cambian
   useEffect(() => {
-    const categoria = searchParams.get("categoria");
-    const consulta = searchParams.get("q");
-    if (categoria) setCategoriaActiva(categoria);
-    if (consulta !== null) setBusqueda(consulta);
-  }, [searchParams]);
+  const categoria = searchParams.get("categoria");
+  const consulta = searchParams.get("q");
+
+  setCategoriaActiva(categoria || "todas");
+  setBusqueda(consulta || "");
+}, [searchParams]);
 
   useEffect(() => {
     let activo = true;
@@ -122,21 +122,6 @@ export default function Tienda() {
     }
   }, "Inicia sesión para guardar tus favoritos");
 };
-
-  const catalogoRef = useRef(null);
-  const scrollAlCatalogo = () =>
-    catalogoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-
-  const handleBuscar = () => {
-    if (busqueda.trim()) { setCategoriaActiva("todas"); limpiarFiltros(); }
-    scrollAlCatalogo();
-  };
-
-  const seleccionarCategoria = (id) => {
-    setCategoriaActiva(id);
-    scrollAlCatalogo();
-  };
-  
   const setFiltro     = (key, value) => setFiltros((f) => ({ ...f, [key]: value }));
   const limpiarFiltros = () => {
     setFiltros(filtrosIniciales);
@@ -188,7 +173,7 @@ export default function Tienda() {
 
       <HeroCarrusel />
 
-      <section ref={catalogoRef} className="max-w-[1480px] mx-auto px-6 lg:px-10 mt-10 pb-16">
+      <section className="max-w-[1480px] mx-auto px-6 lg:px-10 mt-10 pb-16">
         <div className="flex gap-6">
           <FiltrosSidebar filtros={filtros} setFiltro={setFiltro} onLimpiar={limpiarFiltros} filtrosActivos={filtrosActivos} />
 

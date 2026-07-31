@@ -5,7 +5,7 @@ import PanelErrorBoundary from "./PanelErrorBoundary";
 
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [tirandoParaActualizar, setTirandoParaActualizar] = useState(false);
+  const [ setTirandoParaActualizar] = useState(false);
   const [actualizando, setActualizando] = useState(false);
   const [distanciaTiro, setDistanciaTiro] = useState(0);
   const [versionSeccion, setVersionSeccion] = useState(0);

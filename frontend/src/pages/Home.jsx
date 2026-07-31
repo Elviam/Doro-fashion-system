@@ -1,9 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import hero from "../assets/images/hero.png";
-import Store from "../assets/images/Store.png";
-import clothesRack1 from "../assets/images/clothes-rack-1.png";
-import clothesRack2 from "../assets/images/clothes-rack-2.png";
 import products from "../assets/images/products.png"
 import useTitulo from "../hooks/useTitulo";
 
@@ -138,28 +135,42 @@ const GlobalStyles = () => (
        RESPONSIVE — Tablet  (≤ 900px)
     ══════════════════════════════════════════════════════ */
     @media (max-width: 900px) {
-      .header-nav { display: none; }  /* nav colapsada */
+  .header-nav {
+    display: none;
+  }
 
-      .stats-row > div {
-        flex: 1 1 45% !important;
-        border-right: none !important;
-        border-bottom: 1px solid var(--border-gold-20);
-        padding: 36px 32px !important;
-      }
+  .split-section {
+    flex-direction: column;
+  }
 
-      .split-section > div { flex: 1 1 100% !important; }
-      .split-section .manifesto-text { padding: 60px 48px !important; }
+  .split-section > div {
+    flex: 1 1 100% !important;
+  }
 
-      .strip-section { flex-direction: column; }
-      .strip-center-card { flex: 0 0 auto !important; min-height: 200px !important; }
+  .split-section .manifesto-text {
+    order: 1;
+    padding: 60px 48px !important;
+  }
 
-      .pillars-grid > div { flex: 1 1 45% !important; max-width: 100% !important; }
+  .split-section .heritage-image {
+    order: 2;
+  }
 
-      .quote-strip  { padding: 72px 48px !important; }
-      .cta-band     { padding: 60px 48px !important; }
-      .footer-inner { flex-direction: column; gap: 36px !important; }
-      .footer-nav   { flex-wrap: wrap; gap: 32px !important; }
-    }
+  .pillars-grid > div {
+    flex: 1 1 45% !important;
+    max-width: 100% !important;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+    gap: 36px !important;
+  }
+
+  .footer-nav {
+    flex-wrap: wrap;
+    gap: 32px !important;
+  }
+}
 
     /* ══════════════════════════════════════════════════════
        RESPONSIVE — Mobile  (≤ 540px)
@@ -188,7 +199,10 @@ const GlobalStyles = () => (
       .footer-nav   { flex-direction: column; gap: 28px !important; }
 
       .copyright-bar { padding: 14px 24px !important; flex-direction: column; gap: 4px; }
+    .heritage-image {
+      min-height: 320px !important;
     }
+      }
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
@@ -301,23 +315,6 @@ export default function Home() {
     transition: "background 0.3s, transform 0.2s, box-shadow 0.3s",
   };
 
-  const btnGhost = {
-    fontFamily: "var(--font-tag)",
-    fontWeight: 400,
-    fontSize: "11px",
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
-    padding: "13px 38px",
-    background: "transparent",
-    color: "var(--snow)",
-    border: "1px solid var(--border-gold-55)",
-    borderRadius: "2px",
-    cursor: "pointer",
-    transition: "border-color 0.3s, color 0.3s, background 0.3s",
-    textDecoration: "none",
-    display: "inline-block",
-  };
-
   return (
     <div style={{ width: "100%", overflowX: "hidden", background: "var(--ivory)" }}>
       <FontLoader />
@@ -345,33 +342,9 @@ export default function Home() {
         }}
       >
         <DoroWordmark size={22} color="var(--noir)" />
-
-        <nav className="header-nav">
-          {["Colección", "Historia", "Contacto"].map((item) => (
-            <a
-              key={item}
-              style={{
-                fontFamily: "var(--font-tag)",
-                fontSize: "11px",
-                fontWeight: 400,
-                letterSpacing: "0.14em",
-                color: "var(--ash)",
-                textDecoration: "none",
-                textTransform: "uppercase",
-                transition: "color 0.2s",
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--gold)")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--ash)")}
-            >
-              {item}
-            </a>
-          ))}
-        </nav>
-
         <div className="header-btns">
           <button
-            onClick={() => navigate("/Register")}
+            onClick={() => navigate("/login")}
             style={{
               fontFamily: "var(--font-tag)",
               fontSize: "11px",
@@ -395,11 +368,11 @@ export default function Home() {
               e.currentTarget.style.borderColor = "rgba(122,92,30,0.35)";
             }}
           >
-            Registro
+            Iniciar sesión
           </button>
 
           <button
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/tienda")}
             style={{
               fontFamily: "var(--font-tag)",
               fontSize: "11px",
@@ -423,7 +396,7 @@ export default function Home() {
               e.currentTarget.style.borderColor = "var(--noir)";
             }}
           >
-            Ingresar
+            Tienda
           </button>
         </div>
       </header>
@@ -587,333 +560,125 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════
-          STATS BAR
-      ══════════════════════════════════════════════════════════════════ */}
-      <section
-        className="stats-row"
-        style={{
-          background: "var(--ivory-deep)",
-          borderTop: "1px solid var(--border-gold-25)",
-          borderBottom: "1px solid var(--border-gold-25)",
-        }}
-      >
-        {[
-          { num: "38",  suffix: "años",   label: "de tradición en alta costura" },
-          { num: "210", suffix: "puntos", label: "de venta en cuatro continentes" },
-          { num: "14",  suffix: "colec.", label: "presentadas en pasarelas internacionales" },
-        ].map((stat, i) => (
-          <div
-            key={i}
-            ref={add}
-            className="reveal"
-            style={{
-              flex: "1 1 220px",
-              padding: "52px 48px",
-              borderRight: i < 2 ? "2px solid var(--border-gold-20)" : "none",
-              textAlign: "left",
-              boxSizing: "border-box",
-            }}
-          >
-            <div
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "clamp(62px, 7vw, 92px)",
-                fontWeight: 300,
-                color: "var(--noir)",
-                lineHeight: 1,
-                display: "flex",
-                alignItems: "baseline",
-                gap: "8px",
-              }}
-            >
-              <span className="shimmer-text">{stat.num}</span>
-              <span
-                style={{
-                  fontFamily: "var(--font-tag)",
-                  fontSize: "clamp(13px, 1.3vw, 15px)",
-                  fontWeight: 300,
-                  letterSpacing: "0.12em",
-                  color: "var(--gold-dark)",
-                  textTransform: "uppercase",
-                  marginLeft: "2px",
-                }}
-              >
-                {stat.suffix}
-              </span>
-            </div>
-            <p
-              style={{
-                fontFamily: "var(--font-body)",
-                fontSize: "clamp(18px, 1.4vw, 16px)",
-                color: "var(--ash)",
-                marginTop: "10px",
-                lineHeight: 1.5,
-                fontStyle: "italic",
-              }}
-            >
-              {stat.label}
-            </p>
-          </div>
-        ))}
-      </section>
-
-      {/* ══════════════════════════════════════════════════════════════════
           HERITAGE SPLIT
       ══════════════════════════════════════════════════════════════════ */}
-      <section className="split-section">
-        <div
-          style={{
-            flex: "1 1 380px",
-            minHeight: "480px",
-            overflow: "hidden",
-            position: "relative",
-          }}
-        >
-          <img
-            src={Store}
-            alt="Atelier D'oro"
-            className="img-zoom"
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              bottom: "36px",
-              left: "36px",
-              background: "var(--noir-soft)",
-              border: "1px solid var(--border-gold-40)",
-              padding: "16px 24px",
-            }}
-          >
-            <p
-              style={{
-                fontFamily: "var(--font-tag)",
-                fontSize: "9px",
-                letterSpacing: "0.24em",
-                color: "var(--gold)",
-                textTransform: "uppercase",
-                margin: 0,
-              }}
-            >
-              Fundada en 1986 · Milán
-            </p>
-          </div>
-        </div>
+     <section className="split-section">
+ <div
+  className="heritage-image"
+  style={{
+    flex: "1 1 380px",
+    minHeight: "480px",
+    overflow: "hidden",
+    position: "relative",
+  }}
+>
+  <img
+    src={products}
+    alt="Colección D'oro"
+    className="img-zoom"
+    style={{
+      position: "absolute",
+      inset: 0,
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      objectPosition: "center",
+      display: "block",
+    }}
+  />
 
-        <div
-          ref={add}
-          className="reveal manifesto-text"
-          style={{
-            flex: "1 1 380px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            padding: "80px 72px",
-            background: "var(--snow)",
-            gap: "28px",
-            boxSizing: "border-box",
-          }}
-        >
-          <GoldDivider />
-          <p
-            style={{
-              fontFamily: "var(--font-tag)",
-              fontSize: "10px",
-              fontWeight: 400,
-              letterSpacing: "0.22em",
-              color: "var(--gold-dark)",
-              textTransform: "uppercase",
-              margin: 0,
-            }}
-          >
-            Herencia y Maestría
-          </p>
-          <h2
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "clamp(26px, 3.5vw, 42px)",
-              fontWeight: 300,
-              fontStyle: "italic",
-              color: "var(--noir)",
-              lineHeight: 1.2,
-              margin: 0,
-            }}
-          >
-            Cuatro décadas construyendo el lenguaje del lujo
-          </h2>
-          <p
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: "clamp(15px, 1.6vw, 18px)",
-              color: "var(--ash)",
-              lineHeight: 1.85,
-              margin: 0,
-            }}
-          >
-            D'oro nació de la convicción de que la moda verdadera no caduca. Cada
-            colección es un diálogo entre la tradición italiana del bordado a mano
-            y la precisión del diseño contemporáneo. No fabricamos prendas: creamos
-            piezas que envejecen con elegancia.
-          </p>
-          <p
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: "clamp(14px, 1.4vw, 16px)",
-              color: "var(--ash)",
-              lineHeight: 1.8,
-              margin: 0,
-              opacity: 0.85,
-            }}
-          >
-            Nuestros talleres seleccionan únicamente materias primas certificadas:
-            seda de Como, lana merino andina y lino belga de primera extracción.
-          </p>
-          <GoldDivider />
-        </div>
-      </section>
+  <div
+    style={{
+      position: "absolute",
+      bottom: "36px",
+      left: "36px",
+      zIndex: 2,
+      background: "var(--noir-soft)",
+      border: "1px solid var(--border-gold-40)",
+      padding: "16px 24px",
+    }}
+  >
+    <p
+      style={{
+        fontFamily: "var(--font-tag)",
+        fontSize: "9px",
+        letterSpacing: "0.24em",
+        color: "var(--gold)",
+        textTransform: "uppercase",
+        margin: 0,
+      }}
+    >
+      D'oro Boutique
+    </p>
+  </div>
+</div>
+  <div
+    ref={add}
+    className="reveal manifesto-text"
+    style={{
+      flex: "1 1 380px",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      padding: "80px 72px",
+      background: "var(--snow)",
+      gap: "28px",
+      boxSizing: "border-box",
+    }}
+  >
+    <GoldDivider />
 
-      {/* ══════════════════════════════════════════════════════════════════
-          PHOTO STRIP
-      ══════════════════════════════════════════════════════════════════ */}
-      <div className="strip-section">
-        <div style={{ flex: "1 1 200px", overflow: "hidden", minHeight: "300px" }}>
-          <img
-            src={clothesRack1}
-            alt="Colección D'oro"
-            className="img-zoom"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-              filter: "brightness(0.82) saturate(0.9)",
-            }}
-          />
-        </div>
+    <p
+      style={{
+        fontFamily: "var(--font-tag)",
+        fontSize: "10px",
+        fontWeight: 400,
+        letterSpacing: "0.22em",
+        color: "var(--gold-dark)",
+        textTransform: "uppercase",
+        margin: 0,
+      }}
+    >
+      Identidad D'oro
+    </p>
 
-        <div
-          className="strip-center-card"
-          style={{
-            flex: "0 0 240px",
-            background: "var(--noir)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "48px 32px",
-            gap: "20px",
-            minHeight: "300px",
-            boxSizing: "border-box",
-          }}
-        >
-          <div style={{ width: "40px", height: "1px", background: "var(--gold)", marginBottom: "8px" }} />
-          <p
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "clamp(28px, 3vw, 40px)",
-              fontWeight: 300,
-              fontStyle: "italic",
-              color: "var(--snow)",
-              letterSpacing: "0.06em",
-              textAlign: "center",
-              margin: 0,
-              lineHeight: 1.2,
-            }}
-          >
-            Atelier
-          </p>
-          <p
-            style={{
-              fontFamily: "var(--font-tag)",
-              fontSize: "9px",
-              letterSpacing: "0.3em",
-              color: "var(--gold)",
-              textTransform: "uppercase",
-              textAlign: "center",
-              margin: 0,
-            }}
-          >
-            D'oro · Milán
-          </p>
-          <div style={{ width: "40px", height: "1px", background: "var(--gold)", marginTop: "8px" }} />
-        </div>
+    <h2
+      style={{
+        fontFamily: "var(--font-display)",
+        fontSize: "clamp(28px, 3.6vw, 42px)",
+        fontWeight: 300,
+        fontStyle: "italic",
+        color: "var(--noir)",
+        lineHeight: 1.2,
+        margin: 0,
+      }}
+    >
+      Estilo atemporal para cada ocasión
+    </h2>
 
-        <div style={{ flex: "1 1 200px", overflow: "hidden", minHeight: "300px" }}>
-          <img
-            src={products}
-            alt="Detalle D'oro"
-            className="img-zoom"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              display: "block",
-              filter: "brightness(0.82) saturate(0.9)",
-            }}
-          />
-        </div>
-      </div>
+    <p
+      style={{
+        fontFamily: "var(--font-body)",
+        fontSize: "clamp(16px, 1.8vw, 18px)",
+        color: "var(--ash)",
+        lineHeight: 1.85,
+        margin: 0,
+      }}
+    >
+      En D'oro, cada prenda forma parte de una colección pensada para
+      expresar elegancia, personalidad y estilo atemporal.
+    </p>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          QUOTE STRIP
-      ══════════════════════════════════════════════════════════════════ */}
-      <section
-        ref={add}
-        className="reveal quote-strip"
-        style={{
-          background: "var(--noir)",
-          textAlign: "center",
-          padding: "96px 80px",
-          width: "100%",
-          boxSizing: "border-box",
-        }}
-      >
-        <p
-          style={{
-            fontFamily: "var(--font-tag)",
-            fontSize: "10px",
-            letterSpacing: "0.3em",
-            color: "var(--gold)",
-            textTransform: "uppercase",
-            marginBottom: "36px",
-          }}
-        >
-          Manifesto D'oro
-        </p>
-        <blockquote
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "clamp(22px, 4vw, 52px)",
-            fontWeight: 300,
-            fontStyle: "italic",
-            color: "var(--snow)",
-            lineHeight: 1.3,
-            maxWidth: "860px",
-            margin: "0 auto 36px",
-          }}
-        >
-          "El lujo verdadero no se anuncia: se percibe en cada costura, en cada
-          elección de hilo, en el silencio entre dos detalles."
-        </blockquote>
-        <p
-          style={{
-            fontFamily: "var(--font-tag)",
-            fontSize: "10px",
-            letterSpacing: "0.22em",
-            color: "var(--gold-60)",
-            textTransform: "uppercase",
-          }}
-        >
-          — Lorenzo D'Aquino, Fundador
-        </p>
-      </section>
+    <GoldDivider />
+  </div>
+</section>
 
       {/* ══════════════════════════════════════════════════════════════════
           PILLARS
       ══════════════════════════════════════════════════════════════════ */}
       <section
         style={{
-          background: "var(--ivory)",
+          background: "var(--ivory-clear)",
           padding: "96px 60px 80px",
           width: "100%",
           boxSizing: "border-box",
@@ -939,7 +704,7 @@ export default function Home() {
           className="reveal delay-r1"
           style={{
             fontFamily: "var(--font-display)",
-            fontSize: "clamp(24px, 3.5vw, 40px)",
+             fontSize: "clamp(28px, 3.6vw, 42px)",
             fontWeight: 300,
             fontStyle: "italic",
             color: "var(--noir)",
@@ -955,12 +720,12 @@ export default function Home() {
           className="reveal delay-r2"
           style={{
             fontFamily: "var(--font-body)",
-            fontSize: "clamp(14px, 1.5vw, 18px)",
+             fontSize: "clamp(16px, 1.8vw, 18px)",
             color: "var(--ash)",
             lineHeight: 1.75,
             maxWidth: "620px",
             margin: "0 auto 64px",
-            fontStyle: "italic",
+            
           }}
         >
           Cada decisión en D'oro parte de un principio: la prenda que viste hoy

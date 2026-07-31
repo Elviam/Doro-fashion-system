@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 const ENVIO_GRATIS_DESDE = 799;
 const COSTO_ENVIO        = 99;
 
@@ -13,11 +12,13 @@ function ImagenMiniatura({ producto }) {
     );
   }
   return (
-    <div
-      className="w-full h-full"
-      style={{ background: `linear-gradient(135deg, ${c0}, ${c1})` }}
-    />
-  );
+  <div
+    className="flex h-full w-full items-center justify-center bg-[var(--gold-08)] text-[var(--gold-dark)]"
+    aria-label="Producto sin imagen"
+  >
+    <i className="bi bi-image text-2xl" aria-hidden="true" />
+  </div>
+);
 }
 export default function SeccionCarrito({
   
@@ -34,7 +35,7 @@ export default function SeccionCarrito({
   const total           = subtotal + envio;
   const totalArticulos  = carrito.reduce((acc, i) => acc + i.cantidad, 0);
   const faltaParaEnvio  = ENVIO_GRATIS_DESDE - subtotal;
-  const navigate = useNavigate();
+
   return (
     <>
       {/* Overlay */}

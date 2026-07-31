@@ -47,7 +47,7 @@ const FontLoader = () => (
 );
 
 export default function Sidebar({ onCerrar }) {
-  const { logout, usuario } = useAuth();
+  const { usuario } = useAuth();
   const navigate   = useNavigate();
   const location   = useLocation();
   const [collapsed, setCollapsed] = useState(

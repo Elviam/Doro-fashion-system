@@ -20,6 +20,7 @@ export default defineConfig([
     rules: {
       ...reactHooks.configs.recommended.rules,
       'react/jsx-uses-vars': 'error',
+      'react-refresh/only-export-components': 'off',
     },
     languageOptions: {
       globals: globals.browser,

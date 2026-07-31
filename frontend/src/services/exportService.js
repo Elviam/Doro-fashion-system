@@ -1,5 +1,4 @@
 import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 
