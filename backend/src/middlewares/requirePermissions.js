@@ -1,16 +1,21 @@
+import {
+  getRoleCode,
+  hasAnyPermission,
+  hasPermission,
+  normalizeAuthenticatedUser,
+} from '../services/authorization.service.js'
+
 export function requirePermissions(requiredPermissions = []) {
   return (req, res, next) => {
-    const user = req.user
+    const user = req.user && normalizeAuthenticatedUser(req.user)
 
     if (!user) {
       return res.status(401).json({ message: 'No autorizado' })
     }
 
     if (user.accountType !== 'STAFF') return res.status(403).json({ message: 'Esta operaciÃ³n es exclusiva para personal interno' })
-    const userPermissions = Array.isArray(user.permissions) ? user.permissions : []
-
     const hasAllPermissions = requiredPermissions.every((permission) =>
-      userPermissions.includes(permission)
+      hasPermission(user, permission)
     )
 
     if (!hasAllPermissions) {
@@ -23,18 +28,14 @@ export function requirePermissions(requiredPermissions = []) {
 
 export function requireAnyPermission(anyOfPermissions = []) {
   return (req, res, next) => {
-    const user = req.user
+    const user = req.user && normalizeAuthenticatedUser(req.user)
 
     if (!user) {
       return res.status(401).json({ message: 'No autorizado' })
     }
 
     if (user.accountType !== 'STAFF') return res.status(403).json({ message: 'Esta operaciÃ³n es exclusiva para personal interno' })
-    const userPermissions = Array.isArray(user.permissions) ? user.permissions : []
-
-    const hasAny = anyOfPermissions.some((permission) =>
-      userPermissions.includes(permission)
-    )
+    const hasAny = hasAnyPermission(user, anyOfPermissions)
 
     if (!hasAny) {
       return res.status(403).json({ message: 'No tienes permisos para realizar esta acción' })
@@ -47,7 +48,8 @@ export function requireAnyPermission(anyOfPermissions = []) {
 /** Administrative invariants are independent from functional permissions. */
 export function requirePrimaryAdmin(req, res, next) {
   if (!req.user) return res.status(401).json({ message: 'No autorizado' })
-  if (req.user.accountType !== 'STAFF' || req.user.role !== 'ADMIN' || req.user.isPrimaryAdmin !== true) {
+  const user = normalizeAuthenticatedUser(req.user)
+  if (user.accountType !== 'STAFF' || getRoleCode(user) !== 'ADMIN' || user.isPrimaryAdmin !== true) {
     return res.status(403).json({ message: 'Esta operaciÃ³n requiere al administrador principal' })
   }
   next()
@@ -55,7 +57,8 @@ export function requirePrimaryAdmin(req, res, next) {
 
 export function requireClientAccount(req, res, next) {
   if (!req.user) return res.status(401).json({ message: 'No autorizado' })
-  if (req.user.accountType !== 'CLIENT' || req.user.role !== 'CLIENTE') {
+  const user = normalizeAuthenticatedUser(req.user)
+  if (user.accountType !== 'CLIENT' || getRoleCode(user) !== 'CLIENTE') {
     return res.status(403).json({ message: 'Esta operaciÃ³n es exclusiva para clientes de la tienda' })
   }
   next()
