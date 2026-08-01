@@ -36,7 +36,6 @@ import TiendaComoInvitado from "./components/tienda/TiendaComoInvitado";
 import MisPedidos from "./pages/MisPedidos";
 import GenerarPedido from "./pages/GenerarPedido";
 import PrepararPedidos from "./pages/PrepararPedidos";
-import Roles from "./pages/Roles";
 
 import "./App.css";
 
@@ -192,16 +191,6 @@ function App() {
           }
         />
 
-        <Route
-          path="/configuracion"
-          element={
-            <ProtectedRoute requiredPage="configuracion">
-              <Layout>
-                <Roles />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
         <Route
           path="/preparar-pedidos"
           element={

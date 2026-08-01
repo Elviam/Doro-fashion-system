@@ -9,7 +9,7 @@ const AuthContext = createContext(null);
 
 const STAFF_PATHS = [
   "/dashboard", "/productos", "/recepciones", "/clientes", "/proveedores", "/usuarios",
-  "/auditoria", "/ventas", "/inventario", "/configuracion", "/preparar-pedidos", "/reabastecimiento",
+  "/auditoria", "/ventas", "/inventario", "/preparar-pedidos", "/reabastecimiento",
 ];
 
 function accountTypeForLocation(location) {

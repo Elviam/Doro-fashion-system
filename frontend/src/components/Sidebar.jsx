@@ -1,6 +1,21 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Package, ClipboardList, Users, Truck, UserCog, ShieldCheck, ShoppingCart, ChevronLeft, ChevronRight, ChevronDown, Book, RefreshCw, PackageCheck, Settings } from "lucide-react";
+import {
+  LayoutDashboard,
+  Package,
+  ClipboardList,
+  Users,
+  Truck,
+  UserCog,
+  ShieldCheck,
+  ShoppingCart,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Book,
+  RefreshCw,
+  PackageCheck,
+} from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { hasAnyPermission, hasPermission } from "../utils/accessControl";
 
@@ -32,7 +47,6 @@ const navItems = [
   ] },
   { section: "ADMINISTRACIÓN Y CONTROL", items: [
     { label: "Personal", ruta: "/usuarios", icon: UserCog, permiso: "users:read" },
-    { label: "Configuración", ruta: "/configuracion", icon: Settings, anyPermissions: ["roles:read", "permissions:read"] },
     { label: "Auditoría", ruta: "/auditoria", icon: ShieldCheck, permiso: "audit:read" },
   ] },
 ];
