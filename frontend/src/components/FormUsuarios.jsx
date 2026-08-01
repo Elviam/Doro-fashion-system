@@ -49,14 +49,6 @@ const ACCIONES_PERMISOS = {
   seed: "Configurar", me: "Ver"
 };
 
-const MODULOS_ORDENADOS = ['dashboard', 'ventas', 'products', 'clients', 'inventory', 'fulfillment', 'reabastecimiento', 'recepciones', 'pedidos', 'suppliers', 'users', 'permissions', 'roles', 'audit'];
-const ACCIONES_ORDENADAS = ['read', 'create', 'update', 'enviar', 'confirm', 'cancel', 'delete'];
-const ordenarPermisos = (permisos) => [...permisos].sort((a, b) => {
-  const posicionA = ACCIONES_ORDENADAS.indexOf(a.code.split(':')[1]);
-  const posicionB = ACCIONES_ORDENADAS.indexOf(b.code.split(':')[1]);
-  return (posicionA < 0 ? 99 : posicionA) - (posicionB < 0 ? 99 : posicionB);
-});
-
 export function getPermissionLabel(code) {
   const presentation = getPermissionPresentation(code);
   if (presentation) return presentation.label;

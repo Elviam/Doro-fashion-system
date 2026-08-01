@@ -22,19 +22,6 @@ function getValidCost(...candidates) {
   return null;
 }
 
-function formatDate(iso) {
-  if (!iso) return "—";
-  if (iso.includes("-")) {
-    const [year, month, day] = iso.split("T")[0].split("-");
-    return `${day}/${month}/${year}`;
-  }
-  if (iso.includes("/")) {
-    const [dia, mes, anio] = iso.split("/");
-    return `${dia.padStart(2, "0")}/${mes.padStart(2, "0")}/${anio}`;
-  }
-  return iso;
-}
-
 export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar, onEnviar, onEditar, onEditarPedido, onEliminar, onAdjuntarFactura, isOpen, soloLectura = false, modoChecklist = false, vistaMisPedidos = false, puedeEditar = false, puedeEliminar = false, puedeConfirmar = false, puedeCancelar = false, puedeEnviar = false, enviando = false }) {
   const [busquedaItems, setBusquedaItems] = useState("");
   const [itemsChecklist, setItemsChecklist] = useState([]);
@@ -185,8 +172,6 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
       : item));
   };
 
-  const evitarCambioConRueda = (event) => event.currentTarget.blur();
-
   const editarNumero = (clave, valor, actualizar) => {
     setValoresEnEdicion((prev) => ({ ...prev, [clave]: valor }));
     if (valor !== "" && Number.isFinite(Number(valor))) actualizar(valor);
@@ -218,12 +203,6 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
 
     actualizarCostoRealProducto(items, nuevoCosto);
   };
-
-  const obtenerCantidadSolicitada = (id) =>
-    Math.max(
-      0,
-      Number(row.items.find((item) => item.id === id)?.cantidad || 0)
-    );
 
   const normalizarCantidadEscrita = (valor) => {
     const soloDigitos = String(valor).replace(/\D/g, "");
@@ -289,7 +268,8 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
   const finalizarEdicionNumero = (clave, valor, actualizar) => {
     if (valor === "") actualizar(0);
     setValoresEnEdicion((prev) => {
-      const { [clave]: _, ...resto } = prev;
+      const resto = { ...prev };
+      delete resto[clave];
       return resto;
     });
   };

@@ -48,9 +48,7 @@ export function ActionBadge({ action, className = "" }) {
     </span>
   );
 }
-
 export function ResourceBadge({ resource, action }) {
-  const labels = { users: "Usuarios", clients: "Clientes", suppliers: "Proveedores", products: "Productos", recepciones: "Recepciones", inventory: "Inventario", roles: "Roles", permissions: "Permisos", ventas: "Ventas", fulfillment: "Preparación", auth: "Autenticación" };
   return (
     <span className="inline-block px-2 py-0.5 rounded-[2px] border text-xs font-tag font-medium bg-gold/10 border-gold/30 text-gold-dark dark:text-gold-light">
       {getResourceLabel(resource, action)}
