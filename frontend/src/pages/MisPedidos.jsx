@@ -132,7 +132,7 @@ export default function MisPedidos() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 pb-8 flex flex-col gap-6 font-body">
-      <Encabezado titulo="Mis pedidos" />
+      <Encabezado titulo="Pedidos a proveedores" />
 
       {cargando ? (
         <div className="text-center py-10 text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">
