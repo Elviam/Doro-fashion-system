@@ -72,7 +72,7 @@ export default function Inventario() {
       abrirEditar(producto);
       setSearchParams({}, { replace: true });
     }
-  }, [searchParams, productosDB]);
+  }, [searchParams, productosDB, setSearchParams]);
 
   const [valoresInventario, setValoresInventario] = useState({ costo: 0, venta: 0 });
 

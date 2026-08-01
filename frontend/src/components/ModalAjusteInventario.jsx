@@ -36,10 +36,13 @@ export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guar
   useEffect(() => {
     if (isOpen) {
       const tallas = TALLAS_POR_CATEGORIA[producto?.categoria] || ["Unitalla"];
+      const stockInicialPorTalla = Object.fromEntries(
+        (producto?.inventario || []).map((item) => [item.talla, item.stock || 0])
+      );
       const valoresPorTalla = Object.fromEntries(
         tallas.map((talla) => {
-          const stock = Number(stockPorTalla[talla] ?? 0);
-          return [talla, Object.hasOwn(stockPorTalla, talla) ? String(stock) : ""];
+          const stock = Number(stockInicialPorTalla[talla] ?? 0);
+          return [talla, Object.hasOwn(stockInicialPorTalla, talla) ? String(stock) : ""];
         })
       );
       setForm({ valoresPorTalla, motivo: "", notas: "" });
@@ -47,7 +50,7 @@ export default function ModalAjusteInventario({ isOpen, onClose, onGuardar, guar
       setErrors({});
       setTallasEditadas(new Set());
     }
-  }, [isOpen, producto?.id]);
+  }, [isOpen, producto?.id, producto?.categoria, producto?.inventario]);
 
   useEffect(() => {
     const urls = evidencia.map((f) => URL.createObjectURL(f));

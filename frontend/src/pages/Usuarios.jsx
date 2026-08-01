@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { staffApi } from "../services/api";
 import { canPerformAction } from "../utils/permissionMapper";
@@ -66,7 +66,12 @@ export default function Usuarios() {
     { label: "Acciones", key: "acciones" }
   ];
 
-  const fetchUsuarios = async (silencioso = false) => {
+  const mostrarToast = useCallback((mensaje, tipo = "exito") => {
+    setToastMessage(mensaje);
+    setToastType(tipo);
+  }, []);
+
+  const fetchUsuarios = useCallback(async (silencioso = false) => {
     try {
       if (!silencioso) setCargando(true);
       setError("");
@@ -79,7 +84,7 @@ export default function Usuarios() {
     } finally {
       setCargando(false);
     }
-  };
+  }, [mostrarToast]);
 
   const fetchRoles = async () => {
     try {
@@ -105,7 +110,7 @@ export default function Usuarios() {
     fetchUsuarios();
     fetchRoles();
     fetchPermisos();
-  }, []);
+  }, [fetchUsuarios]);
 
   useEffect(() => { setPaginaActiva(1); }, [filtro, busqueda]);
 
@@ -136,11 +141,6 @@ export default function Usuarios() {
   const start = (paginaActiva - 1) * LIMIT;
   const datosPaginados = datosFiltrados.slice(start, start + LIMIT);
   const textoRango = datosFiltrados.length === 0 ? "0" : `${start + 1} – ${Math.min(paginaActiva * LIMIT, datosFiltrados.length)}`;
-
-  const mostrarToast = (mensaje, tipo = "exito") => {
-    setToastMessage(mensaje);
-    setToastType(tipo);
-  };
 
   const puedeAgregar = canPerformAction(usuarioLogeado?.permissions, 'users', 'create');
   const puedeEditar = canPerformAction(usuarioLogeado?.permissions, 'users', 'update');

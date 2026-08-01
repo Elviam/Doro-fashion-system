@@ -50,13 +50,16 @@ function formatDetails(details) {
 export default function PerfilUsuario({ usuario }) {
   const [auditoria, setAuditoria] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const puedeVerAuditoria = usuario?.role === "ADMIN" || usuario?.permissions?.includes("audit:read");
+  const usuarioId = usuario?.id;
+  const nombreUsuario = usuario?.usuario;
 
   useEffect(() => {
     const cargarAuditoria = async () => {
       try {
         const data = await staffApi.get("/audit?limit=50");
         const movimientos = (data.items || [])
-          .filter(item => item.userId === usuario?.id || (!item.userId && item.usuario === usuario?.usuario))
+          .filter(item => item.userId === usuarioId || (!item.userId && item.usuario === nombreUsuario))
           .slice(0, 20);
         setAuditoria(movimientos);
       } catch (error) {
@@ -66,12 +69,12 @@ export default function PerfilUsuario({ usuario }) {
       }
     };
 
-    if (usuario?.usuario && (usuario?.role === "ADMIN" || usuario?.permissions?.includes("audit:read"))) {
+    if (nombreUsuario && puedeVerAuditoria) {
       cargarAuditoria();
     } else {
       setCargando(false);
     }
-  }, [usuario?.usuario]);
+  }, [nombreUsuario, puedeVerAuditoria, usuarioId]);
 
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto px-4 box-border">

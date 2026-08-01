@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Modal from "./Modal";
 import Input from "./Input";
 import Boton from "./Boton";
@@ -76,7 +76,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
   const [permisoPendiente, setPermisoPendiente] = useState(null);
   const [mostrarAjustesPermisos, setMostrarAjustesPermisos] = useState(false);
 
-  const getRolesDisponibles = () => {
+  const rolesOpciones = useMemo(() => {
     return rolesDispProp
       .filter((rol) => ['ADMIN', 'BODEGUERO'].includes(rol.codigo || rol.id))
       .filter((rol) => usuarioLogeado?.isPrimaryAdmin || rol.codigo !== 'ADMIN')
@@ -86,9 +86,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
         nombre: rol.nombre,
         permissions: rol.permissions || []
       }));
-  };
-
-  const rolesOpciones = getRolesDisponibles();
+  }, [rolesDispProp, usuarioLogeado?.isPrimaryAdmin]);
 
   useEffect(() => {
     const inicial = {
@@ -97,7 +95,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
       email: data?.email || "",
       usuario: data?.usuario || "",
       password: "", // Siempre vacío al iniciar
-      roleId: data?.roleId || rolesOpciones.find((rol) => rol.codigo === "BODEGUERO")?.id || "",
+      roleId: data?.roleId || "",
       activo: data ? data.activo !== false : true,
       revokedPermissions: data?.revokedPermissions || [],
       grantedPermissions: data?.grantedPermissions || []
@@ -109,15 +107,18 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
   }, [data]);
 
   useEffect(() => {
-    if (!data && !formData.roleId && rolesOpciones.length > 0) {
-      const roleBodeguero = rolesOpciones.find((rol) => rol.codigo === "BODEGUERO");
-      if (roleBodeguero) {
-        setFormData((prev) => ({ ...prev, roleId: roleBodeguero.id }));
-      }
-    }
-  }, [data, rolesDispProp]);
+    if (data) return;
+    const roleBodeguero = rolesOpciones.find((rol) => rol.codigo === "BODEGUERO");
+    if (!roleBodeguero) return;
 
-  const handleIntentarCerrar = () => {
+    setFormData((prev) => prev.roleId ? prev : ({ ...prev, roleId: roleBodeguero.id }));
+    setEstadoOriginal((prev) => {
+      const original = JSON.parse(prev);
+      return original.roleId ? prev : JSON.stringify({ ...original, roleId: roleBodeguero.id });
+    });
+  }, [data, rolesOpciones]);
+
+  const handleIntentarCerrar = useCallback(() => {
     const estadoActual = JSON.stringify(formData);
     
     if (estadoActual !== estadoOriginal) {
@@ -125,7 +126,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
     } else {
       if (typeof onClose === 'function') onClose();
     }
-  };
+  }, [formData, estadoOriginal, onClose]);
 
   useEffect(() => {
     const handleKeyDown = (e) => { 
@@ -135,7 +136,7 @@ export default function FormUsuarios({ data, onGuardar, onClose, usuarioLogeado,
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, confirmarDescartar, formData, estadoOriginal, onClose]);
+  }, [isOpen, confirmarDescartar, handleIntentarCerrar]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

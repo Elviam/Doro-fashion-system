@@ -62,9 +62,9 @@ export default function Auditoria() {
       const data = await staffApi.get(`/audit?${params}`);
       setLogs(data.items || []); setTotal(data.total || 0);
     } catch (err) { setError(err.message); } finally { setCargando(false); }
-  }, [token, pagina, filtros, refreshKey]);
+  }, [token, pagina, filtros]);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => { cargar(); }, [cargar, refreshKey]);
   useEffect(() => {
     if (!token) return;
     staffApi.get("/audit/filters")

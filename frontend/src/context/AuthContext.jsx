@@ -119,7 +119,7 @@ export function AuthProvider({ children }) {
     return () => sessionRequestRef.current?.abort();
   }, [accountType, loadSession]);
 
-  const login = (tokenRecibido, datosUsuario) => {
+  const login = useCallback((tokenRecibido, datosUsuario) => {
     sessionOperationRef.current += 1;
     sessionRequestRef.current?.abort();
     const currentUser = normalizeAuthenticatedUser(datosUsuario);
@@ -130,7 +130,7 @@ export function AuthProvider({ children }) {
     setToken(tokenRecibido);
     setUsuario(currentUser);
     setSessionUnavailable(false);
-  };
+  }, []);
 
   const register = async ({ nombre, email, password }) => {
     const res = await fetch(`${API_BASE}/auth/register`, {
@@ -146,7 +146,7 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  const logout = (type = usuario?.accountType || accountType) => {
+  const logout = useCallback((type = usuario?.accountType || accountType) => {
     sessionOperationRef.current += 1;
     sessionRequestRef.current?.abort();
     const keys = storageKeys(type);
@@ -162,7 +162,7 @@ export function AuthProvider({ children }) {
       setUsuario(null);
       setSessionUnavailable(false);
     }
-  };
+  }, [accountType, usuario?.accountType]);
 
   useEffect(() => {
     const handleExpiredSession = (event) => {
@@ -173,7 +173,7 @@ export function AuthProvider({ children }) {
     };
     window.addEventListener("doro:session-expired", handleExpiredSession);
     return () => window.removeEventListener("doro:session-expired", handleExpiredSession);
-  }, [accountType, usuario]);
+  }, [accountType, logout]);
 
   const retrySession = useCallback(() => {
     setLoading(true);

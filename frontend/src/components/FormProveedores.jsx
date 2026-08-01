@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Modal from "./Modal";
 import Input from "./Input";
 import Boton from "./Boton";
@@ -31,14 +31,14 @@ export default function FormProveedores({ proveedor, esNuevo, onClose, onGuardar
     setEstadoOriginal(JSON.stringify(inicial));
   }, [proveedor, esNuevo]);
 
-  const handleIntentarCerrar = () => {
+  const handleIntentarCerrar = useCallback(() => {
     const estadoActual = JSON.stringify(form);
     if (estadoActual !== estadoOriginal) {
       setConfirmarDescartar(true);
     } else {
       if (typeof onClose === 'function') onClose();
     }
-  };
+  }, [form, estadoOriginal, onClose]);
 
   useEffect(() => {
     const handleKeyDown = (e) => { 
@@ -48,7 +48,7 @@ export default function FormProveedores({ proveedor, esNuevo, onClose, onGuardar
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, confirmarDescartar, form, estadoOriginal, onClose]);
+  }, [isOpen, confirmarDescartar, handleIntentarCerrar]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

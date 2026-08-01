@@ -1,11 +1,19 @@
 //formulario para crear un nuevo producto en el sistema, se publican directamente en tienda
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { staffApi } from "../services/api";
 import Modal from "./Modal";
 import Input from "./Input";
 import Boton from "./Boton";
 import ModalConfirmacion from "./ModalConfirmacion";
 import { CATEGORIAS_PERMITIDAS, DEPARTAMENTOS_PERMITIDOS } from "../constants/categorias";
+
+const tomarSnapshot = (estado) => {
+  const copia = { ...estado };
+  copia.imagenes = (copia.imagenes || []).map((img) =>
+    img instanceof File ? img.name : img
+  );
+  return JSON.stringify(copia);
+};
 
 export default function FormProductos({ data, onGuardar, onCancelar, isOpen, guardando = false }) {
   const [formData, setFormData] = useState({
@@ -38,14 +46,6 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
   const [confirmarDescartar, setConfirmarDescartar] = useState(false);
   const [estadoOriginal, setEstadoOriginal] = useState("");
 
-  const tomarSnapshot = (estado) => {
-    const copia = { ...estado };
-    copia.imagenes = (copia.imagenes || []).map((img) =>
-      img instanceof File ? img.name : img
-    );
-    return JSON.stringify(copia);
-  };
-
   useEffect(() => {
     let inicial;
     if (data) {
@@ -61,14 +61,14 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
     setMostrarAyudaStock(false);
   }, [data]);
 
-  const handleIntentarCerrar = () => {
+  const handleIntentarCerrar = useCallback(() => {
     const estadoActual = tomarSnapshot(formData);
     if (estadoActual !== estadoOriginal) {
       setConfirmarDescartar(true);
     } else {
       onCancelar(); 
     }
-  };
+  }, [formData, estadoOriginal, onCancelar]);
 
   useEffect(() => {
     staffApi.get("/suppliers?limit=100")
@@ -84,7 +84,7 @@ export default function FormProductos({ data, onGuardar, onCancelar, isOpen, gua
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, confirmarDescartar, formData, estadoOriginal, onCancelar]);
+  }, [isOpen, confirmarDescartar, handleIntentarCerrar]);
 
   const handleProveedorChange = (e) => {
     const nombreSeleccionado = e.target.value;

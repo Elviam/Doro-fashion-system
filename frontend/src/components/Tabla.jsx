@@ -1,6 +1,39 @@
 import { useState, useMemo } from "react";
 import { ArrowUp, ArrowDown } from "lucide-react";
 
+function getComparableValue(value) {
+  if (value === null || value === undefined) return { type: "string", value: "" };
+  if (typeof value === "number") return { type: "number", value };
+
+  if (typeof value === "string") {
+    const cleanString = value.replace(/[$,\s]/g, '').trim();
+    const asNumber = parseFloat(cleanString);
+    if (!isNaN(asNumber) && cleanString !== "") return { type: "number", value: asNumber };
+    return { type: "string", value: value.trim().toLowerCase() };
+  }
+
+  return { type: "string", value: String(value).toLowerCase() };
+}
+
+function compareValues(valA, valB, direction) {
+  const a = getComparableValue(valA);
+  const b = getComparableValue(valB);
+
+  if (a.type === "number" && b.type === "number") {
+    return direction === "asc" ? a.value - b.value : b.value - a.value;
+  }
+
+  if (a.type === "string" && b.type === "string") {
+    if (a.value < b.value) return direction === "asc" ? -1 : 1;
+    if (a.value > b.value) return direction === "asc" ? 1 : -1;
+    return 0;
+  }
+
+  if (a.type === "number") return -1;
+  if (b.type === "number") return 1;
+  return 0;
+}
+
 export default function Tabla({ 
   encabezados, 
   datos, 
@@ -46,53 +79,6 @@ export default function Tabla({
       setSortColumnIndex(index);
       setSortDirection(newDirection);
     }
-  };
-
-  // Función auxiliar para extraer valor comparable
-  const getComparableValue = (value) => {
-    if (value === null || value === undefined) return { type: "string", value: "" };
-
-    // Si es número, retornar como número
-    if (typeof value === "number") {
-      return { type: "number", value };
-    }
-
-    // Si es string, limpiar símbolos y comas, luego intentar convertir a número
-    if (typeof value === "string") {
-      // Reemplaza el signo $, las comas y los espacios para quedarse solo con el número
-      const cleanString = value.replace(/[$,\s]/g, '').trim(); 
-      const asNumber = parseFloat(cleanString);
-      
-      if (!isNaN(asNumber) && cleanString !== "") {
-        return { type: "number", value: asNumber };
-      }
-      return { type: "string", value: value.trim().toLowerCase() };
-    }
-
-    return { type: "string", value: String(value).toLowerCase() };
-  };
-
-  // Función para comparar valores
-  const compareValues = (valA, valB, direction) => {
-    const a = getComparableValue(valA);
-    const b = getComparableValue(valB);
-
-    // Si ambos son números
-    if (a.type === "number" && b.type === "number") {
-      return direction === "asc" ? a.value - b.value : b.value - a.value;
-    }
-
-    // Si ambos son strings
-    if (a.type === "string" && b.type === "string") {
-      if (a.value < b.value) return direction === "asc" ? -1 : 1;
-      if (a.value > b.value) return direction === "asc" ? 1 : -1;
-      return 0;
-    }
-
-    // Mixto: números primero
-    if (a.type === "number") return -1;
-    if (b.type === "number") return 1;
-    return 0;
   };
 
   // Ordenar datos del nuevo sistema

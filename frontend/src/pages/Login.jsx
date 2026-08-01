@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -355,7 +355,7 @@ export default function Login() {
   };
 
   // ── Login con Google (Google Identity Services) ──────────────────────────
-  const handleGoogleCredential = async (response) => {
+  const handleGoogleCredential = useCallback(async (response) => {
     try {
       setLoadingGoogle(true);
       const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/google`, {
@@ -372,7 +372,7 @@ export default function Login() {
     } finally {
       setLoadingGoogle(false);
     }
-  };
+  }, [login]);
 
  useEffect(() => {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -414,7 +414,7 @@ export default function Login() {
     document.body.removeChild(script);
     observer?.disconnect();
   };
-}, []);
+}, [handleGoogleCredential]);
 
   const isBusy = isSubmitting || loading || loadingGoogle;
 

@@ -36,11 +36,15 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
   const confirmacionEnCursoRef = useRef(false);
   const [guardandoFacturaPendiente, setGuardandoFacturaPendiente] = useState(false);
   const [mostrarFactura, setMostrarFactura] = useState(false);
+  const rowId = row?.id;
+  const latestRowRef = useRef(row);
+  latestRowRef.current = row;
 
   useEffect(() => {
-    if (!row) return;
+    const initialRow = latestRowRef.current;
+    if (!initialRow) return;
 
-    const itemsIniciales = (row.items || []).map((item) => {
+    const itemsIniciales = (initialRow.items || []).map((item) => {
       const cantidadInicial = Math.max(
         0,
         Number(item.cantidadRecibida ?? item.cantidad ?? 0)
@@ -54,9 +58,9 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
     });
 
     setBusquedaItems("");
-    setFacturaProveedor(row.facturaProveedor || "");
+    setFacturaProveedor(initialRow.facturaProveedor || "");
     setArchivoFactura(null);
-    setFacturaUrl(row.facturaUrl || "");
+    setFacturaUrl(initialRow.facturaUrl || "");
     setSubiendoFactura(false);
     setConfirmandoRecepcion(false);
     confirmacionEnCursoRef.current = false;
@@ -64,7 +68,7 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
     setMostrarFactura(false);
     setValoresEnEdicion({});
     setItemsMarcados(
-      Object.fromEntries((row.items || []).map((item) => [item.id, false]))
+      Object.fromEntries((initialRow.items || []).map((item) => [item.id, false]))
     );
     setItemsChecklist(itemsIniciales);
     setCantidadesPrevias(
@@ -75,7 +79,7 @@ export default function ModalRecepciones({ row, onClose, onConfirmar, onCancelar
         ])
       )
     );
-  }, [row?.id, modoChecklist]);
+  }, [rowId, modoChecklist]);
 
   if (!row) return null;
 

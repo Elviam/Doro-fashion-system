@@ -31,19 +31,15 @@ export default function Clientes() {
 
   const handleVerCliente = (cliente) => setClienteSeleccionado(cliente);
 
-  const buildQuery = () => {
-    const params = new URLSearchParams();
-    params.set("page", String(paginaActiva));
-    params.set("limit", String(LIMIT));
-    if (search.trim()) params.set("q", search.trim());
-    return params.toString();
-  };
-
   useEffect(() => {
     const loadClients = async () => {
       setLoading(true);
       try {
-        const queryString = buildQuery();
+        const params = new URLSearchParams();
+        params.set("page", String(paginaActiva));
+        params.set("limit", String(LIMIT));
+        if (search.trim()) params.set("q", search.trim());
+        const queryString = params.toString();
         const data = await staffApi.get(`/clients?${queryString}`);
         const items = Array.isArray(data.items) ? data.items : Array.isArray(data) ? data : [];
         setRows(items);

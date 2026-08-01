@@ -50,7 +50,7 @@ export default function FormRecepciones({ row, esNuevo, onClose, onGuardar }) {
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [confirmarDescartar, form, estadoOriginal, onClose]);
+  }, [confirmarDescartar, handleIntentarCerrar]);
 
   useEffect(() => {
     staffApi.get("/suppliers?limit=100").then((res) => setSuppliers(res.items || res)).catch(console.error);

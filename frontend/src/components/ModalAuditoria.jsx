@@ -74,7 +74,7 @@ export default function ModalAuditoria({ isOpen, onClose, data }) {
       .catch(() => {});
 
     return () => { activo = false; };
-  }, [data?.id, data?.resource, data?.resourceId, isOpen]);
+  }, [data?.id, data?.resource, data?.resourceId, data?.action, isOpen]);
 
   if (!isOpen || !data) return null;
 

@@ -8,7 +8,7 @@ export function isTemporaryRequestError(error) {
   return error?.code === "NETWORK_ERROR" || [500, 502, 503].includes(error?.status);
 }
 
-export default function useRetryableRequest(request, dependencies = [], options = {}) {
+export default function useRetryableRequest(request, [requestKey] = [], options = {}) {
   const { enabled = true, maxWindowMs = MAX_WINDOW_MS, retryDelays = RETRY_DELAYS } = options;
   const requestRef = useRef(request);
   const runRef = useRef(null);
@@ -89,7 +89,7 @@ export default function useRetryableRequest(request, dependencies = [], options 
     mountedRef.current = true;
     start();
     return () => { mountedRef.current = false; cancel(); };
-  }, [start, cancel, ...dependencies]);
+  }, [start, cancel, requestKey]);
 
   return { ...state, retry: start, cancel };
 }
