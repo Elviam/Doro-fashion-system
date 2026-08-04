@@ -5,14 +5,26 @@ import { readFile } from 'node:fs/promises'
 const root = new URL('../../', import.meta.url)
 const read = (path) => readFile(new URL(path, root), 'utf8')
 
-test('las rutas internas existentes y configuración permanecen montadas', async () => {
-  const app = await read('frontend/src/App.jsx')
+test('las rutas internas vigentes permanecen montadas y configuración continúa retirada', async () => {
+  const [app, sidebar, personal, personalForm] = await Promise.all([
+    read('frontend/src/App.jsx'),
+    read('frontend/src/components/Sidebar.jsx'),
+    read('frontend/src/pages/Usuarios.jsx'),
+    read('frontend/src/components/FormUsuarios.jsx'),
+  ])
   for (const route of [
     '/dashboard', '/productos', '/recepciones', '/clientes', '/proveedores',
-    '/usuarios', '/configuracion', '/auditoria', '/ventas', '/inventario',
+    '/usuarios', '/auditoria', '/ventas', '/inventario',
     '/preparar-pedidos', '/reabastecimiento', '/reabastecimiento/pedidos',
     '/reabastecimiento/generar-pedido', '/perfil'
   ]) assert.match(app, new RegExp(`path="${route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`))
+  assert.doesNotMatch(app, /path="\/configuracion"/)
+  assert.match(sidebar, /label: "Personal", ruta: "\/usuarios"/)
+  assert.match(sidebar, /label: "Auditoría", ruta: "\/auditoria"/)
+  assert.doesNotMatch(sidebar, /label: "Configuración"|ruta: "\/configuracion"/)
+  assert.match(personal, /rolesDisponibles=\{rolesDB\}/)
+  assert.match(personal, /permisosDisponibles=\{permisosDB\}/)
+  assert.match(personalForm, /titulo="Ajustar permisos"/)
 })
 
 test('sidebar conserva el orden operativo y reabastecimiento depende de sus permisos propios', async () => {
