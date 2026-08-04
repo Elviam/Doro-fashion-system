@@ -43,7 +43,7 @@ export default function Etiquetas({ contenido }) {
     `,
     
     Pendiente: `
-      bg-amarillo/40 text-amarillo border-amarillo/60 
+      bg-amarillo/40 text-[var(--color-amarillo-dark)] border-[var(--color-amarillo-dark)]/60
       dark:bg-amarillo/20 dark:text-amarillo dark:border-amarillo/30
     `,
 
@@ -64,12 +64,12 @@ export default function Etiquetas({ contenido }) {
 
     // --- ESTADOS VENTAS ---
     pendiente: `
-      bg-amarillo/40 text-amarillo border-amarillo/60 
+      bg-amarillo/40 text-[var(--color-amarillo-dark)] border-[var(--color-amarillo-dark)]/60
       dark:bg-amarillo/20 dark:text-amarillo dark:border-amarillo/30
     `,
 
     PENDIENTE: `
-      bg-amarillo/40 text-amarillo border-amarillo/60
+      bg-amarillo/40 text-[var(--color-amarillo-dark)] border-[var(--color-amarillo-dark)]/60
       dark:bg-amarillo/20 dark:text-amarillo dark:border-amarillo/30
     `,
 
@@ -83,13 +83,15 @@ export default function Etiquetas({ contenido }) {
       dark:bg-verde/20 dark:text-verde dark:border-verde/30
     `,
 
-    enviado: `
-      bg-azul/10 text-azul-dark border-azul/30
-    `,
+   enviado: `
+    bg-azul/20 text-azul-dark border-azul-dark
+    dark:bg-azul/20 dark:text-azul dark:border-azul/40
+  `,
 
-    ENVIADO: `
-      bg-azul/10 text-azul-dark border-azul/30
-    `,
+  ENVIADO: `
+    bg-azul/20 text-azul-dark border-azul-dark
+    dark:bg-azul/20 dark:text-azul dark:border-azul/40
+  `,
 
     entregado: `
       bg-green-600/15 text-green-700 border-green-600/60
