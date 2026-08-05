@@ -35,7 +35,7 @@ También establece una base reproducible para ampliar el portafolio con casos, e
 - Registro e inicio de sesión de clientes.
 - Inicio de sesión del personal.
 - Verificación, expiración y cierre de sesión.
-- Separación del almacenamiento y uso de tokens de `CLIENTE` y personal interno.
+- Separación del almacenamiento y uso de tokens de `CLIENTE` y personal interno. `CLIENTE` corresponde a una sesión y entidad separada de las cuentas internas.
 - Acceso a páginas y endpoints mediante roles y permisos efectivos.
 
 ### Catálogo y relaciones comerciales
@@ -53,8 +53,9 @@ También establece una base reproducible para ampliar el portafolio con casos, e
 
 ### Inventario y almacén
 
-- Consulta y ajuste de inventario por talla.
-- Movimientos de entrada, salida y ajuste.
+- Consulta y ajuste de inventario por talla. El stock persistente se encuentra en `ProductVariant.stock`; el stock agregado del producto se calcula sumando variantes.
+- Mínimos, ideales y máximos definidos en `Product`.
+- Ajuste manual como operación que genera `ENTRADA` al incrementar o `SALIDA` al disminuir. `AJUSTE` no es un tipo de movimiento persistido actual.
 - Preparación y despacho de pedidos pagados.
 - Seguimiento simulado del envío.
 - Recepción de mercancía, cantidades recibidas, costos y factura.
@@ -68,8 +69,10 @@ También establece una base reproducible para ampliar el portafolio con casos, e
 
 ### Administración y control
 
-- Personal con roles internos `ADMIN` y `BODEGUERO`.
+- Personal con roles internos fijos `ADMIN` y `BODEGUERO`.
 - Permisos individuales del bodeguero gestionados desde Personal.
+- Ausencia de una página independiente de Configuración, Roles o Permisos en la navegación vigente.
+- Catálogo técnico de permisos administrable mediante endpoints protegidos exclusivamente para el administrador principal.
 - Protección del administrador principal.
 - Auditoría del personal y notificaciones operativas.
 - Dashboard y búsqueda interna.
@@ -92,17 +95,18 @@ Escala: probabilidad e impacto se califican como baja, media o alta. El nivel co
 | ID | Riesgo | Módulo | Probabilidad | Impacto | Nivel | Respuesta de prueba |
 |---|---|---|---|---|---|---|
 | R-01 | Stock inconsistente entre producto, talla y movimiento de inventario | Inventario | Media | Alta | Alto | Comparar el estado previo y posterior, así como el movimiento persistido por talla. |
-| R-02 | Una recepción se confirma más de una vez | Recepciones | Media | Alta | Alto | Repetir solicitudes y ejecutarlas de forma concurrente; verificar una sola transición y un solo incremento. |
-| R-03 | Se paga o vende una cantidad sin existencias suficientes | Ventas | Alta | Alta | Crítico | Probar stock cero, inferior a la cantidad solicitada, exacto y solicitudes concurrentes. |
-| R-04 | Cancelar una venta pagada repone cantidades incorrectas o más de una vez | Ventas e inventario | Media | Alta | Alto | Validar transición, stock y movimiento de entrada; repetir la cancelación. |
+| R-02 | Dos confirmaciones concurrentes podrían incrementar el stock más de una vez porque no existe una actualización condicional confirmada por `id + estado` | Recepciones | Media | Alta | Alto | Ejecutar confirmaciones secuenciales y simultáneas; verificar una sola transición, movimientos y cantidades finales. No clasificar el riesgo como defecto sin reproducirlo. |
+| R-03 | Un pago con stock insuficiente o dos pagos concurrentes podrían comprometer las existencias; no existe compare-and-set sobre `Sale.estado` | Ventas | Alta | Alta | Crítico | Probar stock cero, inferior, exacto y suficiente para solicitudes simultáneas; contrastar estado, movimientos y stock final. |
+| R-04 | Dos cancelaciones concurrentes podrían reponer stock más de una vez porque no existe compare-and-set sobre `Sale.estado` | Ventas e inventario | Media | Alta | Alto | Validar repetición secuencial y simultánea, stock final y movimientos de entrada. No declarar duplicidad sin ejecución reproducible. |
 | R-05 | Un usuario accede a páginas o endpoints sin permiso | Autorización | Media | Alta | Alto | Crear una matriz de rol, permiso y recurso, y probar la interfaz y la API directamente. |
 | R-06 | Una sesión de `CLIENTE` se utiliza como sesión de personal interno o viceversa | Autenticación | Media | Alta | Alto | Intercambiar tokens, rutas y sesiones simultáneas; esperar 401/403 controlados. |
 | R-07 | Se modifica, desactiva o elimina una cuenta protegida | Personal | Baja | Alta | Alto | Probar administrador principal, cuenta propia, administrador secundario e historial relacionado. |
-| R-08 | Dos operadores intentan preparar simultáneamente el mismo pedido | Preparación | Media | Alta | Alto | Ejecutar solicitudes concurrentes y verificar que el pedido se despache una sola vez. La regla funcional y la protección de concurrencia deben confirmarse antes de clasificar un resultado como defecto. |
+| R-08 | Dos operadores podrían despachar simultáneamente el mismo pedido y generar más de una guía o conjunto de eventos; no existe lock ni condición atómica confirmada sobre el estado | Preparación | Media | Alta | Alto | Ejecutar despachos simultáneos y contrastar estado, guía, eventos y auditoría; conservar el resultado como riesgo hasta reproducirlo formalmente. |
 | R-09 | Se pierde información al cerrar un formulario sin guardar | Productos, personal, pedidos | Media | Media | Medio | Explorar cierre por botón, fondo, Escape, navegación y recarga con cambios pendientes. |
 | R-10 | Se acepta una transición de estado no permitida | Ventas y recepciones | Media | Alta | Alto | Probar cada transición válida e inválida mediante API. |
 | R-11 | Importes, costos, envío o cantidades se calculan incorrectamente | Checkout, ventas y abastecimiento | Media | Alta | Alto | Usar valores límite, decimales y cálculos independientes. |
-| R-12 | El historial de recepciones expone datos fuera de la ventana del bodeguero | Recepciones | Media | Media | Medio | Verificar el frontend y realizar una consulta directa a la API. El límite de diez días está confirmado en el frontend, no en el servicio del backend. |
+| R-12 | Diferencia entre el filtro frontend de diez días para el bodeguero y el contrato backend, que puede devolver registros antiguos | Recepciones | Media | Media | Medio | Comparar la presentación de `CONFIRMADA`/`CANCELADA` con consultas directas; documentar la diferencia sin clasificarla automáticamente como vulnerabilidad o defecto. |
+| R-13 | Un pedido a proveedor podría enviarse mediante API sin `supplierId`, aunque la interfaz exige proveedor antes de crear y enviar | Abastecimiento | Media | Alta | Alto | Crear un borrador sin proveedor y probar por separado interfaz y API de envío; verificar contrato, persistencia y trazabilidad sin asumir la regla pendiente. |
 
 Los riesgos describen fallos potenciales; no afirman que exista un defecto.
 
@@ -119,6 +123,12 @@ Los riesgos describen fallos potenciales; no afirman que exista un defecto.
 - **Exploratorias:** sesiones guiadas por riesgos sobre formularios, navegación y estados poco frecuentes.
 - **Regresión:** repetición de la ruta crítica tras cambios.
 - **Automatización futura:** expansión de pruebas de servicio/API y cobertura end-to-end con Playwright.
+
+### Automatización existente
+
+La ejecución actual confirma 60 pruebas automatizadas de backend y 19 de frontend, 79 en total. Cubren principalmente servicios, autorización, contratos y regresión estructural. Estas suites no levantan una API completa con PostgreSQL real, no usan un navegador real y no contienen cobertura end-to-end ni Playwright.
+
+La automatización existente complementa, pero no sustituye, las pruebas manuales, las pruebas de API en un entorno real, la validación de base de datos, las pruebas de concurrencia ni los recorridos end-to-end.
 
 ## 8. Estrategia por nivel
 
@@ -224,7 +234,7 @@ La regresión mínima incluirá:
 3. Alta o edición de producto, estado activo y existencias por talla.
 4. Consulta y ajuste de inventario con registro de movimiento.
 5. Checkout, pago simulado, descuento de stock y cancelación con reposición.
-6. Pedido a proveedor desde borrador hasta enviado; recepción parcial/completa y aumento de stock.
+6. Pedido a proveedor desde borrador hasta enviado; recepción con cantidades completas o menores, cierre en `CONFIRMADA` y aumento de stock por cantidades efectivamente recibidas.
 7. Listado y despacho de un pedido pagado, generación de guía y cambio de seguimiento.
 
 Se ejecutará después de cambios en autenticación, permisos, modelos Prisma, ventas, inventario, recepciones o preparación de pedidos, y antes de cerrar una versión candidata.
@@ -277,15 +287,30 @@ La falta de independencia entre desarrollo y pruebas aumenta el riesgo de sesgo 
 | Estado | Versión inicial aprobada |
 | Observaciones | Documento sujeto a actualización conforme avancen el diseño y la ejecución de pruebas. |
 
-## Reglas confirmadas y puntos pendientes
+## Reglas confirmadas
 
 Las siguientes reglas se verificaron en el código y orientarán el diseño posterior:
 
-- El inventario se almacena por talla; técnicamente, cada talla se representa mediante una entidad `ProductVariant`.
+- El inventario se almacena por talla en `ProductVariant.stock`; `stockMinimo`, `stockIdeal` y `stockMaximo` pertenecen a `Product`, y el stock agregado se calcula sumando variantes.
 - Una venta pasa de `PENDIENTE` a `PAGADO` o `CANCELADO`; una venta en estado `PAGADO` puede cancelarse; `ENVIADO` y `CANCELADO` no admiten nuevas transiciones en el servicio de ventas.
-- Pagar descuenta stock de forma condicional y registra una `SALIDA`; cancelar una venta pagada repone stock y registra una `ENTRADA`.
-- Los pedidos a proveedores usan `BORRADOR`, `ENVIADA`, `CONFIRMADA` y `CANCELADA`. Solo una recepción `ENVIADA` puede confirmarse, y la confirmación incrementa stock y registra entradas dentro de una transacción.
-- La vista operativa de recepciones excluye borradores. El frontend limita a diez días el historial confirmado o cancelado del `BODEGUERO`, mientras los pendientes no tienen ese filtro. La aplicación del límite en el backend está **pendiente de confirmar** porque el servicio no realiza ese filtrado por rol.
-- Los pedidos de clientes pagados se preparan y pasan a `ENVIADO`, con estado de preparación `PREPARADO`, guía y seguimiento simulado.
-- La protección ante dos despachos simultáneos está pendiente de confirmar; debe verificarse que solo una solicitud pueda cambiar el pedido de `PAGADO` a `ENVIADO`.
-- Los roles internos utilizados por Personal son fijos (`ADMIN` y `BODEGUERO`); los permisos individuales del bodeguero se gestionan desde Personal. No se considera vigente una pantalla separada para crear roles o permisos.
+- El ajuste manual genera `ENTRADA` al incrementar y `SALIDA` al disminuir; `AJUSTE` no es un tipo persistido actual.
+- Pagar descuenta stock con una condición de cantidad suficiente y registra una `SALIDA`; cancelar una venta pagada repone stock y registra una `ENTRADA`. La operación multiartículo se ejecuta dentro de una transacción.
+- Un pago secuencial repetido y una cancelación secuencial repetida son rechazados. La actualización no usa compare-and-set sobre `Sale.estado`, por lo que pagos o cancelaciones simultáneos permanecen como riesgos técnicos pendientes de ejecución formal.
+- Las ventas o pedidos de clientes usan `PENDIENTE`, `PAGADO`, `ENVIADO` y `CANCELADO`. `ENVIADO` pertenece a `Sale`.
+- Los pedidos a proveedores y recepciones comparten `Reception`, diferenciada para reabastecimiento mediante su origen, y usan `BORRADOR`, `ENVIADA`, `CONFIRMADA` y `CANCELADA`. `RECIBIDO` puede aparecer como etiqueta de interfaz, pero no es un estado técnico persistido de `Reception`.
+- Solo una recepción `ENVIADA` puede confirmarse secuencialmente. La confirmación incrementa stock, registra entradas y cambia a `CONFIRMADA` dentro de una transacción; la actualización final no usa una condición atómica por `id + estado`, por lo que la confirmación simultánea debe probarse.
+- Una recepción parcial admite cantidades menores, registra faltantes y movimientos solo por cantidades mayores que cero, y cierra definitivamente en `CONFIRMADA`. No permite exceder lo solicitado ni completar faltantes mediante una recepción posterior enlazada al mismo pedido.
+- La vista operativa excluye borradores. El filtro de diez días está implementado solo en `Recepciones.jsx`, usa el reloj local del navegador y se aplica al `BODEGUERO` para `CONFIRMADA` y `CANCELADA`, no para `ENVIADA`. El backend no impone el límite por rol y una consulta directa puede devolver registros antiguos.
+- Los pedidos pagados se preparan y pasan a `ENVIADO`, con preparación `PREPARADO`, guía y seguimiento simulado. Dos operadores pueden abrir el mismo pedido; no existe lock. El despacho secuencial posterior se rechaza, pero la actualización final no condiciona atómicamente el estado y el despacho simultáneo debe verificarse.
+- Un borrador de pedido a proveedor puede existir sin proveedor. La interfaz exige proveedor antes de crear y enviar, pero el servicio backend de envío no valida actualmente `supplierId`.
+- Los roles internos son fijos (`ADMIN` y `BODEGUERO`), `CLIENTE` usa una entidad y sesión separada, y los permisos individuales del bodeguero se gestionan desde Personal. No existe una página independiente de Configuración, Roles o Permisos; el catálogo técnico de permisos conserva una API protegida para el administrador principal.
+
+## Decisiones funcionales pendientes
+
+1. Respuesta contractual para una segunda operación concurrente: `409`, `400` o resultado idempotente.
+2. Garantía de exclusividad de despacho mediante transición atómica, sin determinar todavía si existirá reserva al abrir.
+3. Si la recepción parcial debe continuar cerrando definitivamente o admitir entregas posteriores.
+4. Si la ventana de diez días es solo presentación o una restricción de acceso.
+5. Si un pedido puede enviarse sin proveedor mediante API.
+6. Si el catálogo de permisos debe seguir administrable solo mediante API.
+7. Si `AJUSTE` debe permanecer como concepto de operación o convertirse algún día en tipo persistido.

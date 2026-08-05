@@ -57,17 +57,30 @@ Esta carpeta constituye la base documental inicial. El plan de pruebas está dis
 - **BODEGUERO:** cuenta interna orientada a inventario, recepción y preparación de pedidos. Sus capacidades efectivas dependen de permisos base y ajustes individuales.
 - **CLIENTE:** cuenta de tienda separada de las sesiones internas; puede operar sobre sus direcciones y pedidos propios.
 
-Los roles operativos internos vigentes son `ADMIN` y `BODEGUERO`. La interfaz actual administra los permisos individuales desde **Personal** y no expone una página separada de Configuración o Roles y permisos.
+Los roles internos vigentes son fijos (`ADMIN` y `BODEGUERO`). La administración de cuentas internas y de los permisos individuales del bodeguero se realiza desde **Personal**. La navegación actual no incluye una página independiente de Configuración, Roles o Permisos.
+
+El catálogo técnico de permisos conserva endpoints protegidos para su administración por el administrador principal, aunque esta operación no se expone en una página independiente del panel.
+
+## Reglas técnicas confirmadas
+
+- El stock persistente se almacena por talla en `ProductVariant.stock`; el stock agregado de un producto se calcula sumando sus variantes.
+- El ajuste manual de inventario es una operación: un incremento genera un movimiento `ENTRADA` y una disminución genera `SALIDA`. Los tipos de movimiento persistidos confirmados son `ENTRADA` y `SALIDA`; `AJUSTE` no es un tipo persistido actual.
+- `InventoryMovement` no almacena directamente talla, evidencia, responsable, referencia, stock anterior ni stock nuevo. Parte de ese contexto puede aparecer en el motivo del movimiento o en la auditoría, pero no como campos del modelo persistente.
+- Una recepción admite cantidades recibidas menores que las solicitadas y registra los faltantes. Solo genera movimientos por cantidades mayores que cero y queda definitivamente en `CONFIRMADA`; no permanece abierta ni admite entregas posteriores enlazadas al mismo pedido.
 
 ## Estado actual de calidad
 
 | Validación | Estado |
 |---|---|
-| Backend | 60/60 pruebas aprobadas |
-| Frontend ESLint | 0 errores y 0 warnings |
-| Frontend build | Correcto |
+| Pruebas automatizadas del backend | 60/60 aprobadas |
+| Pruebas automatizadas del frontend | 19/19 aprobadas |
+| Total de pruebas automatizadas | 79/79 aprobadas |
+| Frontend ESLint | Correcto: 0 errores y 0 warnings |
+| Frontend build | Correcto; Vite emitió una advertencia por chunks mayores de 500 kB |
 
-No se declara un porcentaje de cobertura porque actualmente no se genera un reporte de cobertura automatizado.
+Las pruebas automatizadas existentes cubren principalmente servicios, autorización, contratos y regresiones estructurales; no representan cobertura end-to-end. No se declara un porcentaje de cobertura porque actualmente no se genera un reporte automatizado de cobertura.
+
+Como parte del portafolio QA todavía no se han ejecutado formalmente pruebas con navegador real, una API completa levantada y PostgreSQL real. Las pruebas manuales y sus resultados también permanecen pendientes.
 
 ## Estrategia de pruebas
 
@@ -80,7 +93,7 @@ La estrategia prevista combina:
 - pruebas de integración entre frontend, backend y base de datos;
 - automatización y regresión de escenarios estables.
 
-El repositorio ya contiene pruebas automatizadas con el ejecutor nativo de Node.js. Las suites manuales, exploratorias, de API, base de datos y una automatización end-to-end formal permanecen planificadas.
+El repositorio ya contiene pruebas automatizadas con el ejecutor nativo de Node.js. Estas pruebas complementan, pero no sustituyen, las pruebas manuales, exploratorias, de API con un entorno real, de base de datos, de concurrencia ni una automatización end-to-end formal. Esas actividades permanecen planificadas mientras no exista evidencia de ejecución.
 
 ## Estructura prevista de QA
 
@@ -129,21 +142,16 @@ cd backend
 npm test
 ```
 
-### Lint del frontend
+### Pruebas, lint y build del frontend
 
 ```powershell
 cd frontend
+npm test
 npm run lint
-```
-
-> El comando configurado ejecuta ESLint sobre `src/` con corrección automática (`--fix`).
-
-### Build del frontend
-
-```powershell
-cd frontend
 npm run build
 ```
+
+> `npm run lint` ejecuta ESLint sobre `src/` con corrección automática (`--fix`), por lo que puede modificar archivos. El lint es análisis estático y no sustituye pruebas funcionales.
 
 ## Autoría
 
