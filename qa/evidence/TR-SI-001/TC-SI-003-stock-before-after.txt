@@ -1,0 +1,21 @@
+﻿Caso: TC-SI-003
+Producto: Vestido negro
+Producto ID: cmrvkg97q0001ckr87t6oxr3s
+Variante: XS
+Variante ID: cmrvqq4f90005ckqkb5je3yzn
+Venta ID: cmsh17rbu0005ckx0dyb4azef
+Pedido: PED-MSH17RBT
+
+Cantidad comprada: 1
+
+Stock XS antes del pago: 1
+Stock XS después del pago: 0
+
+Movimientos antes: 8
+Movimientos después: 9
+
+Resultado esperado:
+El pago se confirma, el stock queda exactamente en 0 y no se genera stock negativo.
+
+Resultado observado:
+La venta quedó PAGADO, el stock XS disminuyó de 1 a 0 y se creó un movimiento adicional.

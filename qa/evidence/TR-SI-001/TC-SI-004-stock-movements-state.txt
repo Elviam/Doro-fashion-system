@@ -1,0 +1,23 @@
+﻿Caso: TC-SI-004
+Producto: Vestido negro
+Producto ID: cmrvkg97q0001ckr87t6oxr3s
+Variante: M
+Variante ID: cmrvqq4ls0009ckqk52q1iy2o
+Venta ID: cmsh6coa1000bckx07wvyfl24
+Pedido: PED-MSH6CO9U
+
+Cantidad solicitada: 2
+
+Stock disponible antes del pago: 1
+Stock después del intento de pago: 1
+
+Movimientos antes del pago: 10
+Movimientos después del pago: 10
+
+Estado de la venta después del intento: PENDIENTE
+
+Resultado esperado:
+El pago es rechazado por stock insuficiente sin descontar inventario, crear movimientos ni cambiar el estado de la venta.
+
+Resultado observado:
+La API respondió 409 Conflict. La venta permaneció PENDIENTE, el stock permaneció en 1 y el conteo de movimientos permaneció en 10.

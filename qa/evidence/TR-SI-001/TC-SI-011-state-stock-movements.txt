@@ -1,0 +1,33 @@
+﻿Caso: TC-SI-011
+Venta ID: cmsh17rbu0005ckx0dyb4azef
+Pedido: PED-MSH17RBT
+Producto: Vestido negro
+Producto ID: cmrvkg97q0001ckr87t6oxr3s
+Variante: XS
+
+Estado antes del segundo intento: CANCELADO
+Estado después del segundo intento: CANCELADO
+
+Stock XS antes: 1
+Stock XS después: 1
+
+Movimientos antes: 12
+Movimientos después: 12
+
+Respuesta:
+HTTP 400 Bad Request
+Mensaje: No se puede cambiar una venta CANCELADO a CANCELADO
+
+Entradas de cancelación asociadas a PED-MSH17RBT: 1
+
+Entrada existente:
+ID: cmsig7j0q000jck5s0qcxoxke
+Tipo: ENTRADA
+Cantidad: 1
+Motivo: CANCELACION VENTA PED-MSH17RBT - Talla XS
+
+Resultado esperado:
+Una segunda cancelación debe rechazarse sin volver a modificar el stock ni generar otra ENTRADA.
+
+Resultado observado:
+La API rechazó la transición CANCELADO a CANCELADO. El stock XS permaneció en 1, el conteo de movimientos permaneció en 12 y solo existe una ENTRADA de cancelación para PED-MSH17RBT.

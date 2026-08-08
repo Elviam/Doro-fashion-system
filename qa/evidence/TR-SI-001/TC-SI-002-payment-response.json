@@ -1,0 +1,50 @@
+{
+    "message": "Pago simulado confirmado correctamente",
+    "item": {
+        "id": "cmsfr44wk0001ckrks7uwyzac",
+        "numeroPedido": "PED-MSFR44WC",
+        "clienteId": "profile_cmrockb1o0003ckv8tazaeqni",
+        "cliente": {
+            "nombre": "Cliente",
+            "email": "juan@gmail.com",
+            "direccion": "Calle Prueba 123, Centro, León, Guanajuato, CP 37000, México"
+        },
+        "metodoPago": "tarjeta",
+        "items": [
+            {
+                "productoId": "cmrvkg97q0001ckr87t6oxr3s",
+                "nombre": "Vestido negro",
+                "imagen": "https://res.cloudinary.com/dxpf2s9yv/image/upload/v1784693530/sfmwk5bmgqahzgcboxnr.png",
+                "talla": "M",
+                "cantidad": 1,
+                "precioUnitario": 688
+            }
+        ],
+        "subtotal": 688,
+        "envio": 99,
+        "total": 787,
+        "estado": "PAGADO",
+        "motivoCancelacion": "",
+        "estadoPreparacion": "PENDIENTE",
+        "direccionEntrega": {
+            "pais": "México",
+            "estado": "Guanajuato",
+            "ciudad": "León",
+            "colonia": "Centro",
+            "calle": "Calle Prueba",
+            "numeroExterior": "123",
+            "numeroInterior": "",
+            "cp": "37000",
+            "referencias": "Casa de prueba",
+            "telefono": "4771234567"
+        },
+        "guiaEnvio": "",
+        "estadoEnvio": "PENDIENTE",
+        "paqueteria": "D'ORO Envíos (simulado)",
+        "enviadoAt": null,
+        "entregadoAt": null,
+        "eventosEnvio": [],
+        "createdAt": "2026-08-05T07:14:10.768Z",
+        "updatedAt": "2026-08-06T02:18:46.947Z"
+    }
+}

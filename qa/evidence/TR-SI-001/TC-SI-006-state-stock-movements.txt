@@ -1,0 +1,25 @@
+﻿Caso: TC-SI-006
+Producto: Vestido negro
+Producto ID: cmrvkg97q0001ckr87t6oxr3s
+Variante: XS
+Variante ID: cmrvqq4f90005ckqkb5je3yzn
+Venta ID: cmsh17rbu0005ckx0dyb4azef
+Pedido: PED-MSH17RBT
+
+Estado antes del segundo intento de pago: PAGADO
+Estado después del segundo intento de pago: PAGADO
+
+Stock XS antes: 0
+Stock XS después: 0
+
+Movimientos antes: 11
+Movimientos después: 11
+
+HTTP: 400 Bad Request
+Mensaje: Este pedido ya fue procesado
+
+Resultado esperado:
+La segunda confirmación de pago es rechazada. La venta permanece PAGADO, el stock no vuelve a disminuir y no se crea otro movimiento.
+
+Resultado observado:
+La API respondió 400 Bad Request. La venta permaneció PAGADO, el stock XS permaneció en 0 y el conteo de movimientos permaneció en 11.

@@ -1,0 +1,30 @@
+﻿Caso: TC-SI-013
+Venta ID: cmsimew9z000nck5shc1fhpse
+Pedido: PED-MSIMEW9X
+Propietario: CLIENTE_A
+Solicitante del pago: CLIENTE_B
+
+Estado antes: PENDIENTE
+Estado después: PENDIENTE
+
+Producto ID: cmrvkg97q0001ckr87t6oxr3s
+
+Stock antes:
+- XXS: 2
+- XS: 0
+
+Stock después:
+- XXS: 2
+- XS: 0
+
+Movimientos antes: 12
+Movimientos después: 12
+
+HTTP: 403 Forbidden
+Mensaje: No tienes acceso a este pedido
+
+Resultado esperado:
+Un cliente distinto al propietario de la venta no puede procesar su pago. La venta debe permanecer PENDIENTE, el stock no debe cambiar y no deben generarse movimientos.
+
+Resultado observado:
+La API rechazó el pago con 403 Forbidden porque el cliente autenticado no era propietario del pedido. La venta permaneció PENDIENTE, el inventario no cambió y el conteo de movimientos permaneció en 12.

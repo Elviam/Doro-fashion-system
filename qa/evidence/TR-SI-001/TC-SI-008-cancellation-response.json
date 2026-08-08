@@ -1,0 +1,38 @@
+﻿{
+  "message": "Estado de la venta actualizado correctamente",
+  "item": {
+    "id": "cmsh6coa1000bckx07wvyfl24",
+    "numeroPedido": "PED-MSH6CO9U",
+    "clienteId": "profile_cmrockb1o0003ckv8tazaeqni",
+    "cliente": {
+      "nombre": "Cliente QA",
+      "email": "juan@gmail.com",
+      "direccion": "Calle Prueba 126, Centro, León, Guanajuato, CP 37000, México"
+    },
+    "metodoPago": "tarjeta",
+    "items": [
+      {
+        "productoId": "cmrvkg97q0001ckr87t6oxr3s",
+        "nombre": "Vestido negro",
+        "imagen": "https://res.cloudinary.com/dxpf2s9yv/image/upload/v1784693530/sfmwk5bmgqahzgcboxnr.png",
+        "talla": "M",
+        "cantidad": 2,
+        "precioUnitario": 688
+      }
+    ],
+    "subtotal": 1376,
+    "envio": 0,
+    "total": 1376,
+    "estado": "CANCELADO",
+    "motivoCancelacion": "Cancelación de prueba TC-SI-008",
+    "estadoPreparacion": "CANCELADO",
+    "guiaEnvio": "",
+    "estadoEnvio": "CANCELADO",
+    "paqueteria": "D'ORO Envíos (simulado)",
+    "enviadoAt": null,
+    "entregadoAt": null,
+    "eventosEnvio": [],
+    "createdAt": "2026-08-06T07:08:29.545Z",
+    "updatedAt": "2026-08-07T03:47:27.393Z"
+  }
+}

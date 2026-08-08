@@ -1,0 +1,25 @@
+﻿Caso: TC-SI-015
+Venta ID: cmrwvm1uq0001ckl4szbkhvhq
+Pedido: PED-MRWVM1UF
+Producto: Blusa Plisada Manga Campana
+Producto ID: cmrek7zbd0001ck8wlb2giku2
+Variante: XS
+Cantidad: 1
+
+Estado antes: ENVIADO
+Estado después: ENVIADO
+
+Stock XS antes: 9
+Stock XS después: 9
+
+Movimientos antes: 6
+Movimientos después: 6
+
+HTTP: 400 Bad Request
+Mensaje: No se puede cambiar una venta ENVIADO a CANCELADO
+
+Resultado esperado:
+Una venta en estado ENVIADO no puede cambiar a CANCELADO. El rechazo no debe reponer stock ni crear movimientos de inventario.
+
+Resultado observado:
+La API rechazó la transición ENVIADO a CANCELADO con 400 Bad Request. La venta permaneció ENVIADO, el stock XS permaneció en 9 y el conteo de movimientos permaneció en 6.

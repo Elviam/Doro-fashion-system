@@ -1,0 +1,32 @@
+﻿Caso: TC-SI-014
+Venta ID: cmsimew9z000nck5shc1fhpse
+Pedido: PED-MSIMEW9X
+
+Tipo de sesión utilizada: STAFF
+Rol: ADMIN
+
+Estado antes: PENDIENTE
+Estado después: PENDIENTE
+
+Stock XXS antes: 2
+Stock XXS después: 2
+
+Stock XS antes: 0
+Stock XS después: 0
+
+Movimientos antes: 12
+Movimientos después: 12
+
+HTTP: 403 Forbidden
+Mensaje: Esta operación es exclusiva para clientes de la tienda
+
+La solicitud fue ejecutada dos veces y ambas fueron rechazadas sin producir cambios de estado ni inventario.
+
+Nota de ejecución:
+Durante la ejecución se corrigieron únicamente textos de mensajes en requirepermission.js. No se modificó la lógica de autorización evaluada por este caso.
+
+Resultado esperado:
+Una sesión STAFF no puede ejecutar una operación exclusiva de clientes. La venta permanece PENDIENTE y no se modifica el inventario.
+
+Resultado observado:
+La API rechazó la sesión STAFF con 403 Forbidden. La venta permaneció PENDIENTE, XXS permaneció en 2, XS permaneció en 0 y el conteo de movimientos permaneció en 12.

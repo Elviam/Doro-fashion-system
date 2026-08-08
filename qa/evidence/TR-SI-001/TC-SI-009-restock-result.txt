@@ -1,0 +1,28 @@
+﻿Caso: TC-SI-009
+Venta ID: cmsh17rbu0005ckx0dyb4azef
+Pedido: PED-MSH17RBT
+Producto: Vestido negro
+Producto ID: cmrvkg97q0001ckr87t6oxr3s
+Variante: XS
+Cantidad vendida: 1
+
+Estado antes: PAGADO
+Estado después: CANCELADO
+Motivo de cancelación: Cancelación de prueba TC-SI-009
+
+Stock XS antes de cancelar: 0
+Stock XS después de cancelar: 1
+
+Movimientos antes: 11
+Movimientos después: 12
+
+Movimiento creado:
+Tipo: ENTRADA
+Cantidad: 1
+Motivo: CANCELACION VENTA PED-MSH17RBT - Talla XS
+
+Resultado esperado:
+La cancelación de una venta PAGADA repone exactamente la cantidad vendida y crea una ENTRADA de inventario.
+
+Resultado observado:
+La venta cambió a CANCELADO, el stock XS aumentó de 0 a 1 y se creó una ENTRADA de cantidad 1.

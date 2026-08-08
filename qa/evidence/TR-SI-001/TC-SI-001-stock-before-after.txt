@@ -1,0 +1,16 @@
+Caso: TC-SI-001
+Producto: Vestido negro
+Producto ID: cmrvkg97q0001ckr87t6oxr3s
+Variante: M
+Variante ID: cmrvqq4ls0009ckqk52q1iy2o
+Venta ID: cmsgzreso0001ckx047p46nqx
+Pedido: PED-MSGZRESN
+
+Stock antes de crear la venta: 2
+Stock después de crear la venta: 2
+
+Resultado esperado:
+El stock de la talla M no cambia mientras la venta permanece PENDIENTE.
+
+Resultado observado:
+El stock permaneció en 2.

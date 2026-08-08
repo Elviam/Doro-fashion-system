@@ -1,0 +1,19 @@
+﻿Caso: TC-SI-007
+Venta ID: cmsh17rbu0005ckx0dyb4azef
+Pedido: PED-MSH17RBT
+Producto: Vestido negro
+Producto ID: cmrvkg97q0001ckr87t6oxr3s
+Variante: XS
+Cantidad vendida: 1
+
+Movimiento ID: cmsh1ar980009ckx07t7iktwq
+Tipo: SALIDA
+Cantidad del movimiento: 1
+Motivo: VENTA PED-MSH17RBT - Talla XS
+CreatedAt: 2026-08-06T04:47:02.013Z
+
+Resultado esperado:
+El pago genera un único movimiento SALIDA asociado al producto, pedido, talla y cantidad vendidos.
+
+Resultado observado:
+Se encontró un movimiento SALIDA de cantidad 1, asociado al pedido PED-MSH17RBT y a la talla XS.

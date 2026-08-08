@@ -1,0 +1,32 @@
+﻿Caso: TC-SI-012
+Venta ID: cmsimew9z000nck5shc1fhpse
+Pedido: PED-MSIMEW9X
+Producto: Vestido negro
+Producto ID: cmrvkg97q0001ckr87t6oxr3s
+
+Artículos de la venta:
+- XXS x1
+- XS x1
+
+Estado antes del pago: PENDIENTE
+Estado después del pago rechazado: PENDIENTE
+
+Stock preparado antes del pago:
+- XXS: 2
+- XS: 0
+
+Stock después del pago rechazado:
+- XXS: 2
+- XS: 0
+
+Movimientos antes: 12
+Movimientos después: 12
+
+HTTP: 409 Conflict
+Mensaje: No hay stock suficiente para Vestido negro en talla XS
+
+Resultado esperado:
+Al fallar uno de los artículos por stock insuficiente, la operación completa debe revertirse. Ninguna variante debe conservar descuentos parciales y no deben generarse movimientos de inventario.
+
+Resultado observado:
+El pago fue rechazado por falta de stock en XS. XXS permaneció en 2, XS permaneció en 0, la venta continuó PENDIENTE y el conteo de movimientos permaneció en 12. No hubo cambios parciales.

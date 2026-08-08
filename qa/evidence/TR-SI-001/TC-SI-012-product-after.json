@@ -1,0 +1,34 @@
+﻿{
+  "item": {
+    "id": "cmrvkg97q0001ckr87t6oxr3s",
+    "sku": "SKU-531805",
+    "nombre": "Vestido negro",
+    "descripcion": "Vestido negro de coctel",
+    "categoria": "Vestidos",
+    "departamento": "Dama",
+    "unidad": "Pieza",
+    "precioVenta": 688,
+    "stock": 3,
+    "stockMinimo": 2,
+    "stockIdeal": 5,
+    "stockMaximo": 8,
+    "inventario": [
+      {
+        "id": "cmrvkg97q0002ckr8nocepmcd",
+        "talla": "XXS",
+        "stock": 2
+      },
+      {
+        "id": "cmrvqq4ls0009ckqk52q1iy2o",
+        "talla": "M",
+        "stock": 1
+      },
+      {
+        "id": "cmrvqq4f90005ckqkb5je3yzn",
+        "talla": "XS",
+        "stock": 0
+      }
+    ],
+    "activo": true
+  }
+}

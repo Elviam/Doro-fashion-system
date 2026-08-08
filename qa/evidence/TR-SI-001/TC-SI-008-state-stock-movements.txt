@@ -1,0 +1,23 @@
+﻿Caso: TC-SI-008
+Venta ID: cmsh6coa1000bckx07wvyfl24
+Pedido: PED-MSH6CO9U
+Producto: Vestido negro
+Producto ID: cmrvkg97q0001ckr87t6oxr3s
+Variante: M
+Cantidad de la venta: 2
+
+Estado antes: PENDIENTE
+Estado después: CANCELADO
+Motivo de cancelación: Cancelación de prueba TC-SI-008
+
+Stock M antes: 1
+Stock M después: 1
+
+Movimientos antes: 11
+Movimientos después: 11
+
+Resultado esperado:
+La venta pendiente cambia a CANCELADO sin aumentar ni disminuir el inventario y sin crear movimientos.
+
+Resultado observado:
+La API respondió correctamente. La venta quedó CANCELADO, el motivo fue persistido, el stock M permaneció en 1 y el conteo de movimientos permaneció en 11.

@@ -1,0 +1,26 @@
+﻿Caso: TC-SI-005
+Producto: Vestido negro
+Producto ID: cmrvkg97q0001ckr87t6oxr3s
+Variante: XS
+Variante ID: cmrvqq4f90005ckqkb5je3yzn
+Venta ID: cmsh81m3y000dck5s0h61rzz6
+Pedido: PED-MSH81M3X
+
+Cantidad solicitada: 1
+
+Preparación del dato:
+El stock de la variante XS se estableció en 0 directamente desde Prisma Studio para preparar el escenario controlado de prueba.
+
+Stock XS antes del pago: 0
+Stock XS después del intento de pago: 0
+
+Movimientos antes del pago: 11
+Movimientos después del pago: 11
+
+Estado final de la venta: PENDIENTE
+
+Resultado esperado:
+El pago es rechazado porque la variante tiene stock 0. La venta permanece PENDIENTE, el stock no cambia y no se crea ningún movimiento.
+
+Resultado observado:
+La API respondió 409 Conflict. La venta permaneció PENDIENTE, el stock XS permaneció en 0 y el conteo de movimientos permaneció en 11.

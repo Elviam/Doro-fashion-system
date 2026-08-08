@@ -1,0 +1,30 @@
+﻿Caso: TC-SI-016
+Venta ID: cmsh17rbu0005ckx0dyb4azef
+Pedido: PED-MSH17RBT
+Producto: Vestido negro
+Producto ID: cmrvkg97q0001ckr87t6oxr3s
+Variante: XS
+
+HTTP: 400 Bad Request
+Mensaje: Este pedido ya fue procesado
+
+Estado final de la venta: CANCELADO
+
+Stock XS antes del intento: 0
+Stock XS después del intento: 0
+
+Verificación de movimientos:
+No se creó una nueva SALIDA asociada al pedido PED-MSH17RBT después del intento de pago.
+
+Movimientos conocidos relacionados con PED-MSH17RBT:
+- VENTA PED-MSH17RBT - Talla XS
+- CANCELACION VENTA PED-MSH17RBT - Talla XS, createdAt 2026-08-07T04:32:11.786Z
+
+El movimiento más reciente del producto corresponde a otro pedido:
+- VENTA PED-MSIOYQZ2 - Talla XXS, createdAt 2026-08-07T08:38:14.109Z
+
+Resultado esperado:
+Una venta CANCELADO no puede volver a procesarse como PAGADO. La API debe rechazar el intento, mantener la venta CANCELADO, no reducir el stock y no crear una nueva SALIDA.
+
+Resultado observado:
+La API respondió 400 Bad Request con "Este pedido ya fue procesado". La venta permaneció CANCELADO, el stock XS permaneció en 0 y no se encontró una nueva SALIDA asociada a PED-MSH17RBT.

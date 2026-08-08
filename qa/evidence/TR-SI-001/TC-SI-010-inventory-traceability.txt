@@ -1,0 +1,27 @@
+﻿Caso: TC-SI-010
+Venta ID: cmsh17rbu0005ckx0dyb4azef
+Pedido: PED-MSH17RBT
+Producto: Vestido negro
+Producto ID: cmrvkg97q0001ckr87t6oxr3s
+Variante: XS
+Cantidad vendida: 1
+
+Movimiento de salida previo:
+ID: cmsh1ar980009ckx07t7iktwq
+Tipo: SALIDA
+Cantidad: 1
+Motivo: VENTA PED-MSH17RBT - Talla XS
+
+Movimiento de reposición:
+ID: cmsig7j0q000jck5s0qcxoxke
+Product ID: cmrvkg97q0001ckr87t6oxr3s
+Tipo: ENTRADA
+Cantidad: 1
+Motivo: CANCELACION VENTA PED-MSH17RBT - Talla XS
+CreatedAt: 2026-08-07T04:32:11.786Z
+
+Resultado esperado:
+La cancelación genera exactamente una ENTRADA con el producto y cantidad correctos, cuyo motivo contiene el pedido y la talla. La SALIDA original permanece registrada.
+
+Resultado observado:
+Se encontró una única ENTRADA de cantidad 1 para el producto correcto, asociada al pedido PED-MSH17RBT y a la talla XS. La SALIDA previa permanece registrada.
