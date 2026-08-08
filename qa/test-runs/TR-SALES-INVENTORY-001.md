@@ -1,33 +1,33 @@
-﻿# Registro de ejecuciÃ³n â€” Ventas e inventario
+# Registro de ejecución — Ventas e inventario
 
-## IdentificaciÃ³n
+## Identificación
 
 | Campo | Valor |
 |---|---|
-| ID de ejecuciÃ³n | TR-SI-001 |
+| ID de ejecución | TR-SI-001 |
 | Suite | Ventas e inventario |
 | Caso | TC-SI-001 |
 | Rama bajo prueba | `feature/erp-refactor` |
 | Commit bajo prueba | `10c0dc9` |
-| Fecha de preparaciÃ³n | 4 de agosto de 2026 |
-| Fecha de ejecuciÃ³n | 5 de agosto de 2026 |
+| Fecha de preparación | 4 de agosto de 2026 |
+| Fecha de ejecución | 5 de agosto de 2026 |
 | Ambiente | Desarrollo local con backend y base de datos local |
-| Ejecutor | Elvia GutiÃ©rrez GarcÃ­a |
+| Ejecutor | Elvia Gutiérrez García |
 | Estado | PASS |
 
 ## Objetivo
 
-Crear una venta vÃ¡lida y comprobar que queda en estado `PENDIENTE` sin descontar `ProductVariant.stock` y sin crear registros en `InventoryMovement`.
+Crear una venta válida y comprobar que queda en estado `PENDIENTE` sin descontar `ProductVariant.stock` y sin crear registros en `InventoryMovement`.
 
 ## Precondiciones
 
 - Backend y base de datos del ambiente de desarrollo o QA disponibles.
-- VersiÃ³n bajo prueba identificada por la rama y el commit registrados.
+- Versión bajo prueba identificada por la rama y el commit registrados.
 - `CLIENTE_A` activo, autenticado como cuenta `CLIENT` con rol efectivo `CLIENTE`.
 - `PRODUCTO_A` activo y con `VARIANTE_A_M` disponible.
 - Cantidad solicitada entera, igual o mayor que uno y no mayor que el stock de la variante.
-- DirecciÃ³n sintÃ©tica vÃ¡lida.
-- MÃ©todo de pago `tarjeta` u `oxxo`.
+- Dirección sintética válida.
+- Método de pago `tarjeta` u `oxxo`.
 - Stock inicial y conteo inicial de movimientos registrados antes de crear la venta.
 
 Estado de las precondiciones: confirmado.
@@ -35,33 +35,33 @@ Estado de las precondiciones: confirmado.
 
 ## Datos utilizados
 
-| Dato | CondiciÃ³n | CÃ³mo obtenerlo | Valor encontrado | Listo |
+| Dato | Condición | Cómo obtenerlo | Valor encontrado | Listo |
 |---|---|---|---|---|
-| `CLIENTE_A` | Cliente activo y autenticado | SesiÃ³n del cliente utilizada en Postman | `profile_cmrockb1o0003ckv8tazaeqni` | SÃ­ |
-| `PRODUCTO_A` | Producto activo con variante talla `M` disponible | `GET /api/products/cmrvkg97q0001ckr87t6oxr3s` | `cmrvkg97q0001ckr87t6oxr3s` â€” Vestido negro | SÃ­ |
-| `VARIANTE_A_M` | Variante talla `M` con stock suficiente | Respuesta de `GET /api/products/:id` | `cmrvqq4ls0009ckqk52q1iy2o` | SÃ­ |
-| DirecciÃ³n vÃ¡lida | DirecciÃ³n sintÃ©tica vÃ¡lida para la prueba | Body enviado en Postman | Calle Prueba 124, Centro, LeÃ³n, Guanajuato, CP 37000 | SÃ­ |
-| Cantidad permitida | Entero igual o mayor que 1 y no superior al stock disponible | Body enviado en Postman | 1 | SÃ­ |
-| MÃ©todo de pago vÃ¡lido | `tarjeta` u `oxxo` | Body enviado en Postman | `tarjeta` | SÃ­ |
-| Stock inicial | Stock de la talla `M` inmediatamente antes de crear la venta | `GET /api/products/cmrvkg97q0001ckr87t6oxr3s` | 2 | SÃ­ |
-| Conteo inicial de movimientos | Movimientos de inventario asociados al producto antes de crear la venta | Prisma Studio, filtro por `productId` | 8 | SÃ­ |
+| `CLIENTE_A` | Cliente activo y autenticado | Sesión del cliente utilizada en Postman | `profile_cmrockb1o0003ckv8tazaeqni` | Sí |
+| `PRODUCTO_A` | Producto activo con variante talla `M` disponible | `GET /api/products/cmrvkg97q0001ckr87t6oxr3s` | `cmrvkg97q0001ckr87t6oxr3s` — Vestido negro | Sí |
+| `VARIANTE_A_M` | Variante talla `M` con stock suficiente | Respuesta de `GET /api/products/:id` | `cmrvqq4ls0009ckqk52q1iy2o` | Sí |
+| Dirección válida | Dirección sintética válida para la prueba | Body enviado en Postman | Calle Prueba 124, Centro, León, Guanajuato, CP 37000 | Sí |
+| Cantidad permitida | Entero igual o mayor que 1 y no superior al stock disponible | Body enviado en Postman | 1 | Sí |
+| Método de pago válido | `tarjeta` u `oxxo` | Body enviado en Postman | `tarjeta` | Sí |
+| Stock inicial | Stock de la talla `M` inmediatamente antes de crear la venta | `GET /api/products/cmrvkg97q0001ckr87t6oxr3s` | 2 | Sí |
+| Conteo inicial de movimientos | Movimientos de inventario asociados al producto antes de crear la venta | Prisma Studio, filtro por `productId` | 8 | Sí |
 
 ## Contrato confirmado
 
 - Ruta: `POST /api/ventas`.
-- AutenticaciÃ³n: encabezado Bearer de una cuenta cliente activa. `authenticate` carga la cuenta y `requireClientAccount` exige `accountType = CLIENT` y rol `CLIENTE`.
-- ValidaciÃ³n: `createVentaSchema` exige `cliente`, `metodoPago` e `items`; cada artÃ­culo requiere `productoId`, `talla` y una `cantidad` entera mÃ­nima de uno.
-- Servicio: `VentasService.create` vuelve a obtener producto, variante y precio desde el catÃ¡logo; verifica producto activo y stock suficiente.
-- Persistencia: `VentasRepository.create` ejecuta un `prisma.sale.create` con creaciÃ³n anidada de `SaleItem`.
+- Autenticación: encabezado Bearer de una cuenta cliente activa. `authenticate` carga la cuenta y `requireClientAccount` exige `accountType = CLIENT` y rol `CLIENTE`.
+- Validación: `createVentaSchema` exige `cliente`, `metodoPago` e `items`; cada artículo requiere `productoId`, `talla` y una `cantidad` entera mínima de uno.
+- Servicio: `VentasService.create` vuelve a obtener producto, variante y precio desde el catálogo; verifica producto activo y stock suficiente.
+- Persistencia: `VentasRepository.create` ejecuta un `prisma.sale.create` con creación anidada de `SaleItem`.
 - Estado inicial: `PENDIENTE`.
 - Respuesta correcta: HTTP `201`, mensaje `Venta registrada correctamente` y la venta en `item`.
-- La creaciÃ³n no actualiza `ProductVariant` ni crea `InventoryMovement`. Esos efectos se encuentran en la transiciÃ³n posterior a `PAGADO`.
+- La creación no actualiza `ProductVariant` ni crea `InventoryMovement`. Esos efectos se encuentran en la transición posterior a `PAGADO`.
 
 ## Nombres reales de tablas y columnas
 
 Confirmados en `backend/prisma/schema.prisma`:
 
-| Modelo Prisma | Tabla | Columnas usadas en esta ejecuciÃ³n |
+| Modelo Prisma | Tabla | Columnas usadas en esta ejecución |
 |---|---|---|
 | `Client` | `clients` | `id`, `nombre`, `email`, `activo` |
 | `Product` | `products` | `id`, `sku`, `nombre`, `precio_venta`, `activo` |
@@ -126,7 +126,7 @@ WHERE id = '<SALE_ID>'
   AND client_id = '<CLIENT_ID>';
 ```
 
-### Comprobar los artÃ­culos de la venta
+### Comprobar los artículos de la venta
 
 ```sql
 SELECT
@@ -170,7 +170,7 @@ Para aprobar el caso, `movement_count_after` debe ser igual a `movement_count_be
 
 ## Solicitud API preparada
 
-MÃ©todo y URL relativa:
+Método y URL relativa:
 
 ```http
 POST /api/ventas
@@ -219,52 +219,52 @@ Resultado:
 - Pedido: `PED-MSGZRESN`
 - Estado: `PENDIENTE`
 - Stock antes: `2`
-- Stock despuÃ©s: `2`
+- Stock después: `2`
 - Movimientos antes: `8`
-- Movimientos despuÃ©s: `8`
+- Movimientos después: `8`
 - Comportamiento inesperado: ninguno
 
 ## Aislamiento de TC-SI-001
 
-La interfaz no permite observar de forma segura la venta pendiente como Ãºnico paso: `Checkout.confirmarPago` llama primero a `POST /ventas`, espera y despuÃ©s llama automÃ¡ticamente a `POST /ventas/:id/simulate-payment`.
+La interfaz no permite observar de forma segura la venta pendiente como único paso: `Checkout.confirmarPago` llama primero a `POST /ventas`, espera y después llama automáticamente a `POST /ventas/:id/simulate-payment`.
 
-Para ejecutar solamente `TC-SI-001`, usar una llamada manual al endpoint con una herramienta REST o cliente HTTP local y enviar Ãºnicamente `POST /api/ventas`. No llamar a `simulate-payment`, no completar el flujo de checkout y no modificar el frontend.
+Para ejecutar solamente `TC-SI-001`, usar una llamada manual al endpoint con una herramienta REST o cliente HTTP local y enviar únicamente `POST /api/ventas`. No llamar a `simulate-payment`, no completar el flujo de checkout y no modificar el frontend.
 
-## GuÃ­a de ejecuciÃ³n manual
+## Guía de ejecución manual
 
 1. Confirmar rama `feature/erp-refactor`, commit `10c0dc9`, ambiente y ejecutor.
 2. Autenticar `CLIENTE_A` sin copiar el token completo al registro; confirmar su `id`, `accountType`, rol y estado activo mediante `GET /api/auth/me`.
-3. Seleccionar `PRODUCTO_A` y `VARIANTE_A_M`; registrar `<PRODUCT_ID>`, `<VARIANT_ID>`, cantidad y datos sintÃ©ticos de direcciÃ³n.
+3. Seleccionar `PRODUCTO_A` y `VARIANTE_A_M`; registrar `<PRODUCT_ID>`, `<VARIANT_ID>`, cantidad y datos sintéticos de dirección.
 4. Ejecutar las consultas previas para registrar `ProductVariant.stock` y `movement_count_before`.
 5. Enviar una sola solicitud `POST /api/ventas` con el body preparado. No enviar la solicitud de pago simulado.
-6. Guardar el cÃ³digo HTTP y el cuerpo completo de la respuesta, ocultando cualquier dato sensible.
-7. Tomar `item.id` de la respuesta como `<SALE_ID>` y ejecutar las consultas de venta y artÃ­culos.
+6. Guardar el código HTTP y el cuerpo completo de la respuesta, ocultando cualquier dato sensible.
+7. Tomar `item.id` de la respuesta como `<SALE_ID>` y ejecutar las consultas de venta y artículos.
 8. Ejecutar nuevamente las consultas de variante y movimientos.
-9. Comparar: venta `PENDIENTE`, artÃ­culo correcto, stock anterior igual al posterior y conteo de movimientos anterior igual al posterior.
-10. Guardar la evidencia con los nombres propuestos y devolver Ãºnicamente la informaciÃ³n mÃ­nima indicada abajo para clasificar el caso.
+9. Comparar: venta `PENDIENTE`, artículo correcto, stock anterior igual al posterior y conteo de movimientos anterior igual al posterior.
+10. Guardar la evidencia con los nombres propuestos y devolver únicamente la información mínima indicada abajo para clasificar el caso.
 
-## InformaciÃ³n necesaria para clasificar el caso
+## Información necesaria para clasificar el caso
 
-- CÃ³digo HTTP recibido.
+- Código HTTP recibido.
 - Cuerpo de respuesta sanitizado, sin token ni datos personales reales.
 - Identificador de la venta creado o una referencia enmascarada que permita correlacionar las consultas.
 - Valor de `Sale.estado` persistido.
 - Stock anterior y posterior de `VARIANTE_A_M`.
 - Conteo de movimientos anterior y posterior de `PRODUCTO_A`.
-- ConfirmaciÃ³n de que el `SaleItem` conserva producto, talla y cantidad esperados.
+- Confirmación de que el `SaleItem` conserva producto, talla y cantidad esperados.
 - Cualquier mensaje o efecto inesperado.
 
 ## Resultado esperado
 
-HTTP `201`; una venta y su artÃ­culo persistidos; `Sale.estado = PENDIENTE`; stock y movimientos sin cambios.
+HTTP `201`; una venta y su artículo persistidos; `Sale.estado = PENDIENTE`; stock y movimientos sin cambios.
 
 ## Resultado obtenido
 
-La venta fue creada correctamente con HTTP `201 Created` y quedÃ³ en estado `PENDIENTE`.
+La venta fue creada correctamente con HTTP `201 Created` y quedó en estado `PENDIENTE`.
 
-El stock de la talla `M` permaneciÃ³ en `2` antes y despuÃ©s de crear la venta.
+El stock de la talla `M` permaneció en `2` antes y después de crear la venta.
 
-El conteo de movimientos de inventario permaneciÃ³ en `8` antes y despuÃ©s de crear la venta, por lo que no se generÃ³ ningÃºn movimiento de inventario durante este paso.
+El conteo de movimientos de inventario permaneció en `8` antes y después de crear la venta, por lo que no se generó ningún movimiento de inventario durante este paso.
 
 ## Evidencias
 
@@ -278,13 +278,13 @@ Ninguno
 
 ---
 
-# Registro de ejecuciÃ³n â€” TC-SI-002
+# Registro de ejecución — TC-SI-002
 
-## IdentificaciÃ³n
+## Identificación
 
 | Campo | Valor |
 |---|---|
-| ID de ejecuciÃ³n | TR-SI-001 |
+| ID de ejecución | TR-SI-001 |
 | Suite | Ventas e inventario |
 | Caso | TC-SI-002 |
 | Estado | PASS |
@@ -305,7 +305,7 @@ El pago simulado fue confirmado correctamente.
 | Talla | `M` |
 | Cantidad | 1 |
 | Stock antes | 3 |
-| Stock despuÃ©s | 2 |
+| Stock después | 2 |
 | Movimiento | `SALIDA` |
 | Cantidad del movimiento | 1 |
 | createdAt del movimiento | `2026-08-06T02:18:46.693Z` |
@@ -319,20 +319,20 @@ El pago simulado fue confirmado correctamente.
 
 ---
 
-# Registro de ejecuciÃ³n â€” TC-SI-003
+# Registro de ejecución — TC-SI-003
 
-## IdentificaciÃ³n
+## Identificación
 
 | Campo | Valor |
 |---|---|
-| ID de ejecuciÃ³n | TR-SI-001 |
+| ID de ejecución | TR-SI-001 |
 | Suite | Ventas e inventario |
 | Caso | TC-SI-003 |
 | Rama bajo prueba | `feature/erp-refactor` |
 | Commit bajo prueba | `10c0dc9` |
-| Fecha de ejecuciÃ³n | 5 de agosto de 2026 |
+| Fecha de ejecución | 5 de agosto de 2026 |
 | Ambiente | Desarrollo local con backend y base de datos local |
-| Ejecutor | Elvia GutiÃ©rrez GarcÃ­a |
+| Ejecutor | Elvia Gutiérrez García |
 | Estado | PASS |
 
 ## Resultado obtenido
@@ -341,7 +341,7 @@ La venta fue creada correctamente en estado `PENDIENTE` y posteriormente el pago
 
 | Campo | Valor |
 |---|---|
-| HTTP creaciÃ³n | `201 Created` |
+| HTTP creación | `201 Created` |
 | HTTP pago | `200 OK` |
 | Mensaje de pago | Pago simulado confirmado correctamente |
 | Venta ID | `cmsh17rbu0005ckx0dyb4azef` |
@@ -352,9 +352,9 @@ La venta fue creada correctamente en estado `PENDIENTE` y posteriormente el pago
 | Variante | `XS` |
 | Cantidad | 1 |
 | Stock antes | 1 |
-| Stock despuÃ©s | 0 |
+| Stock después | 0 |
 | Movimientos antes | 8 |
-| Movimientos despuÃ©s | 9 |
+| Movimientos después | 9 |
 | Movimiento creado | `SALIDA` |
 | Cantidad del movimiento | 1 |
 | Comportamiento inesperado | Ninguno |
@@ -371,29 +371,29 @@ La venta fue creada correctamente en estado `PENDIENTE` y posteriormente el pago
 Ninguno
 ---
 
-# Registro de ejecuciÃ³n â€” TC-SI-004
+# Registro de ejecución — TC-SI-004
 
-## IdentificaciÃ³n
+## Identificación
 
 | Campo | Valor |
 |---|---|
-| ID de ejecuciÃ³n | TR-SI-001 |
+| ID de ejecución | TR-SI-001 |
 | Suite | Ventas e inventario |
 | Caso | TC-SI-004 |
 | Rama bajo prueba | `feature/erp-refactor` |
 | Commit bajo prueba | `10c0dc9` |
-| Fecha de ejecuciÃ³n | 6 de agosto de 2026 |
+| Fecha de ejecución | 6 de agosto de 2026 |
 | Ambiente | Desarrollo local con backend y base de datos local |
-| Ejecutor | Elvia GutiÃ©rrez GarcÃ­a |
+| Ejecutor | Elvia Gutiérrez García |
 | Estado | PASS |
 
 ## Resultado obtenido
 
-La venta fue creada cuando existÃ­a stock suficiente. Antes de confirmar el pago, el stock de la talla `M` fue reducido a una unidad, quedando por debajo de las dos unidades solicitadas.
+La venta fue creada cuando existía stock suficiente. Antes de confirmar el pago, el stock de la talla `M` fue reducido a una unidad, quedando por debajo de las dos unidades solicitadas.
 
 | Campo | Valor |
 |---|---|
-| HTTP creaciÃ³n | `201 Created` |
+| HTTP creación | `201 Created` |
 | Venta ID | `cmsh6coa1000bckx07wvyfl24` |
 | Pedido | `PED-MSH6CO9U` |
 | Cantidad solicitada | 2 |
@@ -402,8 +402,8 @@ La venta fue creada cuando existÃ­a stock suficiente. Antes de confirmar el pa
 | HTTP del pago | `409 Conflict` |
 | Mensaje | No hay stock suficiente para Vestido negro en talla M |
 | Estado final de la venta | `PENDIENTE` |
-| Stock despuÃ©s del pago | 1 |
-| Movimientos despuÃ©s del pago | 10 |
+| Stock después del pago | 1 |
+| Movimientos después del pago | 10 |
 | Efectos parciales | Ninguno |
 | Comportamiento inesperado | Ninguno |
 
@@ -420,29 +420,29 @@ Ninguno
 
 ---
 
-# Registro de ejecuciÃ³n â€” TC-SI-005
+# Registro de ejecución — TC-SI-005
 
-## IdentificaciÃ³n
+## Identificación
 
 | Campo | Valor |
 |---|---|
-| ID de ejecuciÃ³n | TR-SI-001 |
+| ID de ejecución | TR-SI-001 |
 | Suite | Ventas e inventario |
 | Caso | TC-SI-005 |
 | Rama bajo prueba | `feature/erp-refactor` |
 | Commit bajo prueba | `10c0dc9` |
-| Fecha de ejecuciÃ³n | 6 de agosto de 2026 |
+| Fecha de ejecución | 6 de agosto de 2026 |
 | Ambiente | Desarrollo local con backend y base de datos local |
-| Ejecutor | Elvia GutiÃ©rrez GarcÃ­a |
+| Ejecutor | Elvia Gutiérrez García |
 | Estado | PASS |
 
 ## Resultado obtenido
 
-Se preparÃ³ una venta pendiente para la variante `XS`. Antes de confirmar el pago, el stock de la variante se estableciÃ³ en `0` mediante Prisma Studio como dato controlado de prueba.
+Se preparó una venta pendiente para la variante `XS`. Antes de confirmar el pago, el stock de la variante se estableció en `0` mediante Prisma Studio como dato controlado de prueba.
 
 | Campo | Valor |
 |---|---|
-| HTTP creaciÃ³n | `201 Created` |
+| HTTP creación | `201 Created` |
 | Venta ID | `cmsh81m3y000dck5s0h61rzz6` |
 | Pedido | `PED-MSH81M3X` |
 | Variante | `XS` |
@@ -452,8 +452,8 @@ Se preparÃ³ una venta pendiente para la variante `XS`. Antes de confirmar el p
 | HTTP del pago | `409 Conflict` |
 | Mensaje | No hay stock suficiente para Vestido negro en talla XS |
 | Estado final de la venta | `PENDIENTE` |
-| Stock despuÃ©s del pago | 0 |
-| Movimientos despuÃ©s del pago | 11 |
+| Stock después del pago | 0 |
+| Movimientos después del pago | 11 |
 | Efectos parciales | Ninguno |
 | Comportamiento inesperado | Ninguno |
 
@@ -467,7 +467,7 @@ Se preparÃ³ una venta pendiente para la variante `XS`. Antes de confirmar el p
 
 ## Observaciones
 
-El stock cero se preparÃ³ directamente en Prisma Studio porque la interfaz de inventario no permitiÃ³ registrar el valor final `0`. Se requiere revisar si el campo representa stock final o cantidad de movimiento antes de clasificar este comportamiento como defecto.
+El stock cero se preparó directamente en Prisma Studio porque la interfaz de inventario no permitió registrar el valor final `0`. Se requiere revisar si el campo representa stock final o cantidad de movimiento antes de clasificar este comportamiento como defecto.
 
 ## Defecto relacionado
 
@@ -475,25 +475,25 @@ Ninguno
 
 ---
 
-# Registro de ejecuciÃ³n â€” TC-SI-006
+# Registro de ejecución — TC-SI-006
 
-## IdentificaciÃ³n
+## Identificación
 
 | Campo | Valor |
 |---|---|
-| ID de ejecuciÃ³n | TR-SI-001 |
+| ID de ejecución | TR-SI-001 |
 | Suite | Ventas e inventario |
 | Caso | TC-SI-006 |
 | Rama bajo prueba | `feature/erp-refactor` |
 | Commit bajo prueba | `10c0dc9` |
-| Fecha de ejecuciÃ³n | 6 de agosto de 2026 |
+| Fecha de ejecución | 6 de agosto de 2026 |
 | Ambiente | Desarrollo local con backend y base de datos local |
-| Ejecutor | Elvia GutiÃ©rrez GarcÃ­a |
+| Ejecutor | Elvia Gutiérrez García |
 | Estado | PASS |
 
 ## Resultado obtenido
 
-Se intentÃ³ confirmar nuevamente el pago de una venta que ya se encontraba en estado `PAGADO`.
+Se intentó confirmar nuevamente el pago de una venta que ya se encontraba en estado `PAGADO`.
 
 | Campo | Valor |
 |---|---|
@@ -502,13 +502,13 @@ Se intentÃ³ confirmar nuevamente el pago de una venta que ya se encontraba en 
 | Venta ID | `cmsh17rbu0005ckx0dyb4azef` |
 | Pedido | `PED-MSH17RBT` |
 | Estado antes | `PAGADO` |
-| Estado despuÃ©s | `PAGADO` |
+| Estado después | `PAGADO` |
 | Producto ID | `cmrvkg97q0001ckr87t6oxr3s` |
 | Variante | `XS` |
 | Stock antes | 0 |
-| Stock despuÃ©s | 0 |
+| Stock después | 0 |
 | Movimientos antes | 11 |
-| Movimientos despuÃ©s | 11 |
+| Movimientos después | 11 |
 | Movimiento adicional | Ninguno |
 | Comportamiento inesperado | Ninguno |
 
@@ -526,25 +526,25 @@ Ninguno
 
 ---
 
-# Registro de ejecuciÃ³n â€” TC-SI-007
+# Registro de ejecución — TC-SI-007
 
-## IdentificaciÃ³n
+## Identificación
 
 | Campo | Valor |
 |---|---|
-| ID de ejecuciÃ³n | TR-SI-001 |
+| ID de ejecución | TR-SI-001 |
 | Suite | Ventas e inventario |
 | Caso | TC-SI-007 |
 | Rama bajo prueba | `feature/erp-refactor` |
 | Commit bajo prueba | `10c0dc9` |
-| Fecha de ejecuciÃ³n | 6 de agosto de 2026 |
+| Fecha de ejecución | 6 de agosto de 2026 |
 | Ambiente | Desarrollo local con backend y base de datos local |
-| Ejecutor | Elvia GutiÃ©rrez GarcÃ­a |
+| Ejecutor | Elvia Gutiérrez García |
 | Estado | PASS |
 
 ## Resultado obtenido
 
-Se verificÃ³ el movimiento de inventario generado por el pago de la venta correspondiente al pedido `PED-MSH17RBT`.
+Se verificó el movimiento de inventario generado por el pago de la venta correspondiente al pedido `PED-MSH17RBT`.
 
 | Campo | Valor |
 |---|---|
@@ -571,25 +571,25 @@ Ninguno
 
 ---
 
-# Registro de ejecuciÃ³n â€” TC-SI-008
+# Registro de ejecución — TC-SI-008
 
-## IdentificaciÃ³n
+## Identificación
 
 | Campo | Valor |
 |---|---|
-| ID de ejecuciÃ³n | TR-SI-001 |
+| ID de ejecución | TR-SI-001 |
 | Suite | Ventas e inventario |
 | Caso | TC-SI-008 |
 | Rama bajo prueba | `feature/erp-refactor` |
 | Commit bajo prueba | `10c0dc9` |
-| Fecha de ejecuciÃ³n | 6 de agosto de 2026 |
+| Fecha de ejecución | 6 de agosto de 2026 |
 | Ambiente | Desarrollo local con backend y base de datos local |
-| Ejecutor | Elvia GutiÃ©rrez GarcÃ­a |
+| Ejecutor | Elvia Gutiérrez García |
 | Estado | PASS |
 
 ## Resultado obtenido
 
-Se cancelÃ³ una venta que permanecÃ­a en estado `PENDIENTE`.
+Se canceló una venta que permanecía en estado `PENDIENTE`.
 
 | Campo | Valor |
 |---|---|
@@ -598,14 +598,14 @@ Se cancelÃ³ una venta que permanecÃ­a en estado `PENDIENTE`.
 | Venta ID | `cmsh6coa1000bckx07wvyfl24` |
 | Pedido | `PED-MSH6CO9U` |
 | Estado antes | `PENDIENTE` |
-| Estado despuÃ©s | `CANCELADO` |
-| Motivo | CancelaciÃ³n de prueba TC-SI-008 |
+| Estado después | `CANCELADO` |
+| Motivo | Cancelación de prueba TC-SI-008 |
 | Producto ID | `cmrvkg97q0001ckr87t6oxr3s` |
 | Variante | `M` |
 | Stock antes | 1 |
-| Stock despuÃ©s | 1 |
+| Stock después | 1 |
 | Movimientos antes | 11 |
-| Movimientos despuÃ©s | 11 |
+| Movimientos después | 11 |
 | Movimiento adicional | Ninguno |
 | Comportamiento inesperado | Ninguno |
 
@@ -622,25 +622,25 @@ Ninguno
 
 ---
 
-# Registro de ejecuciÃ³n â€” TC-SI-009
+# Registro de ejecución — TC-SI-009
 
-## IdentificaciÃ³n
+## Identificación
 
 | Campo | Valor |
 |---|---|
-| ID de ejecuciÃ³n | TR-SI-001 |
+| ID de ejecución | TR-SI-001 |
 | Suite | Ventas e inventario |
 | Caso | TC-SI-009 |
 | Rama bajo prueba | `feature/erp-refactor` |
 | Commit bajo prueba | `10c0dc9` |
-| Fecha de ejecuciÃ³n | 6 de agosto de 2026 |
+| Fecha de ejecución | 6 de agosto de 2026 |
 | Ambiente | Desarrollo local con backend y base de datos local |
-| Ejecutor | Elvia GutiÃ©rrez GarcÃ­a |
+| Ejecutor | Elvia Gutiérrez García |
 | Estado | PASS |
 
 ## Resultado obtenido
 
-Se cancelÃ³ una venta que se encontraba en estado `PAGADO`.
+Se canceló una venta que se encontraba en estado `PAGADO`.
 
 | Campo | Valor |
 |---|---|
@@ -649,15 +649,15 @@ Se cancelÃ³ una venta que se encontraba en estado `PAGADO`.
 | Venta ID | `cmsh17rbu0005ckx0dyb4azef` |
 | Pedido | `PED-MSH17RBT` |
 | Estado antes | `PAGADO` |
-| Estado despuÃ©s | `CANCELADO` |
-| Motivo | CancelaciÃ³n de prueba TC-SI-009 |
+| Estado después | `CANCELADO` |
+| Motivo | Cancelación de prueba TC-SI-009 |
 | Producto ID | `cmrvkg97q0001ckr87t6oxr3s` |
 | Variante | `XS` |
 | Cantidad vendida | 1 |
 | Stock antes | 0 |
-| Stock despuÃ©s | 1 |
+| Stock después | 1 |
 | Movimientos antes | 11 |
-| Movimientos despuÃ©s | 12 |
+| Movimientos después | 12 |
 | Movimiento creado | `ENTRADA` |
 | Cantidad del movimiento | 1 |
 | Motivo del movimiento | CANCELACION VENTA PED-MSH17RBT - Talla XS |
@@ -676,25 +676,25 @@ Ninguno
 
 ---
 
-# Registro de ejecuciÃ³n â€” TC-SI-010
+# Registro de ejecución — TC-SI-010
 
-## IdentificaciÃ³n
+## Identificación
 
 | Campo | Valor |
 |---|---|
-| ID de ejecuciÃ³n | TR-SI-001 |
+| ID de ejecución | TR-SI-001 |
 | Suite | Ventas e inventario |
 | Caso | TC-SI-010 |
 | Rama bajo prueba | `feature/erp-refactor` |
 | Commit bajo prueba | `10c0dc9` |
-| Fecha de ejecuciÃ³n | 6 de agosto de 2026 |
+| Fecha de ejecución | 6 de agosto de 2026 |
 | Ambiente | Desarrollo local con backend y base de datos local |
-| Ejecutor | Elvia GutiÃ©rrez GarcÃ­a |
+| Ejecutor | Elvia Gutiérrez García |
 | Estado | PASS |
 
 ## Resultado obtenido
 
-Se verificÃ³ la trazabilidad de inventario generada al cancelar una venta previamente pagada.
+Se verificó la trazabilidad de inventario generada al cancelar una venta previamente pagada.
 
 | Campo | Valor |
 |---|---|
@@ -709,7 +709,7 @@ Se verificÃ³ la trazabilidad de inventario generada al cancelar una venta prev
 | Cantidad del nuevo movimiento | 1 |
 | Motivo | CANCELACION VENTA PED-MSH17RBT - Talla XS |
 | CreatedAt | `2026-08-07T04:32:11.786Z` |
-| SALIDA previa conservada | SÃ­ |
+| SALIDA previa conservada | Sí |
 | Movimientos ENTRADA creados | 1 |
 | Comportamiento inesperado | Ninguno |
 
@@ -724,25 +724,25 @@ Ninguno
 
 ---
 
-# Registro de ejecuciÃ³n â€” TC-SI-011
+# Registro de ejecución — TC-SI-011
 
-## IdentificaciÃ³n
+## Identificación
 
 | Campo | Valor |
 |---|---|
-| ID de ejecuciÃ³n | TR-SI-001 |
+| ID de ejecución | TR-SI-001 |
 | Suite | Ventas e inventario |
 | Caso | TC-SI-011 |
 | Rama bajo prueba | `feature/erp-refactor` |
 | Commit bajo prueba | `10c0dc9` |
-| Fecha de ejecuciÃ³n | 6 de agosto de 2026 |
+| Fecha de ejecución | 6 de agosto de 2026 |
 | Ambiente | Desarrollo local con backend y base de datos local |
-| Ejecutor | Elvia GutiÃ©rrez GarcÃ­a |
+| Ejecutor | Elvia Gutiérrez García |
 | Estado | PASS |
 
 ## Resultado obtenido
 
-Se intentÃ³ cancelar nuevamente una venta que ya se encontraba en estado `CANCELADO`.
+Se intentó cancelar nuevamente una venta que ya se encontraba en estado `CANCELADO`.
 
 | Campo | Valor |
 |---|---|
@@ -751,14 +751,14 @@ Se intentÃ³ cancelar nuevamente una venta que ya se encontraba en estado `CANC
 | Venta ID | `cmsh17rbu0005ckx0dyb4azef` |
 | Pedido | `PED-MSH17RBT` |
 | Estado antes | `CANCELADO` |
-| Estado despuÃ©s | `CANCELADO` |
+| Estado después | `CANCELADO` |
 | Producto ID | `cmrvkg97q0001ckr87t6oxr3s` |
 | Variante | `XS` |
 | Stock antes | 1 |
-| Stock despuÃ©s | 1 |
+| Stock después | 1 |
 | Movimientos antes | 12 |
-| Movimientos despuÃ©s | 12 |
-| Entradas de cancelaciÃ³n para el pedido | 1 |
+| Movimientos después | 12 |
+| Entradas de cancelación para el pedido | 1 |
 | Movimiento adicional | Ninguno |
 | Comportamiento inesperado | Ninguno |
 
@@ -775,25 +775,25 @@ Ninguno
 
 ---
 
-# Registro de ejecuciÃ³n â€” TC-SI-012
+# Registro de ejecución — TC-SI-012
 
-## IdentificaciÃ³n
+## Identificación
 
 | Campo | Valor |
 |---|---|
-| ID de ejecuciÃ³n | TR-SI-001 |
+| ID de ejecución | TR-SI-001 |
 | Suite | Ventas e inventario |
 | Caso | TC-SI-012 |
 | Rama bajo prueba | `feature/erp-refactor` |
 | Commit bajo prueba | `10c0dc9` |
-| Fecha de ejecuciÃ³n | 7 de agosto de 2026 |
+| Fecha de ejecución | 7 de agosto de 2026 |
 | Ambiente | Desarrollo local con backend y base de datos local |
-| Ejecutor | Elvia GutiÃ©rrez GarcÃ­a |
+| Ejecutor | Elvia Gutiérrez García |
 | Estado | PASS |
 
 ## Resultado obtenido
 
-Se intentÃ³ pagar una venta PENDIENTE con dos variantes del mismo producto. XXS tenÃ­a stock suficiente y XS fue preparada con stock insuficiente antes del pago.
+Se intentó pagar una venta PENDIENTE con dos variantes del mismo producto. XXS tenía stock suficiente y XS fue preparada con stock insuficiente antes del pago.
 
 | Campo | Valor |
 |---|---|
@@ -802,16 +802,16 @@ Se intentÃ³ pagar una venta PENDIENTE con dos variantes del mismo producto. XX
 | Venta ID | `cmsimew9z000nck5shc1fhpse` |
 | Pedido | `PED-MSIMEW9X` |
 | Estado antes | `PENDIENTE` |
-| Estado despuÃ©s | `PENDIENTE` |
+| Estado después | `PENDIENTE` |
 | Producto ID | `cmrvkg97q0001ckr87t6oxr3s` |
-| ArtÃ­culo disponible | `XXS x1` |
-| ArtÃ­culo sin stock suficiente | `XS x1` |
+| Artículo disponible | `XXS x1` |
+| Artículo sin stock suficiente | `XS x1` |
 | Stock XXS antes | 2 |
-| Stock XXS despuÃ©s | 2 |
+| Stock XXS después | 2 |
 | Stock XS antes | 0 |
-| Stock XS despuÃ©s | 0 |
+| Stock XS después | 0 |
 | Movimientos antes | 12 |
-| Movimientos despuÃ©s | 12 |
+| Movimientos después | 12 |
 | Movimientos adicionales | Ninguno |
 | Descuento parcial en XXS | No |
 | Comportamiento inesperado | Ninguno |
@@ -830,25 +830,25 @@ Ninguno
 
 ---
 
-# Registro de ejecuciÃ³n â€” TC-SI-013
+# Registro de ejecución — TC-SI-013
 
-## IdentificaciÃ³n
+## Identificación
 
 | Campo | Valor |
 |---|---|
-| ID de ejecuciÃ³n | TR-SI-001 |
+| ID de ejecución | TR-SI-001 |
 | Suite | Ventas e inventario |
 | Caso | TC-SI-013 |
 | Rama bajo prueba | `feature/erp-refactor` |
 | Commit bajo prueba | `10c0dc9` |
-| Fecha de ejecuciÃ³n | 7 de agosto de 2026 |
+| Fecha de ejecución | 7 de agosto de 2026 |
 | Ambiente | Desarrollo local con backend y base de datos local |
-| Ejecutor | Elvia GutiÃ©rrez GarcÃ­a |
+| Ejecutor | Elvia Gutiérrez García |
 | Estado | PASS |
 
 ## Resultado obtenido
 
-Se intentÃ³ pagar una venta perteneciente a CLIENTE_A utilizando el token autenticado de CLIENTE_B.
+Se intentó pagar una venta perteneciente a CLIENTE_A utilizando el token autenticado de CLIENTE_B.
 
 | Campo | Valor |
 |---|---|
@@ -857,15 +857,15 @@ Se intentÃ³ pagar una venta perteneciente a CLIENTE_A utilizando el token aute
 | Venta ID | `cmsimew9z000nck5shc1fhpse` |
 | Pedido | `PED-MSIMEW9X` |
 | Estado antes | `PENDIENTE` |
-| Estado despuÃ©s | `PENDIENTE` |
+| Estado después | `PENDIENTE` |
 | Producto ID | `cmrvkg97q0001ckr87t6oxr3s` |
 | Stock XXS antes | 2 |
-| Stock XXS despuÃ©s | 2 |
+| Stock XXS después | 2 |
 | Stock XS antes | 0 |
-| Stock XS despuÃ©s | 0 |
+| Stock XS después | 0 |
 | Movimientos antes | 12 |
-| Movimientos despuÃ©s | 12 |
-| OperaciÃ³n de inventario | Ninguna |
+| Movimientos después | 12 |
+| Operación de inventario | Ninguna |
 | Comportamiento inesperado | Ninguno |
 
 ## Evidencias
@@ -880,49 +880,49 @@ Ninguno
 
 ---
 
-# Registro de ejecuciÃ³n â€” TC-SI-014
+# Registro de ejecución — TC-SI-014
 
-## IdentificaciÃ³n
+## Identificación
 
 | Campo | Valor |
 |---|---|
-| ID de ejecuciÃ³n | TR-SI-001 |
+| ID de ejecución | TR-SI-001 |
 | Suite | Ventas e inventario |
 | Caso | TC-SI-014 |
 | Rama bajo prueba | `feature/erp-refactor` |
 | Commit de referencia | `10c0dc9` |
-| Fecha de ejecuciÃ³n | 7 de agosto de 2026 |
+| Fecha de ejecución | 7 de agosto de 2026 |
 | Ambiente | Desarrollo local con backend y base de datos local |
-| Ejecutor | Elvia GutiÃ©rrez GarcÃ­a |
+| Ejecutor | Elvia Gutiérrez García |
 | Estado | PASS |
 
 ## Resultado obtenido
 
-Se intentÃ³ ejecutar el pago de una venta de cliente utilizando una sesiÃ³n autenticada de tipo STAFF.
+Se intentó ejecutar el pago de una venta de cliente utilizando una sesión autenticada de tipo STAFF.
 
 | Campo | Valor |
 |---|---|
 | HTTP | `403 Forbidden` |
-| Mensaje | Esta operaciÃ³n es exclusiva para clientes de la tienda |
+| Mensaje | Esta operación es exclusiva para clientes de la tienda |
 | Venta ID | `cmsimew9z000nck5shc1fhpse` |
 | Pedido | `PED-MSIMEW9X` |
-| Tipo de sesiÃ³n | `STAFF` |
+| Tipo de sesión | `STAFF` |
 | Rol | `ADMIN` |
 | Estado antes | `PENDIENTE` |
-| Estado despuÃ©s | `PENDIENTE` |
+| Estado después | `PENDIENTE` |
 | Stock XXS antes | 2 |
-| Stock XXS despuÃ©s | 2 |
+| Stock XXS después | 2 |
 | Stock XS antes | 0 |
-| Stock XS despuÃ©s | 0 |
+| Stock XS después | 0 |
 | Movimientos antes | 12 |
-| Movimientos despuÃ©s | 12 |
+| Movimientos después | 12 |
 | Solicitudes ejecutadas | 2 |
 | Efectos secundarios | Ninguno |
 | Comportamiento inesperado | Ninguno |
 
-## Nota de ejecuciÃ³n
+## Nota de ejecución
 
-Durante la ejecuciÃ³n se corrigieron Ãºnicamente textos de mensajes en `requirepermission.js`. No se modificÃ³ la lÃ³gica de autorizaciÃ³n evaluada por este caso.
+Durante la ejecución se corrigieron únicamente textos de mensajes en `requirePermissions.js`. No se modificó la lógica de autorización evaluada por este caso.
 
 ## Evidencias
 

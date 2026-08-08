@@ -12,7 +12,7 @@ D’oro se utiliza como caso de estudio de QA porque contiene flujos con distint
 
 El portafolio busca demostrar habilidades en análisis de requisitos, diseño y ejecución de pruebas funcionales y negativas, autorización por rol y permiso, pruebas de API, validación de base de datos, pruebas exploratorias, automatización, reporte de defectos y regresión.
 
-Esta carpeta constituye la base documental inicial. El plan de pruebas está disponible; los casos detallados, las evidencias, los reportes y la automatización se incorporarán progresivamente.
+Esta carpeta contiene la documentación del proceso de QA del proyecto: plan de pruebas, casos de prueba, ejecuciones manuales, evidencias, defectos encontrados y futuras actividades de automatización y regresión.
 
 ## Alcance funcional resumido
 
@@ -75,12 +75,31 @@ El catálogo técnico de permisos conserva endpoints protegidos para su administ
 | Pruebas automatizadas del backend | 60/60 aprobadas |
 | Pruebas automatizadas del frontend | 19/19 aprobadas |
 | Total de pruebas automatizadas | 79/79 aprobadas |
+| Suite manual Ventas e inventario | 16/16 PASS |
+| Defectos documentados durante QA | 1 abierto |
 | Frontend ESLint | Correcto: 0 errores y 0 warnings |
 | Frontend build | Correcto; Vite emitió una advertencia por chunks mayores de 500 kB |
 
+### Ejecución manual destacada
+
+La primera ejecución formal del portafolio QA corresponde a la suite **Ventas e inventario** (`TR-SI-001`).
+
+Resultados:
+
+- 16 casos ejecutados.
+- 16 casos aprobados.
+- 0 casos fallidos.
+- Validaciones de API, reglas de negocio, inventario y persistencia en PostgreSQL.
+- Pruebas positivas, negativas, autorización y transiciones de estado.
+- Validación de atomicidad en operaciones con múltiples artículos.
+- Verificación de movimientos `ENTRADA` y `SALIDA`.
+- Evidencias almacenadas en `qa/evidence/TR-SI-001/`.
+
+Durante el proceso también se documentó un defecto relacionado con la separación de sesiones entre cuentas `CLIENTE` y `STAFF`, registrado como `BUG-AUTH-001`.
+
 Las pruebas automatizadas existentes cubren principalmente servicios, autorización, contratos y regresiones estructurales; no representan cobertura end-to-end. No se declara un porcentaje de cobertura porque actualmente no se genera un reporte automatizado de cobertura.
 
-Como parte del portafolio QA todavía no se han ejecutado formalmente pruebas con navegador real, una API completa levantada y PostgreSQL real. Las pruebas manuales y sus resultados también permanecen pendientes.
+Como parte del portafolio QA ya se ejecutó una primera suite manual utilizando la API local, PostgreSQL mediante Prisma Studio y validaciones directas de persistencia. La cobertura actual no representa todavía una validación end-to-end completa del sistema y continuará ampliándose con pruebas exploratorias, RBAC, regresión y automatización.
 
 ## Estrategia de pruebas
 
@@ -95,40 +114,42 @@ La estrategia prevista combina:
 
 El repositorio ya contiene pruebas automatizadas con el ejecutor nativo de Node.js. Estas pruebas complementan, pero no sustituyen, las pruebas manuales, exploratorias, de API con un entorno real, de base de datos, de concurrencia ni una automatización end-to-end formal. Esas actividades permanecen planificadas mientras no exista evidencia de ejecución.
 
-## Estructura prevista de QA
+## Estructura de QA
 
 ```text
 qa/
 ├── README.md
 ├── test-plan/
 ├── test-cases/
+├── test-runs/
+├── evidence/
+├── defects/
 ├── exploratory-testing/
-├── bug-reports/
 ├── api-testing/
 ├── database-testing/
 ├── automation/
-├── evidence/
 ├── reports/
 └── traceability/
 ```
 
-En esta fase solo existen `README.md` y `test-plan/doro-test-plan.md`; las demás carpetas representan la evolución prevista.
+Actualmente ya existen documentación de planificación, casos de prueba, una ejecución formal, evidencias y un defecto documentado. Las demás áreas se incorporarán conforme avance el portafolio.
 
 ## Herramientas
 
 ### En uso
 
 - Git y GitHub para control de versiones.
+- Postman para ejecución manual y documentación de pruebas de API.
+- Prisma Studio para inspección y validación de persistencia.
+- PostgreSQL para validaciones de datos.
 - ESLint para análisis estático del frontend.
 - Vite para desarrollo y compilación del frontend.
 - Ejecutor de pruebas nativo de Node.js para la suite automatizada.
 - Express y Zod para API y validación.
-- Prisma y PostgreSQL para persistencia.
 - Herramientas de desarrollo del navegador para inspección manual.
 
 ### Planificadas
 
-- Postman para colecciones y ejecución documentada de pruebas de API.
 - Playwright para automatización end-to-end.
 
 ## Cómo ejecutar las validaciones existentes
@@ -167,10 +188,13 @@ El proyecto refleja tanto el proceso de desarrollo de la aplicación como el an�
 | README del portafolio QA | Completado |
 | Plan de pruebas inicial | Completado |
 | Revisión y actualización de la suite automatizada existente | Completado |
-| Casos de prueba manuales y negativos | Planificado |
+| Diseño de casos manuales de Ventas e inventario | Completado |
+| Ejecución manual de Ventas e inventario | Completado — 16/16 PASS |
+| Evidencias de ejecución | Completado para `TR-SI-001` |
+| Reporte de defectos | En progreso — 1 defecto abierto |
+| Pruebas de API | En progreso |
+| Validaciones documentadas de base de datos | En progreso |
+| Pruebas de autorización y RBAC | Siguiente fase |
 | Pruebas exploratorias con charters y evidencias | Planificado |
-| Colección de pruebas de API | Planificado |
-| Validaciones documentadas de base de datos | Planificado |
-| Reportes de defectos y resultados de ejecución | Planificado |
 | Automatización end-to-end con Playwright | Planificado |
 | Matriz de trazabilidad | Planificado |
