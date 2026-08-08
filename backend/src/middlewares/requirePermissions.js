@@ -13,7 +13,7 @@ export function requirePermissions(requiredPermissions = []) {
       return res.status(401).json({ message: 'No autorizado' })
     }
 
-    if (user.accountType !== 'STAFF') return res.status(403).json({ message: 'Esta operaciÃ³n es exclusiva para personal interno' })
+    if (user.accountType !== 'STAFF') return res.status(403).json({ message: 'Esta operación es exclusiva para personal interno' })
     const hasAllPermissions = requiredPermissions.every((permission) =>
       hasPermission(user, permission)
     )
@@ -34,7 +34,7 @@ export function requireAnyPermission(anyOfPermissions = []) {
       return res.status(401).json({ message: 'No autorizado' })
     }
 
-    if (user.accountType !== 'STAFF') return res.status(403).json({ message: 'Esta operaciÃ³n es exclusiva para personal interno' })
+    if (user.accountType !== 'STAFF') return res.status(403).json({ message: 'Esta operación es exclusiva para personal interno' })
     const hasAny = hasAnyPermission(user, anyOfPermissions)
 
     if (!hasAny) {
@@ -50,7 +50,7 @@ export function requirePrimaryAdmin(req, res, next) {
   if (!req.user) return res.status(401).json({ message: 'No autorizado' })
   const user = normalizeAuthenticatedUser(req.user)
   if (user.accountType !== 'STAFF' || getRoleCode(user) !== 'ADMIN' || user.isPrimaryAdmin !== true) {
-    return res.status(403).json({ message: 'Esta operaciÃ³n requiere al administrador principal' })
+    return res.status(403).json({ message: 'Esta operación requiere al administrador principal' })
   }
   next()
 }
@@ -59,13 +59,13 @@ export function requireClientAccount(req, res, next) {
   if (!req.user) return res.status(401).json({ message: 'No autorizado' })
   const user = normalizeAuthenticatedUser(req.user)
   if (user.accountType !== 'CLIENT' || getRoleCode(user) !== 'CLIENTE') {
-    return res.status(403).json({ message: 'Esta operaciÃ³n es exclusiva para clientes de la tienda' })
+    return res.status(403).json({ message: 'Esta operación es exclusiva para clientes de la tienda' })
   }
   next()
 }
 
 export function requireStaffAccount(req, res, next) {
   if (!req.user) return res.status(401).json({ message: 'No autorizado' })
-  if (req.user.accountType !== 'STAFF' || !['ADMIN', 'BODEGUERO'].includes(req.user.role)) return res.status(403).json({ message: 'Esta operaciÃ³n es exclusiva para personal interno' })
+  if (req.user.accountType !== 'STAFF' || !['ADMIN', 'BODEGUERO'].includes(req.user.role)) return res.status(403).json({ message: 'Esta operación es exclusiva para personal interno' })
   next()
 }
