@@ -100,7 +100,7 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 **Severidad potencial si falla:** Crítica<br>
 **Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
-**Observaciones:** La talla se valida en `SaleItem.talla` y en la variante; `InventoryMovement` solo la refleja dentro de `motivo`. `TC-SI-002-stock-before-after.txt` está vacío; el test run registra stock `3 → 2`, pero falta un artefacto independiente utilizable para ese before/after.
+**Observaciones:** La talla se valida en `SaleItem.talla` y en la variante; `InventoryMovement` solo la refleja dentro de `motivo`.
 
 ---
 

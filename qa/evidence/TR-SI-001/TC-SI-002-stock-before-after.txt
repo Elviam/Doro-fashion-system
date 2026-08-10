@@ -1,0 +1,17 @@
+Caso: TC-SI-002
+Producto: Vestido negro
+Producto ID: cmrvkg97q0001ckr87t6oxr3s
+Variante: M
+Cantidad vendida: 1
+
+Stock antes del pago: 3
+Stock después del pago: 2
+Variación de stock: -1
+
+Resultado esperado:
+Al confirmar correctamente el pago, el stock de la variante M debe disminuir en la misma cantidad vendida.
+
+Resultado observado:
+El stock de la variante M disminuyó de 3 a 2 después de confirmar el pago.
+
+Resultado: PASS

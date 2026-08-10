@@ -314,7 +314,7 @@ El pago simulado fue confirmado correctamente.
 ## Evidencias
 
 - `qa/evidence/TR-SI-001/TC-SI-002-payment-response.json`
-- `qa/evidence/TR-SI-001/TC-SI-002-stock-before-after.txt` — archivo presente pero vacío; los valores `3 → 2` permanecen documentados en la tabla de resultado, pero falta el artefacto independiente de before/after.
+- `qa/evidence/TR-SI-001/TC-SI-002-stock-before-after.txt`
 - `qa/evidence/TR-SI-001/TC-SI-002-inventory-movement.png`
 
 ---

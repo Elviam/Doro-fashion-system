@@ -203,7 +203,6 @@ It uses existing identifiers such as `R-03`, `TC-SI-012`, `TR-SI-001`, and `BUG-
 - The manual execution focuses on Sales & Inventory rather than every D'oro workflow.
 - The RBAC evidence is stronger at automated unit/middleware level than in a formal manual role-endpoint matrix.
 - BUG-AUTH-001 has documented reproduction evidence, but no confirmed root cause, fix, or post-fix retest.
-- `TC-SI-002-stock-before-after.txt` is a zero-byte file. The TC-SI-002 test run records the stock change, but the independent before/after stock artifact should be recaptured rather than treated as usable evidence.
 - The local execution does not certify production behavior, performance, security, accessibility, or cross-browser compatibility.
 
 ## 19. Transferable QA Skills for Operational Software

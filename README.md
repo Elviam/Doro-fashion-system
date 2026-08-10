@@ -238,7 +238,31 @@ No credentials, tokens, connection strings, or private service URLs are committe
 
 ## Screenshots
 
-The repository currently contains branded store artwork and detailed QA evidence, but it does not include a small, consistent set of portfolio screenshots covering the dashboard, inventory or warehouse operations, customer store, and QA/API validation. This section is intentionally left without image references so the README does not present decorative assets as product screenshots or create broken links.
+### Administrative Dashboard
+
+Operational overview with confirmed revenue, pending fulfillment, low-stock alerts, cancellations, and inventory indicators.
+
+![D'oro administrative dashboard](screenshots/01-admin-dashboard.png)
+
+### Size-Level Inventory
+
+Inventory management with product variants, size-level stock, inventory valuation, critical stock alerts, and product-level controls.
+
+![D'oro size-level inventory](screenshots/02-size-inventory.png)
+
+### Warehouse Receiving
+
+Pending supplier orders awaiting merchandise confirmation, connecting procurement with warehouse receiving and inventory updates.
+
+![D'oro warehouse receiving workflow](screenshots/03-warehouse-receiving.png)
+
+### Customer Store
+
+Customer-facing catalog connected to the same products and inventory managed through the internal system.
+
+![D'oro customer store](screenshots/04-customer-store.png)
+
+
 
 ## Repository Structure
 

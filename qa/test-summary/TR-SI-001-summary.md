@@ -83,7 +83,6 @@ TC-SI-012 used a `PENDIENTE` sale with two variants: one still available and one
 - The scope is Sales & Inventory; receiving, replenishment, broader RBAC, authentication lifecycle, usability, accessibility, performance, and security assessment require separate coverage.
 - Some controlled preconditions were prepared through Prisma Studio, including zero or insufficient stock before payment.
 - The evidence set supports the recorded scenarios but is not a coverage report.
-- `TC-SI-002-stock-before-after.txt` is present but empty. TR-SI-001 records stock `3 → 2`, the payment JSON records the successful `PAGADO` result, and the image records the `SALIDA`; however, a separate usable before/after stock artifact was not found and should be recaptured in a future controlled run.
 
 ## Conclusion
 
