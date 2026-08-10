@@ -42,6 +42,7 @@ jobs:
         run: npm test
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/doro_ci
+          JWT_REFRESH_SECRET: ci-refresh-secret-not-for-production
 
   frontend:
     name: Frontend tests, lint, and build
