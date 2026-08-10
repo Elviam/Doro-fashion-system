@@ -1,80 +1,116 @@
-﻿# BUG-AUTH-001 — Cliente accede al perfil interno de STAFF al compartir sesiones
+# BUG-AUTH-001 — Customer profile navigation resolves to an existing privileged STAFF session
 
-## Identificación
+## Summary
 
-| Campo | Valor |
+Customer profile navigation can resolve to an existing privileged STAFF session when valid CLIENT and ADMIN authentication states coexist in the same browser profile.
+
+From the store in CLIENT context, selecting **Mi Perfil** navigates to `/perfil`, resolves the existing ADMIN session, and opens the administrative panel under the ADMIN identity. Administrative functionality remains accessible in the resulting context.
+
+This does not demonstrate that a CLIENT without a valid pre-existing ADMIN session can obtain ADMIN privileges.
+
+## Defect record
+
+| Field | Value |
 |---|---|
 | ID | BUG-AUTH-001 |
-| Módulo | Autenticación / Navegación / Perfiles |
-| Fecha | 6 de agosto de 2026 |
-| Reportado por | Elvia Gutiérrez García |
-| Ambiente | Desarrollo local |
-| Rama | `feature/erp-refactor` |
-| Commit | `10c0dc9` |
-| Severidad | Alta |
-| Prioridad | Alta |
-| Estado | OPEN |
+| Module | Authentication / Navigation / Profiles |
+| Reported date | August 6, 2026 |
+| Reported by | Elvia Gutiérrez García |
+| Severity | High |
+| Priority | High |
+| Status | **OPEN** |
+| Discovery context | Independent exploratory review of the application |
 
-## Título
+## Environment
 
-Un cliente es dirigido al perfil interno del sistema y aparece autenticado como ADMIN cuando existen sesiones de cliente y STAFF en pestañas del mismo navegador.
+| Field | Recorded value |
+|---|---|
+| Original environment | Local development |
+| Additional reproduction | Public deployment: `https://doro-fashion-system.vercel.app` |
+| Browser / version | Not recorded |
+| Browser condition | Valid CLIENT and ADMIN sessions coexist in the same browser profile |
+| Original branch | `feature/erp-refactor` |
+| Original reference commit | `10c0dc9` |
+| Accounts | One valid ADMIN account and one valid CLIENT account |
+| Latest reproduction date | August 9, 2026 |
 
-## Descripción
+## Preconditions
 
-Durante la ejecución de pruebas de ventas e inventario se mantuvo una sesión ADMIN abierta en una pestaña del navegador. En otra pestaña del mismo navegador se inició sesión en la tienda como cliente con la cuenta `juan@gmail.com`.
+- A valid ADMIN session already exists in the browser profile.
+- A valid CLIENT session also exists in the same browser profile.
+- The user is operating from the customer store in the CLIENT context.
 
-Al seleccionar la opción “Mi perfil” desde la tienda, la aplicación abrió la sección de perfil del sistema interno y mostró la sesión de ADMIN, en lugar de presentar exclusivamente el perfil del cliente.
+## Steps to reproduce
 
-## Precondiciones
+1. Sign in as ADMIN within the browser profile.
+2. Keep the ADMIN session valid.
+3. Sign in as CLIENT within the same browser profile.
+4. From the customer store, select **Mi Perfil**.
+5. Observe navigation to `/perfil`.
+6. Confirm that the displayed identity belongs to the existing ADMIN session.
+7. Navigate to a non-destructive administrative section and confirm that administrative functionality remains accessible.
 
-- Aplicación ejecutándose en desarrollo local.
-- Una cuenta ADMIN válida.
-- Una cuenta CLIENTE válida.
-- Ambas sesiones abiertas en pestañas del mismo navegador.
+## Expected result
 
-## Pasos para reproducir
+The customer remains in the store context and sees only the authenticated customer profile. A CLIENT interaction must not resolve to a STAFF profile merely because a STAFF session also exists in the browser.
 
-1. Abrir el panel interno e iniciar sesión como ADMIN.
-2. Mantener abierta esa pestaña.
-3. Abrir la tienda en otra pestaña del mismo navegador.
-4. Iniciar sesión como cliente.
-5. Desde la tienda, seleccionar “Mi perfil”.
-6. Observar la ruta y la información de sesión mostrada.
+## Actual result
 
-## Resultado esperado
+- The CLIENT-initiated flow resolves the existing ADMIN session.
+- The application opens the administrative panel at `/perfil`.
+- The active and visible identity is ADMIN.
+- Administrative sections and functionality remain accessible from the resulting context.
 
-El cliente debe permanecer dentro de la tienda y acceder únicamente a su perfil de cliente.
+## Impact and severity rationale
 
-La aplicación debe impedir que una cuenta CLIENTE acceda a rutas o componentes exclusivos de STAFF, aunque existan otras sesiones abiertas en el mismo navegador.
+- The account context that initiated the action is lost.
+- CLIENT/STAFF separation is compromised.
+- The administrative panel is entered under an existing ADMIN session.
+- Administrative functionality remains available from the resulting context.
 
-## Resultado obtenido
+Severity remains **High** because a CLIENT-initiated flow resolves to a privileged existing STAFF identity and its administrative access. This does not prove that a CLIENT without a valid pre-existing ADMIN session can escalate privileges.
 
-La navegación abrió el perfil interno del sistema y mostró la identidad de ADMIN.
+## Evidence
 
-## Impacto
+The repository contains reproduction evidence:
 
-- Confusión de identidad entre cuentas.
-- Posible exposición de rutas o información de STAFF.
-- Incumplimiento de la separación entre cuentas CLIENTE y STAFF.
-- Riesgo de autorización si las rutas internas no validan correctamente `accountType` y rol.
+- [01-client-context.png](../evidence/BUG-AUTH-001/01-client-context.png) — authenticated CLIENT context in the public store before navigation.
+- [02-profile-resolves-admin.png](../evidence/BUG-AUTH-001/02-profile-resolves-admin.png) — `/perfil` resolved inside the administrative panel under the existing ADMIN identity.
+- [03-admin-panel-access.png](../evidence/BUG-AUTH-001/03-admin-panel-access.png) — non-destructive access to the administrative dashboard from the resulting context.
+- [BUG-AUTH-001-reproduction.mp4](../evidence/BUG-AUTH-001/BUG-AUTH-001-reproduction.mp4) — video reproduction of the reported flow.
 
-## Hipótesis técnica
+The evidence confirms reproduction of the open defect. It is not a post-fix retest and does not support closure.
 
-La causa no está confirmada. Es posible que la tienda y el panel interno compartan:
+## Root cause
 
-- la misma clave de token en `localStorage`;
-- la misma ruta de perfil;
-- un estado de autenticación común;
-- protecciones de ruta que no distinguen correctamente entre CLIENTE y STAFF.
+**Root cause: Not confirmed.** Investigation should compare route selection, profile rendering, authentication-context selection, and the separate CLIENT/STAFF session keys when both sessions exist. These are investigation targets, not a root-cause conclusion.
 
-## Evidencia
+## Workaround
 
-Pendiente de captura o grabación.
+Use a private/incognito window or a different browser profile when CLIENT and STAFF sessions must remain active at the same time.
 
-## Solución temporal
+## Retest
 
-Usar una ventana de incógnito o un navegador diferente para mantener simultáneamente una sesión CLIENTE y una sesión STAFF.
+| Field | Value |
+|---|---|
+| Retest status | **NOT RUN / NOT DOCUMENTED** |
+| Fix version or commit | Not available |
+| Retest evidence | Not available |
+| Closure decision | Not eligible for closure |
 
-## Defecto descubierto durante
+## Regression considerations
 
-Ejecución exploratoria relacionada con `TR-SI-001`. No provocó el fallo de `TC-SI-004`.
+After a verified fix, regression should cover:
+
+- CLIENT only: **Mi Perfil** opens the customer profile.
+- STAFF only: `/perfil` opens the internal profile intentionally.
+- Valid CLIENT and STAFF sessions in the same browser profile: navigation preserves its initiating account context.
+- Direct access to `/perfil` with each account type and with no session.
+- CLIENT token against STAFF-only API routes and STAFF token against CLIENT-only routes returns the expected controlled denial.
+- Logging out or expiring one account type does not remove or silently replace the other valid session.
+
+## Relationship to formal test execution
+
+BUG-AUTH-001 was discovered independently during exploratory review of the application, outside the formal execution of TR-SI-001. It was not triggered by or associated with a failed TC-SI case. TR-SI-001 remains 16/16 PASS.
+
+

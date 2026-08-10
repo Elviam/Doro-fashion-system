@@ -86,7 +86,7 @@ También establece una base reproducible para ampliar el portafolio con casos, e
 - Integraciones reales de paquetería o proveedores; el seguimiento de entrega actual es simulado.
 - Recuperación ante desastres y alta disponibilidad de infraestructura.
 - Auditoría completa de conformidad con WCAG. Durante esta etapa solo se realizarán comprobaciones básicas de accesibilidad, como navegación con teclado, foco visible, etiquetas y contraste.
-- Validación del despliegue público, pendiente hasta que el frontend y el backend estén publicados en un ambiente estable.
+- Validación formal del despliegue público; `TR-SI-001` se ejecutó en ambiente local y no certifica el entorno publicado.
 
 ## 6. Enfoque basado en riesgos
 
@@ -96,7 +96,7 @@ Escala: probabilidad e impacto se califican como baja, media o alta. El nivel co
 |---|---|---|---|---|---|---|
 | R-01 | Stock inconsistente entre producto, talla y movimiento de inventario | Inventario | Media | Alta | Alto | Comparar el estado previo y posterior, así como el movimiento persistido por talla. |
 | R-02 | Dos confirmaciones concurrentes podrían incrementar el stock más de una vez porque no existe una actualización condicional confirmada por `id + estado` | Recepciones | Media | Alta | Alto | Ejecutar confirmaciones secuenciales y simultáneas; verificar una sola transición, movimientos y cantidades finales. No clasificar el riesgo como defecto sin reproducirlo. |
-| R-03 | Un pago con stock insuficiente o dos pagos concurrentes podrían comprometer las existencias; no existe compare-and-set sobre `Sale.estado` | Ventas | Alta | Alta | Crítico | Probar stock cero, inferior, exacto y suficiente para solicitudes simultáneas; contrastar estado, movimientos y stock final. |
+| R-03 | Un pago con stock insuficiente o cero, o un segundo pago secuencial sobre una venta ya procesada, podría comprometer la consistencia entre `Sale`, `ProductVariant` e `InventoryMovement` | Ventas | Alta | Alta | Crítico | Probar stock cero, inferior, exacto y suficiente; repetir el pago secuencialmente y contrastar estado, movimientos y stock final. |
 | R-04 | Dos cancelaciones concurrentes podrían reponer stock más de una vez porque no existe compare-and-set sobre `Sale.estado` | Ventas e inventario | Media | Alta | Alto | Validar repetición secuencial y simultánea, stock final y movimientos de entrada. No declarar duplicidad sin ejecución reproducible. |
 | R-05 | Un usuario accede a páginas o endpoints sin permiso | Autorización | Media | Alta | Alto | Crear una matriz de rol, permiso y recurso, y probar la interfaz y la API directamente. |
 | R-06 | Una sesión de `CLIENTE` se utiliza como sesión de personal interno o viceversa | Autenticación | Media | Alta | Alto | Intercambiar tokens, rutas y sesiones simultáneas; esperar 401/403 controlados. |
@@ -107,6 +107,7 @@ Escala: probabilidad e impacto se califican como baja, media o alta. El nivel co
 | R-11 | Importes, costos, envío o cantidades se calculan incorrectamente | Checkout, ventas y abastecimiento | Media | Alta | Alto | Usar valores límite, decimales y cálculos independientes. |
 | R-12 | Diferencia entre el filtro frontend de diez días para el bodeguero y el contrato backend, que puede devolver registros antiguos | Recepciones | Media | Media | Medio | Comparar la presentación de `CONFIRMADA`/`CANCELADA` con consultas directas; documentar la diferencia sin clasificarla automáticamente como vulnerabilidad o defecto. |
 | R-13 | Un pedido a proveedor podría enviarse mediante API sin `supplierId`, aunque la interfaz exige proveedor antes de crear y enviar | Abastecimiento | Media | Alta | Alto | Crear un borrador sin proveedor y probar por separado interfaz y API de envío; verificar contrato, persistencia y trazabilidad sin asumir la regla pendiente. |
+| R-14 | Dos solicitudes de pago simultáneas sobre la misma venta `PENDIENTE` podrían competir antes de que la transición de estado quede persistida | Ventas / Pago | Media | Alta | Alto | Ejecutar dos pagos simultáneos sobre la misma venta y verificar las respuestas, el estado final, el stock final, la ausencia de stock negativo, el número de `SALIDA` y la ausencia de descuento duplicado. Mantenerlo como riesgo hasta una ejecución reproducible. |
 
 Los riesgos describen fallos potenciales; no afirman que exista un defecto.
 
@@ -149,7 +150,7 @@ El ambiente confirmado es de desarrollo local:
 - Acceso a PostgreSQL mediante Prisma. La documentación principal indica Neon para el desarrollo actual.
 - Variables separadas para URL de ejecución, URL directa de migraciones, secretos JWT, origen CORS, OAuth y configuración pública de archivos.
 
-Los valores reales y secretos no forman parte de este plan. Se utilizarán los archivos `.env.example` como referencia y archivos `.env` locales no versionados. No se ha confirmado un ambiente público desplegado.
+Los valores reales y secretos no forman parte de este plan. Se utilizarán los archivos `.env.example` como referencia y archivos `.env` locales no versionados. La ejecución `TR-SI-001` documenta únicamente el ambiente local; la existencia de un despliegue público no equivale a una validación formal de ese entorno.
 
 ## 10. Datos de prueba
 
@@ -241,16 +242,18 @@ Se ejecutará después de cambios en autenticación, permisos, modelos Prisma, v
 
 ## 17. Entregables
 
-- Casos de prueba manuales.
-- Evidencias de ejecución.
-- Reportes de defectos.
-- Colecciones y resultados de pruebas de API.
-- Consultas SQL de validación.
-- Automatización de regresión.
-- Reportes de ejecución.
-- Matriz de trazabilidad.
+Entregables existentes y versionados:
 
-Estos entregables están planificados; en la fase actual solo se crean el README de QA y este plan.
+- catálogo de reglas de negocio y matriz de trazabilidad;
+- casos manuales de Ventas e inventario;
+- ejecución `TR-SI-001` y resumen ejecutivo;
+- evidencias de API, estado e inventario para la ejecución;
+- reporte de defecto `BUG-AUTH-001`;
+- análisis de riesgos;
+- pruebas automatizadas de regresión en `backend/test/` y `frontend/test/`;
+- consultas de validación incluidas dentro del registro de ejecución.
+
+No se confirmó una colección de API exportada, un reporte separado de cobertura automatizada ni una suite formal de concurrencia. Esos elementos no deben presentarse como entregables actuales.
 
 ## 18. Responsabilidades
 
@@ -295,7 +298,7 @@ Las siguientes reglas se verificaron en el código y orientarán el diseño post
 - Una venta pasa de `PENDIENTE` a `PAGADO` o `CANCELADO`; una venta en estado `PAGADO` puede cancelarse; `ENVIADO` y `CANCELADO` no admiten nuevas transiciones en el servicio de ventas.
 - El ajuste manual genera `ENTRADA` al incrementar y `SALIDA` al disminuir; `AJUSTE` no es un tipo persistido actual.
 - Pagar descuenta stock con una condición de cantidad suficiente y registra una `SALIDA`; cancelar una venta pagada repone stock y registra una `ENTRADA`. La operación multiartículo se ejecuta dentro de una transacción.
-- Un pago secuencial repetido y una cancelación secuencial repetida son rechazados. La actualización no usa compare-and-set sobre `Sale.estado`, por lo que pagos o cancelaciones simultáneos permanecen como riesgos técnicos pendientes de ejecución formal.
+- Un pago secuencial repetido y una cancelación secuencial repetida son rechazados. El riesgo independiente de dos pagos simultáneos se registra como `R-14` y permanece pendiente de ejecución formal; no se presenta como defecto. Las cancelaciones simultáneas también permanecen como riesgo pendiente dentro de `R-04`.
 - Las ventas o pedidos de clientes usan `PENDIENTE`, `PAGADO`, `ENVIADO` y `CANCELADO`. `ENVIADO` pertenece a `Sale`.
 - Los pedidos a proveedores y recepciones comparten `Reception`, diferenciada para reabastecimiento mediante su origen, y usan `BORRADOR`, `ENVIADA`, `CONFIRMADA` y `CANCELADA`. `RECIBIDO` puede aparecer como etiqueta de interfaz, pero no es un estado técnico persistido de `Reception`.
 - Solo una recepción `ENVIADA` puede confirmarse secuencialmente. La confirmación incrementa stock, registra entradas y cambia a `CONFIRMADA` dentro de una transacción; la actualización final no usa una condición atómica por `id + estado`, por lo que la confirmación simultánea debe probarse.
@@ -307,7 +310,7 @@ Las siguientes reglas se verificaron en el código y orientarán el diseño post
 
 ## Decisiones funcionales pendientes
 
-1. Respuesta contractual para una segunda operación concurrente: `409`, `400` o resultado idempotente.
+1. Para `R-14`, respuesta contractual ante una segunda operación de pago concurrente: `409`, `400` o resultado idempotente.
 2. Garantía de exclusividad de despacho mediante transición atómica, sin determinar todavía si existirá reserva al abrir.
 3. Si la recepción parcial debe continuar cerrando definitivamente o admitir entregas posteriores.
 4. Si la ventana de diez días es solo presentación o una restricción de acceso.

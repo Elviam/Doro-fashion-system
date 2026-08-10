@@ -1,0 +1,39 @@
+# D'oro Fashion System — Requirements Traceability Matrix
+
+## Reading the matrix
+
+This matrix connects implemented business rules to known risks and existing QA evidence. `PASS` is used only when a case has a recorded result in `TR-SI-001`. `Not formally covered` means that no versioned manual case, QA test run, and evidence chain currently proves the rule. References to automated source files identify existing regression checks but do not substitute for a formal QA execution artifact.
+
+All executed manual rows refer to test run [TR-SI-001](../test-runs/TR-SALES-INVENTORY-001.md), branch `feature/erp-refactor`, reference commit `10c0dc9`, and the evidence set under [TR-SI-001](../evidence/TR-SI-001/).
+
+| Business Rule | Risk | Test Case / Check | Test Run | Evidence | Result |
+|---|---|---|---|---|---|
+| BR-SALE-001 | R-01, R-03 | [TC-SI-001](../test-cases/TC-SALES-INVENTORY.md#tc-si-001) | TR-SI-001 | `TC-SI-001-response.json`; `TC-SI-001-stock-before-after.txt`; `TC-SI-001-movements-before-after.png` | PASS |
+| BR-SALE-002 | R-11 | No formal case validates tampered client pricing, duplicate-line aggregation, and inactive catalog data as one documented rule. | Not formally covered | Not formally covered | Not formally covered |
+| BR-PAY-001 | R-05, R-06 | [TC-SI-013](../test-cases/TC-SALES-INVENTORY.md#tc-si-013); [TC-SI-014](../test-cases/TC-SALES-INVENTORY.md#tc-si-014) | TR-SI-001 | `TC-SI-013-unauthorized-payment-response.json`; `TC-SI-013-authorization-result.txt`; `TC-SI-013-sale-pending.png`; `TC-SI-014-staff-payment-response.json`; `TC-SI-014-authorization-result.txt`; `TC-SI-014-sale-pending.png` | PASS |
+| BR-PAY-002 | R-03, R-10 | [TC-SI-006](../test-cases/TC-SALES-INVENTORY.md#tc-si-006); [TC-SI-016](../test-cases/TC-SALES-INVENTORY.md#tc-si-016) | TR-SI-001 | `TC-SI-006-payment-error-response.json`; `TC-SI-006-state-stock-movements.txt`; `TC-SI-006-sale-paid.png`; `TC-SI-016-payment-error-response.json`; `TC-SI-016-state-stock-movements.txt`; `TC-SI-016-sale-cancelled.png` | PASS for processed-state rejection; unsupported payment-method coverage is not formally documented |
+| BR-INV-001 | R-01, R-03 | [TC-SI-002](../test-cases/TC-SALES-INVENTORY.md#tc-si-002); [TC-SI-003](../test-cases/TC-SALES-INVENTORY.md#tc-si-003) | TR-SI-001 | TC-SI-002: `TC-SI-002-payment-response.json` and `TC-SI-002-inventory-movement.png`; its before/after text file is empty. TC-SI-003 has text, JSON, and image evidence. | PASS in the test run; independent TC-SI-002 stock before/after artifact is missing |
+| BR-INV-002 | R-01, R-03 | [TC-SI-004](../test-cases/TC-SALES-INVENTORY.md#tc-si-004); [TC-SI-005](../test-cases/TC-SALES-INVENTORY.md#tc-si-005) | TR-SI-001 | `TC-SI-004-payment-error-response.json`; `TC-SI-004-stock-movements-state.txt`; `TC-SI-004-sale-pending.png`; `TC-SI-004-inventory-movements.png`; `TC-SI-005-payment-error-response.json`; `TC-SI-005-stock-movements-state.txt`; `TC-SI-005-sale-pending.png`; `TC-SI-005-inventory-movements.png` | PASS |
+| BR-MOVE-001 | R-01, R-11 | [TC-SI-007](../test-cases/TC-SALES-INVENTORY.md#tc-si-007) | TR-SI-001 | `TC-SI-007-inventory-movement.txt`; `TC-SI-007-inventory-movement.png` | PASS |
+| BR-CANCEL-001 | R-01, R-10 | [TC-SI-008](../test-cases/TC-SALES-INVENTORY.md#tc-si-008) | TR-SI-001 | `TC-SI-008-cancellation-response.json`; `TC-SI-008-state-stock-movements.txt`; `TC-SI-008-sale-cancelled.png`; `TC-SI-008-inventory-movements.png` | PASS |
+| BR-CANCEL-002 | R-01, R-04, R-11 | [TC-SI-009](../test-cases/TC-SALES-INVENTORY.md#tc-si-009); [TC-SI-010](../test-cases/TC-SALES-INVENTORY.md#tc-si-010) | TR-SI-001 | `TC-SI-009-cancellation-response.json`; `TC-SI-009-restock-result.txt`; `TC-SI-009-inventory-entry.png`; `TC-SI-010-inventory-traceability.txt`; `TC-SI-010-inventory-traceability.png` | PASS |
+| BR-CANCEL-003 | R-04, R-10 | [TC-SI-011](../test-cases/TC-SALES-INVENTORY.md#tc-si-011) | TR-SI-001 | `TC-SI-011-second-cancellation-error.json`; `TC-SI-011-state-stock-movements.txt`; `TC-SI-011-sale-cancelled.png`; `TC-SI-011-inventory-movements.png` | PASS for sequential repetition; concurrency is not formally covered |
+| BR-STATE-001 | R-10 | [TC-SI-001](../test-cases/TC-SALES-INVENTORY.md#tc-si-001), [TC-SI-002](../test-cases/TC-SALES-INVENTORY.md#tc-si-002), [TC-SI-008](../test-cases/TC-SALES-INVENTORY.md#tc-si-008), [TC-SI-009](../test-cases/TC-SALES-INVENTORY.md#tc-si-009), [TC-SI-015](../test-cases/TC-SALES-INVENTORY.md#tc-si-015), [TC-SI-016](../test-cases/TC-SALES-INVENTORY.md#tc-si-016) | TR-SI-001 | Corresponding TC-SI-001, 002, 008, 009, 015, and 016 files in the execution evidence folder | PASS for the documented transitions |
+| BR-TXN-001 | R-01, R-03, R-11 | [TC-SI-012](../test-cases/TC-SALES-INVENTORY.md#tc-si-012) | TR-SI-001 | `TC-SI-012-payment-error-response.json`; `TC-SI-012-product-after.json`; `TC-SI-012-atomicity-result.txt`; `TC-SI-012-sale-pending.png`; `TC-SI-012-inventory-movements.png` | PASS |
+| BR-AUTH-001 | R-06 | [TC-SI-014](../test-cases/TC-SALES-INVENTORY.md#tc-si-014); exploratory defect [BUG-AUTH-001](../defects/BUG-AUTH-001.md) | TR-SI-001 for TC-SI-014; no formal defect retest | TC-SI-014 evidence listed above; BUG-AUTH-001 evidence is pending | PASS at the tested API boundary; browser-session defect remains OPEN |
+| BR-AUTH-002 | R-06 | Automated checks exist in `backend/test/auth.middleware.integration.test.js`; no formal manual case ID. | Not formally covered in QA test runs | Not formally covered | Not formally covered |
+| BR-AUTH-003 | R-05 | [TC-SI-013](../test-cases/TC-SALES-INVENTORY.md#tc-si-013) | TR-SI-001 | `TC-SI-013-unauthorized-payment-response.json`; `TC-SI-013-authorization-result.txt`; `TC-SI-013-sale-pending.png` | PASS |
+| BR-RBAC-001 | R-05 | Staff state-change cases used an authorized `ventas:update` account, but no manual negative missing-permission case is documented. Automated middleware checks exist. | Not formally covered | Not formally covered | Not formally covered |
+| BR-RBAC-002 | R-05, R-07 | Automated checks exist in `backend/test/authorization.service.test.js` and `backend/test/requirePermissions.test.js`; no formal manual case ID. | Not formally covered in QA test runs | Not formally covered | Not formally covered |
+| BR-RBAC-003 | R-05 | Automated checks exist in `backend/test/authorization.service.test.js`, `backend/test/requirePermissions.test.js`, and `backend/test/reabastecimiento.authorization.test.js`; no formal manual case ID. | Not formally covered in QA test runs | Not formally covered | Not formally covered |
+| BR-TRACE-001 | R-01, R-11 | [TC-SI-007](../test-cases/TC-SALES-INVENTORY.md#tc-si-007); [TC-SI-010](../test-cases/TC-SALES-INVENTORY.md#tc-si-010) | TR-SI-001 | `TC-SI-007-inventory-movement.txt`; `TC-SI-007-inventory-movement.png`; `TC-SI-010-inventory-traceability.txt`; `TC-SI-010-inventory-traceability.png` | PASS within the current data-model limits |
+
+## Coverage gaps made explicit
+
+- No formal QA case or evidence chain currently covers simultaneous payment, cancellation, last-unit competition, dispatch, or reception confirmation.
+- Concurrent payment is tracked as R-14 and remains **Not formally executed**; deterministic payment coverage remains under R-03.
+- The existing manual suite does not provide a complete negative permission matrix for `ADMIN` and `BODEGUERO` endpoints.
+- Automated test source exists for authentication and RBAC behavior, but no separate versioned automated test-run report is stored under `qa/test-runs/`.
+- BUG-AUTH-001 has no attached screenshot or recording and no documented retest.
+- `TC-SI-002-stock-before-after.txt` exists but is a zero-byte file. The `3 → 2` stock values are recorded in TR-SI-001, but no separate usable before/after artifact was found for TC-SI-002.
+- A reported 79/79 automated PASS result is preserved in the case-study overview, but it is not a code-coverage percentage and does not establish end-to-end coverage.

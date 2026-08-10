@@ -8,7 +8,7 @@
 | Suite | Ventas e inventario |
 | Alcance | Creación, pago simulado, cancelación, autorización, stock por variante y movimientos |
 | Tipo de ejecución | Manual |
-| Estado de la suite | Diseñada; pendiente de ejecución |
+| Estado de la suite | Ejecutada — 16/16 PASS en `TR-SI-001` |
 | Total de casos | 16 |
 
 ## Base técnica confirmada
@@ -31,12 +31,11 @@ Los identificadores siguientes son descriptivos. Sus IDs, cantidades, tokens y f
 | `CLIENTE_B` | Cuenta `CLIENT` activa diferente de `CLIENTE_A`; no es propietaria de las ventas de `CLIENTE_A`. |
 | `STAFF_VENTAS` | Cuenta `STAFF` activa, rol `ADMIN` o `BODEGUERO`, con permiso efectivo `ventas:update`. |
 | `PRODUCTO_A` | Producto activo, con precio de venta conocido y variantes disponibles para las tallas utilizadas. |
-| `PRODUCTO_B` | Segundo producto activo, distinto de `PRODUCTO_A`, para escenarios multiartículo. |
 | `VARIANTE_A_M` | Variante de `PRODUCTO_A` cuya talla es `M` y cuyo stock inicial conocido es mayor que la cantidad solicitada. |
 | `VARIANTE_A_EXACTA` | Variante de `PRODUCTO_A` cuyo stock inicial conocido es exactamente igual a la cantidad solicitada. |
 | `VARIANTE_A_INSUFICIENTE` | Variante que tenía stock suficiente al crear la venta, pero cuyo stock antes del pago es menor que la cantidad de la venta y mayor que cero. |
 | `VARIANTE_A_CERO` | Variante que tenía stock suficiente al crear la venta, pero cuyo stock antes del pago es cero. |
-| `VARIANTE_B_DISPONIBLE` | Variante de `PRODUCTO_B` con stock suficiente para el escenario multiartículo. |
+| `VARIANTE_A_SECUNDARIA_DISPONIBLE` | Segunda variante de `PRODUCTO_A`, distinta de la variante insuficiente y con stock suficiente para el escenario multilínea. |
 | `VENTA_PENDIENTE_A` | Venta propia de `CLIENTE_A`, método `tarjeta` u `oxxo`, estado `PENDIENTE`. |
 | `VENTA_PAGADA_A` | Venta propia de `CLIENTE_A`, estado `PAGADO`, con stock ya descontado y movimientos de salida identificables. |
 | `VENTA_CANCELADA_A` | Venta propia de `CLIENTE_A`, estado `CANCELADO`. |
@@ -67,10 +66,10 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 4. Consultar `Sale`, sus `SaleItem`, `ProductVariant` e `InventoryMovement` relacionados.
 
 **Resultado esperado:** La API responde `201` con `Venta registrada correctamente`; se crea una sola `Sale` propia de `CLIENTE_A` en `PENDIENTE`, con sus artículos, talla y cantidad. `ProductVariant.stock` conserva el valor inicial y no se crean movimientos `ENTRADA` ni `SALIDA` por la creación.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Alta<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
 **Observaciones:** El precio se toma del catálogo mediante `buildTrustedItems`; no debe utilizarse como fuente confiable un precio enviado por el cliente.
 
@@ -96,12 +95,12 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 4. Consultar la variante comprada, las demás variantes y los movimientos del producto.
 
 **Resultado esperado:** La API responde `200` con `Pago simulado confirmado correctamente`; `Sale.estado` queda `PAGADO`; `VARIANTE_A_M.stock` disminuye exactamente la cantidad comprada; las demás tallas no cambian; se registra el movimiento `SALIDA` correspondiente.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Crítica<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
-**Observaciones:** La talla se valida en `SaleItem.talla` y en la variante; `InventoryMovement` solo la refleja dentro de `motivo`.
+**Observaciones:** La talla se valida en `SaleItem.talla` y en la variante; `InventoryMovement` solo la refleja dentro de `motivo`. `TC-SI-002-stock-before-after.txt` está vacío; el test run registra stock `3 → 2`, pero falta un artefacto independiente utilizable para ese before/after.
 
 ---
 
@@ -125,10 +124,10 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 4. Consultar venta, variante y movimientos persistidos.
 
 **Resultado esperado:** El pago responde `200`; `Sale.estado` queda `PAGADO`; `ProductVariant.stock` queda exactamente en `0`, nunca negativo; se crea una `SALIDA` por la cantidad completa.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Crítica<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
 **Observaciones:** La condición implementada para descontar es `stock >= cantidad`.
 
@@ -154,10 +153,10 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 4. Consultar nuevamente venta, variante y movimientos.
 
 **Resultado esperado:** La API responde `409` con un mensaje que identifica stock insuficiente para producto y talla; `Sale.estado` permanece `PENDIENTE`; el stock no cambia; no se crea ningún movimiento y no queda ningún efecto parcial de la transacción.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Crítica<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
 **Observaciones:** La condición se aplica mediante `productVariant.updateMany` dentro de `prisma.$transaction`.
 
@@ -183,10 +182,10 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 4. Consultar persistencia después del rechazo.
 
 **Resultado esperado:** La API responde `409` por stock insuficiente; la venta permanece `PENDIENTE`; el stock sigue en `0`; no se crea `SALIDA` y no existe stock negativo.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Crítica<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
 **Observaciones:** El caso requiere que la venta exista antes de dejar la variante en cero, porque la creación también valida disponibilidad.
 
@@ -212,10 +211,10 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 4. Volver a consultar estado, stock y movimientos.
 
 **Resultado esperado:** La segunda solicitud responde `400` con un mensaje que indique que el pedido ya fue procesado; la venta continúa `PAGADO`; el stock no vuelve a disminuir y no se crea otra `SALIDA`.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Crítica<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
 **Observaciones:** Este caso es secuencial; no cubre dos solicitudes simultáneas.
 
@@ -241,10 +240,10 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 4. Comparar tipo, cantidad, producto y motivo con la venta y su artículo.
 
 **Resultado esperado:** Se agrega exactamente un `InventoryMovement` con `tipo = SALIDA`, `productId` del artículo, `cantidad` igual a `SaleItem.cantidad` y un `motivo` que contiene el número de pedido y la talla. No se crea una `ENTRADA`.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Alta<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
 **Observaciones:** No buscar campos de talla, stock anterior, stock nuevo o responsable dentro de `InventoryMovement`, porque el modelo no los contiene.
 
@@ -270,10 +269,10 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 4. Consultar venta, variantes y movimientos.
 
 **Resultado esperado:** La API responde `200` con `Estado de la venta actualizado correctamente`; `Sale.estado` queda `CANCELADO` y se conserva el motivo; el stock no cambia y no se crea movimiento de inventario.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Alta<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
 **Observaciones:** El endpoint de cancelación es interno; una cuenta cliente no está autorizada para esta ruta.
 
@@ -299,10 +298,10 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 4. Consultar venta, variante y movimientos posteriores.
 
 **Resultado esperado:** La respuesta es `200`; `Sale.estado` queda `CANCELADO`; el stock aumenta exactamente en `SaleItem.cantidad` y vuelve al valor previo al pago si no hubo otros cambios; se crea la `ENTRADA` correspondiente.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Crítica<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
 **Observaciones:** Estado, reposición y movimiento se ejecutan dentro de una transacción Prisma.
 
@@ -328,10 +327,10 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 4. Comparar el nuevo movimiento con el artículo vendido.
 
 **Resultado esperado:** Se agrega exactamente un movimiento `ENTRADA` con el `productId` correcto, cantidad igual a `SaleItem.cantidad` y motivo que contiene el número de pedido y la talla; la `SALIDA` previa se conserva.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Alta<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
 **Observaciones:** La relación con la venta se expresa en `motivo`; el modelo no contiene un campo de referencia estructurado.
 
@@ -357,10 +356,10 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 4. Consultar nuevamente venta, stock y movimientos.
 
 **Resultado esperado:** La segunda solicitud responde `400` con un mensaje que indique que no se permite cambiar una venta `CANCELADO` a `CANCELADO`; el estado no cambia, el stock no vuelve a aumentar y no se crea otra `ENTRADA`.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Alta<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
 **Observaciones:** Este caso no cubre cancelaciones simultáneas.
 
@@ -376,8 +375,8 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 **Prioridad de ejecución:** P1<br>
 **Tipo de prueba:** Negative Testing, Integration Testing, API Testing, Database Testing, Regression Testing<br>
 **Rol o tipo de cuenta:** `CLIENTE_A`, propietario de la venta<br>
-**Precondiciones:** Venta `PENDIENTE` con artículos de `VARIANTE_B_DISPONIBLE` y `VARIANTE_A_INSUFICIENTE`; ambos tenían stock al crearla, pero uno es insuficiente antes del pago.<br>
-**Datos de prueba:** `PRODUCTO_A`, `PRODUCTO_B`, ambas variantes y sus cantidades conocidas.<br>
+**Precondiciones:** Venta `PENDIENTE` con artículos de `VARIANTE_A_SECUNDARIA_DISPONIBLE` y `VARIANTE_A_INSUFICIENTE`; ambas variantes del mismo producto tenían stock al crearla, pero una es insuficiente antes del pago.<br>
+**Datos de prueba:** `PRODUCTO_A`, ambas variantes y sus cantidades conocidas.<br>
 **Pasos:**
 
 1. Registrar el estado, stock de todas las variantes y movimientos iniciales.
@@ -386,12 +385,12 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 4. Consultar todas las variantes, la venta y los movimientos después del rechazo.
 
 **Resultado esperado:** La API responde `409` por el artículo sin stock suficiente; `Sale.estado` permanece `PENDIENTE`; ninguna variante conserva descuentos parciales; no se crea ningún movimiento nuevo para ninguno de los artículos.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Crítica<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
-**Observaciones:** El orden de los artículos no cambia el criterio: toda la operación debe revertirse por `prisma.$transaction`.
+**Observaciones:** La ejecución registrada utilizó dos variantes del mismo producto (`XXS` disponible y `XS` insuficiente). El orden de los artículos no cambia el criterio: toda la operación debe revertirse por `prisma.$transaction`.
 
 ---
 
@@ -415,10 +414,10 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 4. Consultar persistencia con una cuenta autorizada.
 
 **Resultado esperado:** La API responde `403` con un mensaje que indique que la cuenta no tiene acceso al pedido; la venta permanece `PENDIENTE`; no cambia el stock y no se crea movimiento.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Alta<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
 **Observaciones:** `simulatePayment` compara el cliente autenticado con `Sale.clientId` y usa `cliente.id` solo como respaldo si el repositorio no incluye `clientId`.
 
@@ -443,10 +442,10 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 3. Consultar estado, stock y movimientos mediante accesos autorizados.
 
 **Resultado esperado:** `requireClientAccount` responde `403` con un mensaje que indique que la operación es exclusiva para clientes de la tienda; la venta permanece `PENDIENTE`; no cambia el inventario ni se crean movimientos.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Alta<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
 **Observaciones:** La respuesta esperada corresponde al middleware de la ruta, antes de ejecutar el servicio de pago.
 
@@ -472,10 +471,10 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 4. Consultar persistencia después del rechazo.
 
 **Resultado esperado:** La API responde `400` con un mensaje que indique que no se permite cambiar una venta `ENVIADO` a `CANCELADO`; la venta permanece `ENVIADO`; no se repone stock y no se crea `ENTRADA`.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Alta<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
 **Observaciones:** `TRANSICIONES_PERMITIDAS.ENVIADO` es una lista vacía.
 
@@ -501,10 +500,10 @@ Cada caso debe ejecutarse con datos aislados o restaurados a una línea base con
 4. Consultar persistencia después del rechazo.
 
 **Resultado esperado:** La API responde `400` con un mensaje que indique que el pedido ya fue procesado y no puede pagarse; la venta permanece `CANCELADO`; el stock no disminuye y no se crea `SALIDA`.<br>
-**Resultado obtenido:** Pendiente de ejecución<br>
-**Estado:** NOT RUN<br>
+**Resultado obtenido:** PASS — consultar el registro correspondiente en `TR-SI-001`.<br>
+**Estado:** PASS<br>
 **Severidad potencial si falla:** Alta<br>
-**Evidencia:** Pendiente<br>
+**Evidencia:** Consultar los archivos del caso correspondiente en `qa/evidence/TR-SI-001/`.<br>
 **Defecto relacionado:** Ninguno<br>
 **Observaciones:** El rechazo ocurre en `simulatePayment` porque el estado no es `PENDIENTE`.
 
@@ -602,4 +601,4 @@ Esa suite deberá cubrir, sin asumir todavía un resultado contractual:
 - dos despachos simultáneos;
 - dos confirmaciones simultáneas.
 
-No se ejecutó ningún caso durante la creación de este documento.
+Los casos se diseñaron antes de la ejecución. La ejecución posterior quedó registrada en `qa/test-runs/TR-SALES-INVENTORY-001.md` con resultado 16/16 PASS.

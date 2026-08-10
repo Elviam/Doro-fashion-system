@@ -1,0 +1,50 @@
+{
+    "message": "Venta registrada correctamente",
+    "item": {
+        "id": "cmsgzreso0001ckx047p46nqx",
+        "numeroPedido": "PED-MSGZRESN",
+        "clienteId": "profile_cmrockb1o0003ckv8tazaeqni",
+        "cliente": {
+            "nombre": "Cliente QA",
+            "email": "juan@gmail.com",
+            "direccion": "Calle Prueba 124, Centro, León, Guanajuato, CP 37000, México"
+        },
+        "metodoPago": "tarjeta",
+        "items": [
+            {
+                "productoId": "cmrvkg97q0001ckr87t6oxr3s",
+                "nombre": "Vestido negro",
+                "imagen": "https://res.cloudinary.com/dxpf2s9yv/image/upload/v1784693530/sfmwk5bmgqahzgcboxnr.png",
+                "talla": "M",
+                "cantidad": 1,
+                "precioUnitario": 688
+            }
+        ],
+        "subtotal": 688,
+        "envio": 99,
+        "total": 787,
+        "estado": "PENDIENTE",
+        "motivoCancelacion": "",
+        "estadoPreparacion": "PENDIENTE",
+        "direccionEntrega": {
+            "pais": "México",
+            "estado": "Guanajuato",
+            "ciudad": "León",
+            "colonia": "Centro",
+            "calle": "Calle Prueba",
+            "numeroExterior": "124",
+            "numeroInterior": "",
+            "cp": "37000",
+            "referencias": "Prueba TC-SI-001",
+            "telefono": "4770000000"
+        },
+        "guiaEnvio": "",
+        "estadoEnvio": "PENDIENTE",
+        "paqueteria": "D'ORO Envíos (simulado)",
+        "enviadoAt": null,
+        "entregadoAt": null,
+        "eventosEnvio": [],
+        "createdAt": "2026-08-06T04:03:59.784Z",
+        "updatedAt": "2026-08-06T04:03:59.784Z"
+    }
+}
