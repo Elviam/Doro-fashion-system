@@ -5,7 +5,6 @@ D'oro Fashion System is a full-stack retail platform that connects a customer-fa
 ## Live Demo
 
 - [Application](https://doro-fashion-system.vercel.app)
-- [Repository](https://github.com/Elviam/Doro-fashion-system)
 - [QA Case Study](qa/README.md)
 
 ## Project Overview
@@ -180,6 +179,7 @@ The public frontend is deployed on Vercel and includes SPA rewrite configuration
 - ESLint
 - Postman and Prisma Studio for documented manual API and persistence checks
 - Git and GitHub
+- GitHub Actions for continuous integration
 
 ## Quality Assurance
 
@@ -193,6 +193,7 @@ D'oro also serves as a practical QA case study for validating business rules, au
 | Manual Sales & Inventory suite | **16 / 16 PASS** |
 | ESLint | **0 errors / 0 warnings** |
 | Production frontend build | **PASS** |
+| GitHub Actions CI | **PASS — Backend + Frontend** |
 
 The production build currently reports Vite's warning for chunks larger than 500 kB. One open defect is documented in the QA portfolio; the results above do not claim end-to-end coverage or a coverage percentage.
 
@@ -214,6 +215,8 @@ The production build currently reports Vite's warning for chunks larger than 500
 
 The expected rule was all-or-nothing processing. The API rejected payment because of the insufficient line; the available variant was not deducted, the unavailable variant did not become negative, the sale remained `PENDIENTE`, and no new inventory movement was persisted. The result was verified through the API, inventory state, movement records, and database persistence evidence.
 
+![Atomic payment QA validation](screenshots/05-qa-atomic-payment.png)
+
 [Read the test case](qa/test-cases/TC-SALES-INVENTORY.md#tc-si-012) · [Review the execution record](qa/test-runs/TR-SALES-INVENTORY-001.md#registro-de-ejecución--tc-si-012) · [View the concise evidence](qa/evidence/TR-SI-001/TC-SI-012-atomicity-result.txt)
 
 ## Testing Strategy
@@ -225,6 +228,9 @@ The current strategy combines native Node.js regression suites with executed man
 - [Test Run](qa/test-runs/TR-SALES-INVENTORY-001.md)
 - [Execution Evidence](qa/evidence/TR-SI-001/)
 - [Open Defect](qa/defects/BUG-AUTH-001.md)
+- [SQL Validation Queries](qa/database/validation-queries.sql)
+- [Postman QA Collection](qa/api/postman/README.md)
+- [GitHub Actions CI](.github/workflows/ci.yml)
 
 ## Deployment
 
@@ -359,7 +365,7 @@ The current `lint` script includes ESLint's `--fix` option and may format source
 
 ## Language Note
 
-The repository's primary documentation is in English. The interface and some code identifiers remain in Spanish because D'oro was designed for a Mexican retail context; this naming choice does not change the system architecture, authorization model, or engineering and QA practices.
+The repository's primary documentation is in English. The interface, some code identifiers, and detailed test-execution artifacts remain in Spanish because D'oro was designed and tested in a Mexican retail context. Portfolio-level QA documentation is presented in English for broader accessibility. This language choice does not change the system architecture, authorization model, or engineering and QA practices.
 
 ## What This Project Demonstrates
 

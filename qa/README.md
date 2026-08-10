@@ -179,14 +179,6 @@ Static analysis and the production build are separate quality checks:
 
 ```powershell
 cd frontend
-npm run lint
-npm run build
-```
-
-Static analysis and the production build are separate quality checks:
-
-```powershell
-cd frontend
 
 # Local lint command; may apply fixes
 npm run lint
