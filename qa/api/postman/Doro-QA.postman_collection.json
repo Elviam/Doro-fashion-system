@@ -1,0 +1,613 @@
+{
+  "info": {
+    "_postman_id": "78d25a24-a79f-4a31-a7e0-94f557230ba2",
+    "name": "Doro QA",
+    "description": "Colección QA reutilizable construida desde las rutas, esquemas, controladores y servicios actuales de D'oro. Use únicamente entornos locales o de prueba autorizados. La colección no contiene resultados históricos ni implica que las requests hayan sido ejecutadas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "description": "Obtención y verificación de sesiones CLIENT y STAFF mediante endpoints reales de /api/auth.",
+      "item": [
+        {
+          "name": "Client login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response contains a CLIENT token', () => {",
+                  "  pm.expect(json.token).to.be.a('string').and.not.empty;",
+                  "  pm.expect(json.user).to.be.an('object');",
+                  "  pm.expect(json.user.accountType).to.eql('CLIENT');",
+                  "});",
+                  "if (pm.response.code === 200 && typeof json.token === 'string') {",
+                  "  pm.collectionVariables.set('client_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{client_email}}\",\n  \"password\": \"{{client_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/auth/login",
+            "description": "Autentica una cuenta CLIENT por email. Si responde correctamente, guarda el JWT solo en la variable local client_token."
+          }
+        },
+        {
+          "name": "Other client login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response contains a CLIENT token', () => {",
+                  "  pm.expect(json.token).to.be.a('string').and.not.empty;",
+                  "  pm.expect(json.user).to.be.an('object');",
+                  "  pm.expect(json.user.accountType).to.eql('CLIENT');",
+                  "});",
+                  "if (pm.response.code === 200 && typeof json.token === 'string') {",
+                  "  pm.collectionVariables.set('other_client_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{other_client_email}}\",\n  \"password\": \"{{other_client_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/auth/login",
+            "description": "Autentica una segunda cuenta CLIENT diferente y guarda el JWT solo en la variable local other_client_token."
+          }
+        },
+        {
+          "name": "Staff login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response contains a STAFF token', () => {",
+                  "  pm.expect(json.token).to.be.a('string').and.not.empty;",
+                  "  pm.expect(json.user).to.be.an('object');",
+                  "  pm.expect(json.user.accountType).to.eql('STAFF');",
+                  "});",
+                  "if (pm.response.code === 200 && typeof json.token === 'string') {",
+                  "  pm.collectionVariables.set('staff_token', json.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"{{staff_username}}\",\n  \"password\": \"{{staff_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/auth/staff-login",
+            "description": "Autentica una cuenta STAFF por usuario. Si responde correctamente, guarda el JWT solo en la variable local staff_token."
+          }
+        },
+        {
+          "name": "Verify client session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Current account is CLIENT', () => {",
+                  "  pm.expect(json.user).to.be.an('object');",
+                  "  pm.expect(json.user.accountType).to.eql('CLIENT');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/auth/me",
+            "description": "Verifica que client_token resuelva una sesión CLIENT activa."
+          }
+        },
+        {
+          "name": "Verify staff session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Current account is STAFF', () => {",
+                  "  pm.expect(json.user).to.be.an('object');",
+                  "  pm.expect(json.user.accountType).to.eql('STAFF');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/auth/me",
+            "description": "Verifica que staff_token resuelva una sesión STAFF activa."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sales",
+      "description": "Operaciones representativas del flujo de ventas. Crear, pagar y cancelar modifican datos: ejecute solo en local o QA autorizado.",
+      "item": [
+        {
+          "name": "Create sale as CLIENT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('Created sale has reusable identifiers', () => {",
+                  "  pm.expect(json.item).to.be.an('object');",
+                  "  pm.expect(json.item.id).to.be.a('string').and.not.empty;",
+                  "  pm.expect(json.item.numeroPedido).to.be.a('string').and.not.empty;",
+                  "  pm.expect(json.item.estado).to.eql('PENDIENTE');",
+                  "});",
+                  "if (pm.response.code === 201 && json.item?.id) {",
+                  "  pm.collectionVariables.set('sale_id', json.item.id);",
+                  "  pm.collectionVariables.set('order_number', json.item.numeroPedido);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": {\n    \"nombre\": \"Cliente QA Sintético\",\n    \"email\": \"{{client_email}}\",\n    \"calle\": \"Calle Pruebas\",\n    \"numeroExterior\": \"100\",\n    \"numeroInterior\": \"\",\n    \"cp\": \"01000\",\n    \"estado\": \"Ciudad de México\",\n    \"ciudad\": \"Álvaro Obregón\",\n    \"colonia\": \"QA Local\",\n    \"referencias\": \"Dato sintético para validación QA\",\n    \"telefono\": \"5550000000\"\n  },\n  \"metodoPago\": \"tarjeta\",\n  \"items\": [\n    {\n      \"productoId\": \"{{product_id}}\",\n      \"talla\": \"{{size}}\",\n      \"cantidad\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/ventas",
+            "description": "Crea una venta para el CLIENT autenticado usando producto/talla existentes en el entorno de prueba. Guarda sale_id y order_number localmente."
+          }
+        },
+        {
+          "name": "List my sales as CLIENT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response has an items array', () => pm.expect(json.items).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/ventas/me",
+            "description": "Lista las ventas pertenecientes al CLIENT autenticado."
+          }
+        },
+        {
+          "name": "List sales as STAFF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response has paginated sales', () => {",
+                  "  pm.expect(json.items).to.be.an('array');",
+                  "  pm.expect(json.total).to.be.a('number');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/ventas?page=1&limit=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "ventas"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Lista ventas para STAFF con ventas:read o tienda:read."
+          }
+        },
+        {
+          "name": "Get sale by ID as STAFF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Response contains the requested sale', () => {",
+                  "  pm.expect(json.item).to.be.an('object');",
+                  "  pm.expect(json.item.id).to.eql(pm.collectionVariables.get('sale_id'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/ventas/{{sale_id}}",
+            "description": "Consulta una venta concreta para STAFF con ventas:read."
+          }
+        },
+        {
+          "name": "Confirm simulated payment as owning CLIENT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Sale is paid', () => {",
+                  "  pm.expect(json.item).to.be.an('object');",
+                  "  pm.expect(json.item.estado).to.eql('PAGADO');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/ventas/{{sale_id}}/simulate-payment",
+            "description": "Confirma el pago simulado de una venta PENDIENTE perteneciente al CLIENT. Tiene efectos sobre estado, stock y movimientos."
+          }
+        },
+        {
+          "name": "Cancel sale as authorized STAFF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Sale is cancelled', () => {",
+                  "  pm.expect(json.item).to.be.an('object');",
+                  "  pm.expect(json.item.estado).to.eql('CANCELADO');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"CANCELADO\",\n  \"motivoCancelacion\": \"Cancelación controlada de prueba QA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": "{{base_url}}/ventas/{{sale_id}}/estado",
+            "description": "Cancela una venta PENDIENTE o PAGADO para STAFF con ventas:update. Una venta PAGADO restaura inventario."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authorization - Negative Testing",
+      "description": "Rechazos reutilizables que reflejan controles reales de ownership y separación CLIENT/STAFF.",
+      "item": [
+        {
+          "name": "Other CLIENT cannot pay foreign sale",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('Error response has a message', () => pm.expect(json.message).to.be.a('string').and.not.empty);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{other_client_token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/ventas/{{ownership_sale_id}}/simulate-payment",
+            "description": "Valida específicamente ownership con respuesta esperada 403. ownership_sale_id debe ser una venta PENDIENTE propiedad del CLIENT principal; el segundo CLIENT autenticado con other_client_token debe ser una cuenta diferente y no ser propietario de esa venta. No reutilice automáticamente una venta ya pagada o cancelada del flujo positivo."
+          }
+        },
+        {
+          "name": "STAFF cannot use CLIENT payment endpoint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('Error response has a message', () => pm.expect(json.message).to.be.a('string').and.not.empty);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{staff_token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/ventas/{{sale_id}}/simulate-payment",
+            "description": "Verifica requireClientAccount en el endpoint de pago simulado."
+          }
+        },
+        {
+          "name": "CLIENT cannot use STAFF sale detail endpoint",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403', () => pm.response.to.have.status(403));",
+                  "const json = pm.response.json();",
+                  "pm.test('Error response has a message', () => pm.expect(json.message).to.be.a('string').and.not.empty);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{client_token}}",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/ventas/{{sale_id}}",
+            "description": "Verifica requireStaffAccount en la consulta individual de ventas."
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "client_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "other_client_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "staff_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "client_email",
+      "value": "qa.client@example.test",
+      "type": "string"
+    },
+    {
+      "key": "client_password",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "other_client_email",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "other_client_password",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "staff_username",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "staff_password",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "sale_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ownership_sale_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "order_number",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "size",
+      "value": "M",
+      "type": "string"
+    }
+  ]
+}

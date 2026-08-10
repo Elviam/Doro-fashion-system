@@ -7,7 +7,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test --test-isolation=none",
-    "lint": "eslint src/ --fix"
+    "lint": "eslint src/ --fix",
+    "lint:check": "eslint src/"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.0",
