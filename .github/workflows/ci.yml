@@ -40,6 +40,8 @@ jobs:
 
       - name: Run backend automated tests
         run: npm test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/doro_ci
 
   frontend:
     name: Frontend tests, lint, and build
