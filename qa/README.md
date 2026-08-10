@@ -93,6 +93,8 @@ Each case defines preconditions, data needs, steps, expected API and persistence
 | Manual blocked cases | **0** |
 | ESLint | **0 errors / 0 warnings** |
 | Production frontend build | **PASS** |
+| GitHub Actions CI | **PASS — Backend + Frontend** |
+
 
 The manual suite pass rate is 100% for its 16 executed cases. These numbers do **not** mean 100% code coverage, 100% requirements coverage, or 100% end-to-end coverage. No code-coverage percentage is claimed because no coverage report is documented.
 
@@ -150,13 +152,26 @@ The repository uses Node.js's native test runner:
 - **60 backend tests** cover selected authentication, middleware, authorization, Sales payment service behavior, receiving, notifications, roles, password actions, audit dates, navigation contracts, and related services.
 - **19 frontend tests** cover scoped auth tokens, replenishment access presentation, password-audit presentation, and supplier-order UI behavior.
 
+Continuous Integration is configured through [GitHub Actions](../.github/workflows/ci.yml) for pushes to `main` and pull requests targeting `main`.
+
+The CI workflow currently validates:
+
+* **60/60 backend automated tests**
+* **19/19 frontend automated tests**
+* non-destructive ESLint validation
+* production frontend build
+
+The workflow uses Node.js 24, generates Prisma Client before backend execution, and uses synthetic local-only environment values required to initialize the isolated test environment. It does not run migrations, seeds, or connect to the production database.
+
+The current GitHub Actions execution completed successfully for both backend and frontend jobs.
+
 Run commands:
 
 ```powershell
 cd backend
 npm test
 
-cd ../frontend
+cd frontend
 npm test
 ```
 
@@ -168,7 +183,23 @@ npm run lint
 npm run build
 ```
 
-The current `lint` script includes `--fix` and may modify source files. Automated suites complement, but do not replace, manual API/database testing, concurrency testing, or real-browser end-to-end coverage.
+Static analysis and the production build are separate quality checks:
+
+```powershell
+cd frontend
+
+# Local lint command; may apply fixes
+npm run lint
+
+# Non-destructive validation used by CI
+npm run lint:check
+
+npm run build
+```
+
+The local `lint` script includes `--fix` and may modify source files. GitHub Actions therefore uses `lint:check`, which validates ESLint without modifying the repository.
+
+Automated suites complement, but do not replace, manual API/database testing, concurrency testing, or real-browser end-to-end coverage.
 
 ## 16. Traceability
 
@@ -194,6 +225,10 @@ It uses existing identifiers such as `R-03`, `TC-SI-012`, `TR-SI-001`, and `BUG-
 | [Evidence](evidence/TR-SI-001/) | API, state, movement, and persistence artifacts |
 | [BUG-AUTH-001](defects/BUG-AUTH-001.md) | Open session/profile defect report |
 | [BUG-AUTH-001 evidence](evidence/BUG-AUTH-001/) | Screenshots and video from the confirmed reproduction |
+| [SQL validation queries](database/validation-queries.sql) | Read-only PostgreSQL queries for QA validation of sales, variants, stock, and inventory movements |
+| [Postman QA collection](api/postman/README.md) | Reusable API requests and authorization checks built from implemented endpoints |
+| [GitHub Actions CI](../.github/workflows/ci.yml) | Automated backend tests, frontend tests, non-destructive lint, and production build |
+
 
 ## 18. Known Limitations
 
