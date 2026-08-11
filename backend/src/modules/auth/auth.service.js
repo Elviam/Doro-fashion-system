@@ -1,13 +1,22 @@
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
+import nodemailer from 'nodemailer'
 import { OAuth2Client } from 'google-auth-library'
 import { signAccessToken } from '../../config/jwt.js'
+import { env } from '../../config/env.js'
 import { authRepository } from './auth.repository.js'
 import { resolveEffectivePermissions } from '../../services/authorization.service.js'
 import { logAuditEvent } from '../../utils/audit.js'
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 const STAFF_ROLES = new Set(['ADMIN', 'BODEGUERO'])
+
+function isDemoStaffAccount(account) {
+  return Boolean(
+    env.DEMO_STAFF_EMAIL &&
+    account?.email === env.DEMO_STAFF_EMAIL
+  )
+}
 
 function unauthorized() { const error = new Error('Credenciales inválidas'); error.statusCode = 401; return error }
 
@@ -56,6 +65,11 @@ export class AuthService {
       ? await authRepository.findById(currentAccount.id || currentAccount.sub)
       : await authRepository.findClientById(currentAccount.id || currentAccount.sub)
     if (!account || account.activo === false) throw unauthorized()
+    if (currentAccount.accountType === 'STAFF' && isDemoStaffAccount(account)) {
+      const error = new Error('La cuenta de demostración no permite cambiar la contraseña.')
+      error.statusCode = 403
+      throw error
+    }
     const hash = account.passwordHash
     if (!hash || !await bcrypt.compare(currentPassword, hash)) { const error = new Error('La contraseña actual es incorrecta'); error.statusCode = 400; throw error }
     if (await bcrypt.compare(newPassword, hash)) { const error = new Error('La nueva contraseña debe ser diferente'); error.statusCode = 400; throw error }
@@ -80,8 +94,32 @@ export class AuthService {
     return { message: 'Contraseña actualizada correctamente' }
   }
 
-  sanitizeStaff(user, permissions) { return { id: user.id, nombre: user.nombre || '', apellido: user.apellido || '', email: user.email || '', usuario: user.usuario, role: user.role, roleId: user.roleId, isPrimaryAdmin: user.isPrimaryAdmin === true, permissions, activo: user.activo, accountType: 'STAFF', createdAt: user.createdAt } }
+  async requestPasswordReset({ email }) {
+    const client = await authRepository.findClientByEmail(email)
+    if (!client) return { message: 'Se ha enviado un código a tu correo electrónico' }
+    const code = Math.floor(100000 + Math.random() * 900000).toString()
+    await authRepository.upsertClientPasswordReset(client.id, { code, expiresAt: new Date(Date.now() + 15 * 60 * 1000) })
+    await this.sendPasswordResetEmail(client.email, code)
+    return { message: 'Se ha enviado un código a tu correo electrónico' }
+  }
+
+  async validateAndResetPassword({ email, code, newPassword }) {
+    const client = await authRepository.findClientByEmail(email)
+    if (!client) throw unauthorized()
+    const reset = await authRepository.findClientPasswordReset(client.id)
+    if (!reset || reset.used || new Date() > new Date(reset.expiresAt) || reset.code !== code) { const error = new Error('CÃ³digo de recuperaciÃ³n invÃ¡lido o expirado'); error.statusCode = 400; throw error }
+    await authRepository.updateClientPassword(client.id, await bcrypt.hash(newPassword, 10))
+    await authRepository.markClientPasswordResetUsed(client.id)
+    return { message: 'Contraseña actualizada exitosamente' }
+  }
+
+  sanitizeStaff(user, permissions) { return { id: user.id, nombre: user.nombre || '', apellido: user.apellido || '', email: user.email || '', usuario: user.usuario, role: user.role, roleId: user.roleId, isPrimaryAdmin: user.isPrimaryAdmin === true, isDemoStaff: isDemoStaffAccount(user), permissions, activo: user.activo, accountType: 'STAFF', createdAt: user.createdAt } }
   sanitizeClient(client) { return { id: client.id, nombre: client.nombre || '', email: client.email, role: 'CLIENTE', activo: client.activo, accountType: 'CLIENT', createdAt: client.createdAt } }
+
+  async sendPasswordResetEmail(email, code) {
+    const transporter = nodemailer.createTransport({ host: process.env.MAIL_HOST || 'smtp.gmail.com', port: process.env.MAIL_PORT || 587, secure: false, auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASSWORD } })
+    await transporter.sendMail({ from: process.env.MAIL_USER || 'doroclothes@gmail.com', to: email, subject: 'Cóigo para restablecer tu contraseña - DORO', text: `Tu código de verificación es ${code}. Expira en 15 minutos.` })
+  }
 }
 
 export const authService = new AuthService()

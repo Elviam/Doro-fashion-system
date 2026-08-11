@@ -84,11 +84,13 @@ export default function PerfilUsuario({ usuario }) {
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[2px] bg-[var(--gold-08)] text-[var(--gold-dark)] dark:text-[var(--gold-light)]"><i className="bi bi-shield-lock text-lg" /></div>
           <div>
             <h3 className="font-display text-base font-bold text-[var(--noir)] dark:text-[var(--snow)] lg:text-lg">Seguridad</h3>
-            <p className="mt-1 font-body text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">Cambia tu contraseña conociendo la actual. Nadie puede verla después de guardarla.</p>
+            {!usuario?.isDemoStaff && <p className="mt-1 font-body text-xs text-[var(--noir-soft)] dark:text-[var(--ash)]">Cambia tu contraseña conociendo la actual. Nadie puede verla después de guardarla.</p>}
           </div>
         </div>
 
-        <CambioPasswordForm />
+        {usuario?.isDemoStaff
+          ? <p className="font-body text-sm text-[var(--noir-soft)] dark:text-[var(--ash)]">Cuenta de demostración · La contraseña no puede modificarse.</p>
+          : <CambioPasswordForm />}
       </div>
 
       <div className="rounded-[2px] border border-[var(--border-gold-40)] dark:border-[var(--border-gold-20)] shadow-lg p-5 sm:p-6 w-full bg-[var(--snow)] dark:bg-[var(--noir-soft)] backdrop-blur-sm box-border">

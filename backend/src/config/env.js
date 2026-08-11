@@ -21,6 +21,7 @@ export const env = {
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '15m',
   JWT_REFRESH_SECRET: required('JWT_REFRESH_SECRET'),
   JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+  DEMO_STAFF_EMAIL: process.env.DEMO_STAFF_EMAIL || null,
 
   FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || null,
   FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL || null,
