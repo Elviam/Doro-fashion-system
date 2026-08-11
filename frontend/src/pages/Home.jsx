@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import hero from "../assets/images/hero.png";
 import products from "../assets/images/products.png"
 import useTitulo from "../hooks/useTitulo";
+import FooterTienda from "../components/tienda/FooterTienda";
 
 // ---------------------------------------------------------------------------
 // Google Fonts
@@ -111,15 +112,6 @@ const GlobalStyles = () => (
     }
     .img-zoom:hover { transform: scale(1.04); }
 
-    /* Footer links */
-    .footer-link {
-      transition: color 0.2s, letter-spacing 0.3s;
-    }
-    .footer-link:hover {
-      color: var(--gold) !important;
-      letter-spacing: 0.2em;
-    }
-
     /* ── Header responsive ── */
     .header-nav   { display: flex; gap: 36px; align-items: center; }
     .header-btns  { display: flex; gap: 12px; align-items: center; }
@@ -161,15 +153,6 @@ const GlobalStyles = () => (
     max-width: 100% !important;
   }
 
-  .footer-inner {
-    flex-direction: column;
-    gap: 36px !important;
-  }
-
-  .footer-nav {
-    flex-wrap: wrap;
-    gap: 32px !important;
-  }
 }
 
     /* ══════════════════════════════════════════════════════
@@ -195,10 +178,6 @@ const GlobalStyles = () => (
       .manifesto-text { padding: 48px 24px !important; }
       .cta-band     { padding: 52px 24px !important; }
 
-      .footer-root  { padding: 40px 24px !important; }
-      .footer-nav   { flex-direction: column; gap: 28px !important; }
-
-      .copyright-bar { padding: 14px 24px !important; flex-direction: column; gap: 4px; }
     .heritage-image {
       min-height: 320px !important;
     }
@@ -255,21 +234,6 @@ const GoldDivider = () => {
   }, []);
   return <span ref={ref} className="gold-line" />;
 };
-
-// ---------------------------------------------------------------------------
-// SVG Icons
-// ---------------------------------------------------------------------------
-const IconInstagram = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
-  </svg>
-);
-
-const IconX = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L2.14 2.25H8.38l4.259 5.631L18.244 2.25zM17.08 19.77h1.833L7.084 4.126H5.117L17.08 19.77z" />
-  </svg>
-);
 
 // ---------------------------------------------------------------------------
 // Hook: scroll reveal
@@ -805,184 +769,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          FOOTER
-      ══════════════════════════════════════════════════════════════════ */}
-      <footer
-        className="footer-root"
-        style={{
-          background: "var(--noir-soft)",
-          padding: "52px 60px",
-          width: "100%",
-          boxSizing: "border-box",
-          borderTop: "1px solid var(--border-gold-20)",
-        }}
-      >
-        <div
-          className="footer-inner"
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            gap: "40px",
-          }}
-        >
-          {/* Brand */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <DoroWordmark size={22} color="var(--gold-light)" />
-          <p
-            style={{
-                fontFamily: "var(--font-tag)",
-                fontSize: "10px",
-                letterSpacing: "0.2em",
-                color: "var(--gold-50)",
-                textTransform: "uppercase",
-                margin: 0,
-              }}
-            >
-              Alta Moda · Desde 1986
-            </p>
-          </div>
-
-          {/* Nav columns */}
-          <div className="footer-nav" style={{ display: "flex", gap: "56px", flexWrap: "wrap" }}>
-            {[
-              { title: "Colección", links: ["Primavera 2026", "Invierno 2025", "Archivo"] },
-              { title: "Maison",    links: ["Historia", "Atelier", "Sostenibilidad"] },
-              { title: "Servicio",  links: ["Contacto", "Envíos", "Devoluciones"] },
-            ].map((col) => (
-              <div key={col.title} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                <p
-                  style={{
-                    fontFamily: "var(--font-tag)",
-                    fontSize: "9px",
-                    fontWeight: 600,
-                    letterSpacing: "0.24em",
-                    color: "var(--gold)",
-                    textTransform: "uppercase",
-                    margin: 0,
-                  }}
-                >
-                  {col.title}
-                </p>
-                {col.links.map((link) => (
-                  <a
-                    key={link}
-                    className="footer-link"
-                    style={{
-                      fontFamily: "var(--font-tag)",
-                      fontSize: "10px",
-                      fontWeight: 300,
-                      letterSpacing: "0.14em",
-                      color: "var(--snow-45)",
-                      textDecoration: "none",
-                      textTransform: "uppercase",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {link}
-                  </a>
-                ))}
-              </div>
-            ))}
-          </div>
-
-          {/* Social */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <p
-              style={{
-                fontFamily: "var(--font-tag)",
-                fontSize: "9px",
-                fontWeight: 600,
-                letterSpacing: "0.24em",
-                color: "var(--gold)",
-                textTransform: "uppercase",
-                margin: 0,
-              }}
-            >
-              Redes
-            </p>
-            <div style={{ display: "flex", gap: "16px" }}>
-              {[
-                { label: "Instagram", href: "https://www.instagram.com", Icon: IconInstagram },
-                { label: "X",         href: "https://x.com",             Icon: IconX },
-              ].map(({ label, href, Icon }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={label}
-                  style={{
-                    color: "var(--gold-50)",
-                    display: "inline-flex",
-                    transition: "color 0.2s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--gold)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "var(--gold-50)")}
-                >
-                  <Icon />
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* Copyright bar */}
-      <div
-        className="copyright-bar"
-        style={{
-          background: "var(--noir)",
-          borderTop: "1px solid rgba(201,168,76,0.1)",
-          padding: "16px 60px",
-          display: "flex",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: "8px",
-          boxSizing: "border-box",
-          width: "100%",
-        }}
-      >
-        <p
-          style={{
-            fontFamily: "var(--font-tag)",
-            fontSize: "9px",
-            letterSpacing: "0.16em",
-            color: "var(--snow-25)",
-            margin: 0,
-            textTransform: "uppercase",
-          }}
-          >
-            © 2026 D'oro Maison · Todos los derechos reservados
-          </p>
-          <p
-            style={{
-              fontFamily: "var(--font-body)",
-              fontSize: "10px",
-              lineHeight: 1.45,
-              color: "var(--snow-45)",
-              margin: 0,
-              maxWidth: "520px",
-              textAlign: "center",
-            }}
-          >
-            D'oro es una marca ficticia creada con fines académicos y de portafolio. Los nombres, ubicaciones y datos comerciales forman parte del concepto del proyecto.
-          </p>
-        <p
-          style={{
-            fontFamily: "var(--font-tag)",
-            fontSize: "9px",
-            letterSpacing: "0.16em",
-            color: "var(--gold-30)",
-            margin: 0,
-            textTransform: "uppercase",
-          }}
-        >
-          Milán · París · Ciudad de México
-        </p>
-      </div>
+      <FooterTienda />
     </div>
   );
 }

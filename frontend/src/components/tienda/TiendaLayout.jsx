@@ -11,6 +11,16 @@ import SeccionCarrito from "./SeccionCarrito";
 import Wishlist from "./Wishlist";
 
 const TiendaPanelContext = createContext(null);
+const rutasInformativas = new Set([
+  "/tienda/envios",
+  "/tienda/devoluciones",
+  "/tienda/guia-tallas",
+  "/tienda/contacto",
+  "/tienda/faq",
+  "/tienda/sobre-doro",
+  "/tienda/sustentabilidad",
+  "/tienda/terminos",
+]);
 
 export function useTiendaPanel() {
   const context = useContext(TiendaPanelContext);
@@ -26,6 +36,7 @@ export default function TiendaLayout({ children }) {
   const { favoritos, setFavoritos } = useWishlist();
   const [wishlistAbierto, setWishlistAbierto] = useState(false);
   const [productos, setProductos] = useState(() => obtenerCatalogoEnCache() || []);
+  const esRutaInformativa = rutasInformativas.has(location.pathname);
 
   useEffect(() => {
     let activo = true;
@@ -50,8 +61,8 @@ export default function TiendaLayout({ children }) {
         onLogout={() => { logout("CLIENT"); setFlashMessage("Sesión cerrada correctamente."); navigate("/"); }}
         usuario={usuario}
         onIrAlDashboard={() => navigate("/dashboard")}
-        mostrarVolver={location.pathname === "/perfil" || location.pathname === "/tienda/checkout" || location.pathname.startsWith("/tienda/producto/")}
-        onVolver={() => navigate("/tienda")}
+        mostrarVolver={esRutaInformativa || location.pathname === "/perfil" || location.pathname === "/tienda/checkout" || location.pathname.startsWith("/tienda/producto/")}
+        onVolver={() => esRutaInformativa ? navigate(-1) : navigate("/tienda")}
       />
 
       {children ?? <Outlet />}
