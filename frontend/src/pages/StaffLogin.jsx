@@ -154,6 +154,51 @@ const StaffLoginStyles = () => (
       text-transform: uppercase;
     }
 
+    .staff-login-demo {
+      padding: 16px;
+      background: var(--gold-08);
+      border: 1px solid var(--border-gold-25);
+      border-radius: 2px;
+      color: var(--noir-soft);
+    }
+    .staff-login-demo-title {
+      margin: 0;
+      font-family: var(--font-tag);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--noir);
+    }
+    .staff-login-demo-copy {
+      margin: 6px 0 14px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--noir-soft);
+    }
+    .staff-login-demo-button {
+      width: 100%;
+      padding: 10px 14px;
+      background: transparent;
+      border: 1px solid var(--border-gold-40);
+      border-radius: 2px;
+      color: var(--gold-dark);
+      font-family: var(--font-tag);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .staff-login-demo-button:hover:not(:disabled) {
+      background: var(--gold-15);
+      border-color: var(--border-gold-55);
+      color: var(--noir);
+    }
+    .staff-login-demo-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
     .staff-login-btn-primary {
       width: 100%;
       padding: 15px 24px;
@@ -230,6 +275,10 @@ const staffLoginSchema = z.object({
 });
 
 const LOGIN_TIMEOUT_MS = 12_000;
+const DEMO_CREDENTIALS = {
+  usuario: 'demo_portfolio',
+  password: 'DoroDemo2026!',
+};
 
 function getHttpLoginErrorMessage(status, result) {
   if (status === 503) {
@@ -268,6 +317,8 @@ export default function StaffLogin() {
   const {
     register,
     handleSubmit,
+    setValue,
+    clearErrors,
     formState: { errors: formErrors, isSubmitting },
   } = useForm({ resolver: zodResolver(staffLoginSchema) });
 
@@ -320,6 +371,11 @@ export default function StaffLogin() {
   };
 
   const isBusy = isSubmitting || loading;
+  const useDemoCredentials = () => {
+    setValue('usuario', DEMO_CREDENTIALS.usuario, { shouldDirty: true, shouldValidate: true });
+    setValue('password', DEMO_CREDENTIALS.password, { shouldDirty: true, shouldValidate: true });
+    clearErrors(['usuario', 'password']);
+  };
 
   return (
     <>
@@ -397,6 +453,19 @@ export default function StaffLogin() {
             </div>
 
             <div style={{ paddingTop: '30px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <aside className="staff-login-demo" aria-labelledby="staff-demo-title">
+                <p id="staff-demo-title" className="staff-login-demo-title">Cuenta demo para portafolio</p>
+                <p className="staff-login-demo-copy">Acceso restringido para explorar el sistema interno. Las operaciones de escritura están protegidas por autorización del backend.</p>
+                <button
+                  type="button"
+                  className="staff-login-demo-button"
+                  disabled={isBusy}
+                  onClick={useDemoCredentials}
+                >
+                  Usar cuenta demo
+                </button>
+              </aside>
+
               <button type="submit" disabled={isBusy} className="staff-login-btn-primary">
                 {isBusy ? (
                   <>

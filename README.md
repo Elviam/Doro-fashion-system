@@ -7,6 +7,18 @@ D'oro Fashion System is a full-stack retail platform that connects a customer-fa
 - [Application](https://doro-fashion-system.vercel.app)
 - [QA Case Study](qa/README.md)
 
+### Internal Management Demo
+
+Explore the internal management interface using a restricted portfolio account.
+
+- [Open Staff Demo](https://doro-fashion-system.vercel.app/staff/login)
+- **Demo user:** `demo_portfolio`
+- **Password:** `DoroDemo2026!`
+- **Access:** Restricted portfolio account
+- **Available modules:** Dashboard, Sales, Inventory, Fulfillment, Receiving, Customers, and Suppliers
+
+> The demo account is intended for portfolio exploration. Write operations are restricted by backend authorization, and the demo account cannot change its own password.
+
 ## Project Overview
 
 D'oro centralizes operations that would otherwise be handled in separate tools or disconnected records. Customer purchases feed the same inventory used by staff; paid orders move into warehouse fulfillment; low-stock information supports supplier orders; confirmed merchandise receipts update stock; and staff actions are governed by permissions and recorded in audit logs.
@@ -187,8 +199,8 @@ D'oro also serves as a practical QA case study for validating business rules, au
 
 | Validation | Result |
 |---|---:|
-| Automated tests | **79 / 79 PASS** |
-| Backend automated tests | **60 / 60 PASS** |
+| Automated tests | **83 / 83 PASS** |
+| Backend automated tests | **64 / 64 PASS** |
 | Frontend automated tests | **19 / 19 PASS** |
 | Manual Sales & Inventory suite | **16 / 16 PASS** |
 | ESLint | **0 errors / 0 warnings** |
@@ -240,7 +252,7 @@ The current strategy combines native Node.js regression suites with executed man
 - **Database:** Neon PostgreSQL, with separate pooled runtime and direct migration connections.
 - **File uploads:** Cloudinary, configured entirely through environment variables.
 
-No credentials, tokens, connection strings, or private service URLs are committed to this documentation.
+No private credentials, tokens, connection strings, or private service URLs are committed to this documentation. The credentials shown above belong exclusively to the restricted public portfolio demo account.
 
 ## Screenshots
 
