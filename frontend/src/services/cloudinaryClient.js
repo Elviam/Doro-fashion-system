@@ -1,8 +1,17 @@
-const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+const CLOUD_NAME = import.meta.env?.VITE_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = import.meta.env?.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+export const MAX_PRODUCT_IMAGE_SIZE_BYTES = 1024 * 1024;
+
+export const isProductImageWithinSizeLimit = (file) =>
+  file?.size <= MAX_PRODUCT_IMAGE_SIZE_BYTES;
 
 export const uploadImageToCloudinary = async (file) => {
   if (!file) return null;
+  if (!isProductImageWithinSizeLimit(file)) {
+    console.error(`La imagen "${file.name}" supera el límite máximo de 1 MB.`);
+    return null;
+  }
 
   const formData = new FormData();
   formData.append("file", file);
