@@ -26,13 +26,36 @@ test('una selección mixta conserva solamente las imágenes de hasta 1 MiB', () 
 })
 
 test('el formulario filtra antes de actualizar el estado y conserva el máximo de seis', () => {
-  const convierteSeleccion = formSource.indexOf('const archivos = Array.from(e.target.files);')
-  const filtraValidos = formSource.indexOf('const archivosValidos = archivos.filter(isProductImageWithinSizeLimit);')
-  const actualizaEstado = formSource.indexOf('setFormData((prev) =>', convierteSeleccion)
+  const convierteSeleccion = formSource.indexOf(
+    'const archivos = Array.from(e.target.files);'
+  )
 
-  assert.ok(convierteSeleccion < filtraValidos && filtraValidos < actualizaEstado)
-  assert.match(formSource, /nuevosArchivos = archivosValidos\.slice\(0, espacioDisponible\)/)
-  assert.match(formSource, /const espacioDisponible = 6 - prev\.imagenes\.length/)
+  const filtraValidos = formSource.indexOf(
+    'const archivosValidos = archivos.filter('
+  )
+
+  const actualizaEstado = formSource.indexOf(
+    'setFormData((prev) =>',
+    convierteSeleccion
+  )
+
+  assert.ok(
+    convierteSeleccion !== -1 &&
+    filtraValidos !== -1 &&
+    actualizaEstado !== -1 &&
+    convierteSeleccion < filtraValidos &&
+    filtraValidos < actualizaEstado
+  )
+
+  assert.match(
+    formSource,
+    /nuevosArchivos\s*=\s*archivosValidos\.slice\(\s*0,\s*espacioDisponible\s*\)/
+  )
+
+  assert.match(
+    formSource,
+    /const\s+espacioDisponible\s*=\s*6\s*-\s*prev\.imagenes\.length/
+  )
 })
 
 test('una imagen de 1 MiB exacto conserva el flujo normal hacia Cloudinary', async () => {
